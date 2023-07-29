@@ -1,7 +1,7 @@
 ##### Author      : Francesco Massimo (Laboratoire de Physique des Gaz et des Plasmas, CNRS)
 ##### Purpose     : define optimizer classes 
 #####               available optimization algorithms: Random Search, Particle Swarm Optimization ("classic", IAPSO, PSO-TPME), Bayesian Optimization 
-##### Last update : 29/07/2023
+
 
 
 import random
@@ -45,7 +45,6 @@ class SwarmParticle(Sample):
 
 class Optimizer:
     def __init__(self, name = "", num_samples = 1, num_dimensions = 1, search_interval = [], max_iterations = 1, optimizer_hyperparameters = [] ):
-        print("Optimizer hyperparameters received:", optimizer_hyperparameters)
         self.name                        = name                   # name of the optimizer
         self.max_iterations              = max_iterations         # maximum number of iterations
         self.num_samples                 = num_samples            # number of samples drawn at each iteration
@@ -55,7 +54,7 @@ class Optimizer:
         self.optimum_position            = None                   # optimum position found by the optimizer, yielding the swarm_optimum_function_value
         self.optimum_function_value      = float('-inf')          # maximum value found of the function to optimize, in all the the swarm
         self.samples                     = []                     # array containing the explored samples at the present iterations
-        
+        self.iteration_number            = 0                      # present iteration number 
         # history of the positions traveled by the particles
         # dimension 0 : iteration
         # dimension 1 : sample number
@@ -65,11 +64,16 @@ class Optimizer:
     
     def updateSamplesForExploration():
         print("In an optimizer, you must define a way to pick new positions to explore for each sample")
+    
+    def operationsAfterUpdateOfOptimumFunctionValueAndPosition(self):
+        pass
         
     def updateOptimumFunctionValueAndPosition(self):
         function_values_of_samples   = [self.samples[isample].optimum_function_value for isample in range(0,self.num_samples)]
         self.optimum_function_value  = max(function_values_of_samples)
         self.optimum_position        = self.samples[function_values_of_samples.index(self.optimum_function_value)].optimum_position
+        
+        self.operationsAfterUpdateOfOptimumFunctionValueAndPosition()
     
     def updateSamplePositionAndFunctionHistory(self,iteration,isample,function_value):
         self.history_samples_positions_and_function_values[iteration,isample,0:self.num_dimensions]     = self.samples[isample].position[:]
@@ -96,7 +100,7 @@ class Optimizer:
         
     def updateHistoryAndCheckIfFunctionValueIsBetter(self,iteration,isample,function_value):
         # store position and function value in history
-        self.updateSamplePositionAndFunctionHistory(iteration,isample,function_value)    
+        self.updateSamplePositionAndFunctionHistory(iteration,isample,function_value)
         # update the optimum value found by the individual swarm particle if necessary 
         sample = self.samples[isample]
         print("\n ---> Sample", isample, "Position:", sample.position," --> function value at this iteration = ",function_value)           
@@ -237,9 +241,6 @@ class ParticleSwarmOptimization(Optimizer):
             self.amplitude_mutated_range                 = self.amplitude_mutated_range_1
             # value of the last average_function_value_of_swarm
             self.best_average_function_value             = float('-inf')
-                
-        # iteration number
-        self.iteration_number                        = 0
         
         # if PSO-TPME is used, we need an array with the classification of each particle
         # and the total number of iterations in which that particle has remained in the same category
@@ -394,10 +395,54 @@ class ParticleSwarmOptimization(Optimizer):
         self.updateParticlePositionAndVelocity()
         self.iteration_number = self.iteration_number+1
         
+    def operationsAfterUpdateOfOptimumFunctionValueAndPosition(self):
+        if (self.name=="PSO-TPME"):
+            average_function_value_of_swarm = np.average(self.history_samples_positions_and_function_values[self.iteration_number,:,self.num_dimensions])
+            average_function_value_of_swarm = np.maximum(average_function_value_of_swarm,self.best_average_function_value)
+            if (average_function_value_of_swarm > self.best_average_function_value):
+                self.best_average_function_value = average_function_value_of_swarm
+            bad_function_value_level        = average_function_value_of_swarm*(1.-self.portion_of_mean_classification_levels)
+            good_function_value_level       = average_function_value_of_swarm*(1.+self.portion_of_mean_classification_levels)
+                
+            print("\n PSO-TPME: Bad, average and good function value levels :",bad_function_value_level,average_function_value_of_swarm,good_function_value_level)
+            old_particle_category       = self.particle_category
+            
+            for isample in range(0,self.num_samples):
+                    
+                if self.history_samples_positions_and_function_values[self.iteration_number,isample,self.num_dimensions] > good_function_value_level:
+                    self.particle_category[isample] = "good"
+                    self.particles_number_of_iterations_remained_in_current_category[isample] = 1
+                elif self.history_samples_positions_and_function_values[self.iteration_number,isample,self.num_dimensions]< bad_function_value_level:
+                    if (self.particles_number_of_iterations_remained_in_current_category[isample]>self.Nmax_iterations_bad_particles-1):
+                        self.particle_category[isample] = "hopeless"
+                        self.particles_number_of_iterations_remained_in_current_category[isample] = 1
+                    else:
+                        if (self.iteration_number==0):
+                            self.particle_category[isample] = "bad" 
+                            self.particles_number_of_iterations_remained_in_current_category[isample] = 1
+                        else:
+                            if (old_particle_category[isample]=="bad"):
+                                self.particle_category[isample] = "bad" 
+                                self.particles_number_of_iterations_remained_in_current_category[isample] = self.particles_number_of_iterations_remained_in_current_category[isample]+1
+                            else:
+                                self.particle_category[isample] = "bad" 
+                                self.particles_number_of_iterations_remained_in_current_category[isample] = 1
+                else:
+                    self.particle_category[isample] = "fair"
+                    self.particles_number_of_iterations_remained_in_current_category[isample] = 1
+     
+                print("Particle ",isample,"with function value ","{:.3f}".format(self.history_samples_positions_and_function_values[self.iteration_number,isample,self.num_dimensions])," is classified as ",self.particle_category[isample], \
+                            ", remained in this category for",self.particles_number_of_iterations_remained_in_current_category[isample]," iterations")
+                        
+                     
+                     
+                     
+            
+        
 
 class BayesianOptimization(Optimizer):
-    def __init__(self, name, num_samples, num_dimensions, search_interval, max_iterations, additional_arguments):
-        super().__init__(name, num_samples, num_dimensions, search_interval, max_iterations, additional_arguments)
+    def __init__(self, name, num_samples, num_dimensions, search_interval, max_iterations, optimizer_hyperparameters):
+        super().__init__(name, num_samples, num_dimensions, search_interval, max_iterations, optimizer_hyperparameters)
         self.num_tests     = 100    # number of points to test through the surrogate function when choosing new samples to draw
         # Define the model for the kernel of the Gaussian process
         # For multidimensional search spaces it is important to use an anisotropic kernel, i.e. with a different scale in each dimension
@@ -481,6 +526,19 @@ class BayesianOptimization(Optimizer):
     def updateSamplesForExploration(self):
         # pick new samples
         self.chooseNewPositionsToExplore()
+        self.iteration_number = self.iteration_number+1
+    
+    def operationsAfterUpdateOfOptimumFunctionValueAndPosition(self):
+        # perform some special operations for the data structure needed by the Bayesian Optimization kernel
+        if self.iteration_number == 0:
+            for isample in range(0,self.num_samples):
+                self.y[isample] = self.history_samples_positions_and_function_values[self.iteration_number,isample,self.num_dimensions]
+            self.model.fit(self.X, self.y)
+        else:
+            for isample in range(0,self.num_samples):
+                self.X = np.vstack((self.X, self.Xsamples[isample]))
+                self.y = np.vstack((self.y, self.history_samples_positions_and_function_values[self.iteration_number,isample,self.num_dimensions]))
+            self.model.fit(self.X, self.y)
         
             
      

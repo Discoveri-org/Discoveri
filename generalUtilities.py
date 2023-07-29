@@ -1,6 +1,6 @@
 ##### Author      : Francesco Massimo (Laboratoire de Physique des Gaz et des Plasmas, CNRS)
 ##### Purpose     : utilities (minor or essential) for the optimization process
-##### Last update : 29/07/2023
+
 
 import os,sys
 import time

@@ -1,11 +1,11 @@
 ##### Author      : Francesco Massimo (Laboratoire de Physique des Gaz et des Plasmas, CNRS)
 ##### Purpose     : inputs for the optimization run
-##### Last update : 29/07/2023
+
 
 import numpy as np
 import os,sys
 
-path_discoveri = "/Users/francescomassimo/Codes/Optimization_on_cluster/discoveri"
+path_discoveri = "/Users/francescomassimo/Codes/Optimization_on_cluster/Discoveri"
 sys.path.insert(0, path_discoveri)
 
 # import Discoveri class
@@ -35,7 +35,7 @@ num_samples                             = 6 #6 #1 # 10 #3 #3 # for a Particle Sw
 
 #### Optimization parameters
 
-max_iterations                          = 2 #100 
+max_iterations                          = 30 #100 
 iterations_between_outputs              = 1
 
 
@@ -156,7 +156,7 @@ elif (optimization_method=="PSO-TPME"):
     
     optimizer_hyperparameters                  = [c1,c2,w1,w2,                                      \
                                                  initial_velocity_over_search_space_size,           \
-                                                 Nmax_exploration,                                  \
+                                                 Nmax_iterations_bad_particles,                                  \
                                                  portion_of_mean_classification_levels,             \
                                                  amplitude_mutated_range_1,amplitude_mutated_range_2]
 

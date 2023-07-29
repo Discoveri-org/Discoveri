@@ -16,7 +16,7 @@
 ##### Author      : Francesco Massimo (Laboratoire de Physique des Gaz et des Plasmas, CNRS)
 ##### Purpose     : perform an optimizing parameter space exploration on a cluster using PIC simulations (or test functions I guess)
 #####               available optimization algorithms: Random Search, Particle Swarm Optimization ("classic", IAPSO, PSO-TPME), Bayesian Optimization 
-##### Last update : 29/07/2023
+
 
 # import "standard" libraries
 import random
@@ -130,7 +130,7 @@ class optimizationRun:
                                                               search_interval=search_interval, max_iterations=max_iterations, \
                                                               optimizer_hyperparameters = optimizer_hyperparameters)
                                                               #additional_arguments = [max_speed,initial_velocity_over_search_space_size,c1,c2],\
-                                                              #Nmax_exploration=Nmax_exploration, \
+                                                              #Nmax_iterations_bad_particles=Nmax_iterations_bad_particles, \
                                                               #portion_of_mean_classification_levels=portion_of_mean_classification_levels, \
                                                               #amplitude_mutated_range_2=amplitude_mutated_range_2,\
                                                               #amplitude_mutated_range_1=amplitude_mutated_range_1,\
@@ -226,19 +226,19 @@ class optimizationRun:
                     for configuration in self.list_configurations:
                         f.write(configuration)
     
-                # Check if the simulations launched in this iteration have finished
-                # and analyse all of them until all are finished 
-                # then, update swarm optimum 
-                self.job_manager.checkAndAnalyseSimulations(self.optimizer, self.list_configurations,iteration)
+            # Check if the simulations launched in this iteration have finished
+            # and analyse all of them until all are finished 
+            # then, update swarm optimum    
+            self.job_manager.checkAndAnalyseSimulations(self.optimizer,self.list_configurations,iteration)
         
-                # Diagnostic
-                self.optimizer.printOptimumFunctionValueAndOptimumPosition() 
-                if (iteration%self.iterations_between_outputs==0):
-                    self.optimizer.printSamplesPositions()
-                    with open('history_particles_positions_and_function_values_iteration_'+str(iteration).zfill(5)+'.npy', 'wb') as f:
-                        np.save( f, self.optimizer.history_samples_positions_and_function_values[0:iteration+1,:,:] )
-                    with open('time_to_complete_iterations_up_to_iteration_'+str(iteration).zfill(5)+'.npy', 'wb') as f:
-                        np.save( f,np.asarray(self.time_to_complete_iterations))
+            # Diagnostic
+            self.optimizer.printOptimumFunctionValueAndOptimumPosition() 
+            if (iteration%self.iterations_between_outputs==0):
+                self.optimizer.printSamplesPositions()
+                with open('history_particles_positions_and_function_values_iteration_'+str(iteration).zfill(5)+'.npy', 'wb') as f:
+                    np.save( f, self.optimizer.history_samples_positions_and_function_values[0:iteration+1,:,:] )
+                with open('time_to_complete_iterations_up_to_iteration_'+str(iteration).zfill(5)+'.npy', 'wb') as f:
+                    np.save( f,np.asarray(self.time_to_complete_iterations))
               
     
 

@@ -1,6 +1,5 @@
 ##### Author      : Francesco Massimo (Laboratoire de Physique des Gaz et des Plasmas, CNRS)
 ##### Purpose     : definition of the class that manages the jobs
-##### Last update : 29/07/2023
 
 import os,sys,time
 
@@ -109,7 +108,6 @@ class jobManager:
                 namelist.write(newline)
 
     def checkAndAnalyseSimulations(self, optimizer, list_configurations, iteration):
-        
         num_samples = optimizer.num_samples
         # create list of sample to keep track which ones are finished
         # this because we do not know in which order the samples will finish thei simulation
@@ -154,58 +152,4 @@ class jobManager:
         # update the optimizer optimum, which is the optimum among the optima of the individual samples
         optimizer.updateOptimumFunctionValueAndPosition()
         
-        # perform some special operations for the data structure needed by the Bayesian Optimization kernel
-        if ( optimizer.name == "Bayesian Optimization" ):
-            if iteration == 0:
-                for isample in range(0,optimizer.num_samples):
-                    optimizer.y[isample] = optimizer.history_samples_positions_and_function_values[iteration,isample,optimizer.num_dimensions]
-                optimizer.model.fit(optimizer.X, optimizer.y)
-            else:
-                for isample in range(0,optimizer.num_samples):
-                    optimizer.X = np.vstack((optimizer.X, optimizer.Xsamples[isample]))
-                    optimizer.y = np.vstack((optimizer.y, optimizer.history_samples_positions_and_function_values[iteration,isample,optimizer.num_dimensions]))
-                optimizer.model.fit(optimizer.X, optimizer.y)
-        if (optimizer.name == "PSO-TPME"):
-            
-            average_function_value_of_swarm = np.average(optimizer.history_samples_positions_and_function_values[iteration,:,optimizer.num_dimensions])
-            average_function_value_of_swarm = np.maximum(average_function_value_of_swarm,optimizer.best_average_function_value)
-            if (average_function_value_of_swarm > optimizer.best_average_function_value):
-                optimizer.best_average_function_value = average_function_value_of_swarm
-            bad_function_value_level        = average_function_value_of_swarm*(1.-optimizer.portion_of_mean_classification_levels)
-            good_function_value_level       = average_function_value_of_swarm*(1.+optimizer.portion_of_mean_classification_levels)
-            
-            print("\n PSO-TPME: Bad, average and good function value levels :",bad_function_value_level,average_function_value_of_swarm,good_function_value_level)
-            old_particle_category       = optimizer.particle_category
-        
-            for isample in range(0,optimizer.num_samples):
-                
-                if optimizer.history_samples_positions_and_function_values[iteration,isample,optimizer.num_dimensions] > good_function_value_level:
-                    optimizer.particle_category[isample] = "good"
-                    optimizer.particles_number_of_iterations_remained_in_current_category[isample] = 1
-                elif optimizer.history_samples_positions_and_function_values[iteration,isample,optimizer.num_dimensions]< bad_function_value_level:
-                    if (optimizer.particles_number_of_iterations_remained_in_current_category[isample]>optimizer.Nmax_exploration-1):
-                        optimizer.particle_category[isample] = "hopeless"
-                        optimizer.particles_number_of_iterations_remained_in_current_category[isample] = 1
-                    else:
-                        if (iteration==0):
-                            optimizer.particle_category[isample] = "bad" 
-                            optimizer.particles_number_of_iterations_remained_in_current_category[isample] = 1
-                        else:
-                            if (old_particle_category[isample]=="bad"):
-                                optimizer.particle_category[isample] = "bad" 
-                                optimizer.particles_number_of_iterations_remained_in_current_category[isample] = optimizer.particles_number_of_iterations_remained_in_current_category[isample]+1
-                            else:
-                                optimizer.particle_category[isample] = "bad" 
-                                optimizer.particles_number_of_iterations_remained_in_current_category[isample] = 1
-                else:
-                    optimizer.particle_category[isample] = "fair"
-                    optimizer.particles_number_of_iterations_remained_in_current_category[isample] = 1
-
-                        
-                print("Particle ",isample,"with function value ","{:.3f}".format(optimizer.history_samples_positions_and_function_values[iteration,isample,optimizer.num_dimensions])," is classified as ",optimizer.particle_category[isample], \
-                        ", remained in this category for",optimizer.particles_number_of_iterations_remained_in_current_category[isample]," iterations")
-                    
-                 
-                 
-                 
                  
