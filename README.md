@@ -31,6 +31,36 @@ Once an optimization run of ``Discoveri`` is launched, at each of the `max_itera
 
 #### General parameters (to do)
 
+##### Optimization parameters
+- `optimization_method`
+- `num_samples`
+- `num_dimensions`
+- `search_interval`
+- `max_iterations`
+- `input_parameters_names`
+- `iterations_between_outputs`
+- `optimizer_hyperparameters`
+
+##### Function to optimize
+- `use_test_function`                  
+- `test_function`  
+- `simulation_postprocessing_function`
+
+##### Job preparation and management  in a cluster
+- `starting_directory`                     
+- `home_directory`
+- `path_executable`
+- `path_input_namelist`
+- `path_submission_script`
+- `path_second_submission_script`
+- `input_parameters_names`
+- `name_input_namelist`
+- `command_to_launch_jobs`
+- `name_log_file_simulations`
+- `word_marking_end_of_simulation_in_log_file`
+- `time_to_wait_for_iteration_results`
+
+
 #### Available optimization methods and their hyperparameters (to do)
 - `"Random Search"`: in this optimization method, the array `X` for each sample of each iteration is generated pseudo-randomly, with a uniform distribution within the `search_interval`.
   - `use_Halton_sequence` (boolean): if `True`, a scrambled Halton sequence (https://en.wikipedia.org/wiki/Halton_sequence) is used to draw the samples. Otherwise, they are drawn using `numpy.random.uniform` scaled and shifted for each dimension to draw `X` frim the `search_interval` of interest.
