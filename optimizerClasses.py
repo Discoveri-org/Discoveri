@@ -217,15 +217,29 @@ class ParticleSwarmOptimization(Optimizer):
             # and not like in a SPSO, where the position is directly updated (hence the name used in the article IASPSO and the name IAPSO used here).
             
             # w1 (initial inertia weight)
-            self.w1                                      = optimizer_hyperparameters[0] 
-            # w2 (final inertia weight); this value would be reached after an infinite amount of iterations
-            self.w2                                      = optimizer_hyperparameters[1]
-            # m (inertia weight decay parameter): the higher this value is, the faster the inertia weight will decrease
-            self.m                                       = optimizer_hyperparameters[2]
-            # To avoid too quick particles, this parameter is used to make velocity components proportional to the search space size in each dimension
-            self.initial_speed_over_search_space_size = optimizer_hyperparameters[3]
+            default_value_w1  = 0.9
+            self.w1           = kwargs.get('w1', default_value_w1)
+            
+            # w2 (final inertia weight)
+            default_value_w2  = 0.4
+            self.w2           = kwargs.get('w2', default_value_w2)
+            
+            # w2 (final inertia weight)
+            default_value_m   = 10
+            self.w2           = kwargs.get('w2', default_value_m)
+            
+            # # To avoid too quick particles, this parameter is used to make velocity components 
+            # proportional to the search space size in each dimension
+            default_value_initial_speed_over_search_space_size = 0.1
+            self.initial_speed_over_search_space_size          = kwargs.get('initial_speed_over_search_space_size', default_value_initial_speed_over_search_space_size)
+            
             # maximum speed for a particle, it must be a vector with num_dimensions elements
-            self.max_speed                               = optimizer_hyperparameters[4]
+            default_max_speed = np.zeros(self.num_dimensions)
+            for idim in range(0,self.num_dimensions):
+                default_max_speed[idim]   = self.search_interval[idim][1]-self.search_interval[idim][0]
+                    
+            self.max_speed  = kwargs.get('max_speed', default_max_speed)
+            
             
             #### Initialize the acceleration coefficients and the inertia
             # c1 (cognitive parameter): It determines the weight or influence of the particle's personal optimum position on its velocity update. A higher value of c1 gives more importance to the particle's historical optimum position and encourages exploration.
@@ -265,11 +279,11 @@ class ParticleSwarmOptimization(Optimizer):
             
             # w1 (initial inertia weight)
             default_value_w1  = 0.9
-            self.w1           = kwargs.get('w1', default_value_w)
+            self.w1           = kwargs.get('w1', default_value_w1)
             
             # w2 (final inertia weight)
             default_value_w2  = 0.4
-            self.w2           = kwargs.get('w2', default_value_w)
+            self.w2           = kwargs.get('w2', default_value_w2)
             
             # # To avoid too quick particles, this parameter is used to make velocity components 
             # proportional to the search space size in each dimension
