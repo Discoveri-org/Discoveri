@@ -1,6 +1,5 @@
 ##### Author      : Francesco Massimo (Laboratoire de Physique des Gaz et des Plasmas, CNRS)
 ##### Purpose     : read and visualize the optimization history of only one optimization run
-##### Last update : 29/07/2023
 
 import numpy as np
 import matplotlib.pyplot as plt

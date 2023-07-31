@@ -1,6 +1,5 @@
 ##### Author      : Francesco Massimo (Laboratoire de Physique des Gaz et des Plasmas, CNRS)
 ##### Purpose     : compare optimization histories from multiple optimization runs in the same directory
-##### Last update : 29/07/2023
 
 
 import numpy as np
@@ -57,8 +56,8 @@ for run in runs_to_read:
         
 ##### Plot averages of optimization history, individual optimization histories and error bars
 
-color               = "r"
-optimization_method = "Random Scan with Halton sequence" #"Bayesian Optimization"#"Random Search with Halton Sequence"#"Bayesian Optimization"
+color               = "b"
+optimization_method = "Particle Swarm Optimization" #"Bayesian Optimization"#"Random Search with Halton Sequence"#"Bayesian Optimization"
 plt.ion()
 plt.figure(1)
 
