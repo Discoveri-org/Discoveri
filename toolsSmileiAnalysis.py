@@ -46,7 +46,7 @@ def get_average_bunch_energy():
     
     return average_energy
 
-def get_sqrtCharge_times_median_Energy_over_MAD_Energy_new():
+def get_sqrtCharge_times_median_Energy_over_MAD_Energy():
     ########## Open a simulation S
     S                        = happi.Open(".", show=False,verbose=False)
     
