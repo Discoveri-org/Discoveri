@@ -28,8 +28,10 @@ If the gradients of this function are known, probably there are more efficient m
 Once an optimization run of ``Discoveri`` is launched, at each of the `max_iterations` iterations the code will perform `num_samples` evaluations of the function specified by the user, where each sample is characterized by a different array `X`. If the function is a `numpy` function `f`, these evaluations will simply compute the value of `f(X)`. If the function is a function `f` that computes the result of postprocessing of a simulation, the code will automatically launch the required simulations, wait for their results and postprocess them. Each simulation will have `num_dimension` varying physical quantities stored in its own array `X`.
 
 ### Input file for ``Discoveri`` (to do)
+...
 
 #### General parameters
+...
 
 ##### Optimization parameters
 - `optimization_method`(string): the derivative-free optimization techniques that will try to maximise `f(X)`.
