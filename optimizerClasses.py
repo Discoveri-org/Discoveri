@@ -298,7 +298,7 @@ class ParticleSwarmOptimization(Optimizer):
             self.max_speed  = kwargs.get('max_speed', default_max_speed)
             
             # maximum number of iterations in which "bad" particles are allowed to explore (Ne in the original paper)
-            default_Nnumber_of_iterations_bad_particles = 3
+            default_Number_of_iterations_bad_particles = 3
             self.Number_of_iterations_bad_particles   = kwargs.get('Number_of_iterations_bad_particles', default_Number_of_iterations_bad_particles)
             
             # percentage p of the mean to define the classification levels mean*(1-p), mean*(1+p)
