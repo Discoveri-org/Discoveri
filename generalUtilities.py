@@ -32,10 +32,10 @@ def printCheckingSamplesAtDatetime():
         
 
 def getOptimumPositionAndFunctionValueAfterOptimization(optimizer):    
-    optimum_function_value       = np.amax(optimizer.history_samples_positions_and_function_values[:,:,optimizer.num_dimensions])
-    index_optimum_function_value = np.argwhere(optimizer.history_samples_positions_and_function_values[:,:,optimizer.num_dimensions] == optimum_function_value)[0]
-    optimum_position             = optimizer.history_samples_positions_and_function_values[index_optimum_function_value[0],index_optimum_function_value[1],0:optimizer.num_dimensions]
-    best_configuration_number    = index_optimum_function_value[0]*optimizer.num_samples+index_optimum_function_value[1]
+    optimum_function_value       = np.amax(optimizer.history_samples_positions_and_function_values[:,:,optimizer.number_of_dimensions])
+    index_optimum_function_value = np.argwhere(optimizer.history_samples_positions_and_function_values[:,:,optimizer.number_of_dimensions] == optimum_function_value)[0]
+    optimum_position             = optimizer.history_samples_positions_and_function_values[index_optimum_function_value[0],index_optimum_function_value[1],0:optimizer.number_of_dimensions]
+    best_configuration_number    = index_optimum_function_value[0]*optimizer.number_of_samples_per_iteration+index_optimum_function_value[1]
     return optimum_function_value,optimum_position,best_configuration_number
 
 

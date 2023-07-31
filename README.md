@@ -20,12 +20,12 @@
 If ``Discoveri`` is used to optimize the result of ``Smilei`` simulations, then also the postprocessing library `happi` will be necessary.
 
 ### Basic concepts and terminology used in ``Discoveri``
-``Discoveri`` optimizes/maximizes the result of `f(X)`, where `f` is a real-valued function of an array `X` called position, with `num_dimensions` dimensions. The elements of `X` can vary continuously in the real numbers space. The whole search space from which `X` is drawn is called `search_interval`.
+``Discoveri`` optimizes/maximizes the result of `f(X)`, where `f` is a real-valued function of an array `X` called position, with `number_of_dimensions` dimensions. The elements of `X` can vary continuously in the real numbers space. The whole search space from which `X` is drawn is called `search_interval`.
 
 ``Discoveri`` uses derivative-free (also called black-box) optimization methods, used to optimize a function `f` that is costly to evaluate and/or unknown. 
 If the gradients of this function are known, probably there are more efficient methods to optimize it.
 
-Once an optimization run of ``Discoveri`` is launched, at each of the `max_iterations` iterations the code will perform `num_samples` evaluations of the function specified by the user, where each sample is characterized by a different array `X`. If the function is a `numpy` function `f`, these evaluations will simply compute the value of `f(X)`. If the function is a function `f` that computes the result of postprocessing of a simulation, the code will automatically launch the required simulations, wait for their results and postprocess them. Each simulation will have `num_dimension` varying physical quantities stored in its own array `X`.
+Once an optimization run of ``Discoveri`` is launched, at each of the `number_of_iterations` iterations the code will perform `number_of_samples_per_iteration` evaluations of the function specified by the user, where each sample is characterized by a different array `X`. If the function is a `numpy` function `f`, these evaluations will simply compute the value of `f(X)`. If the function is a function `f` that computes the result of postprocessing of a simulation, the code will automatically launch the required simulations, wait for their results and postprocess them. Each simulation will have `num_dimension` varying physical quantities stored in its own array `X`.
 
 ### Input file for ``Discoveri`` (to do)
 ...
@@ -41,10 +41,10 @@ At the moment the available options are:
   - `"Particle Swarm Optimization"`
   - `"IAPSO"`
   - `"PSO-TPME"`
-- `max_iterations`(integer): the number of iterations of the optimization process.
-- `num_samples`(integer): the number of samples chosen/drawn at each iterations, each evaluating `f(X)` at a different `X`.
-- `num_dimensions` (integer): number of dimensions of the parameter space where the maximum of `f(X)` is searched.
-- `search_interval`(list of `num_dimensions` lists of 2 elements): in this list, the inferior and superior boundaries of the parameter space to explore (where the different `X` will always belong). The boundaries for each dimension of the explored parameter space must be provided. 
+- `number_of_iterations`(integer): the number of iterations of the optimization process.
+- `number_of_samples_per_iteration`(integer): the number of samples chosen/drawn at each iteration, each evaluating `f(X)` at a different sample `X`.
+- `number_of_dimensions` (integer): number of dimensions of the parameter space where the maximum of `f(X)` is searched.
+- `search_interval`(list of `number_of_dimensions` lists of 2 elements): in this list, the inferior and superior boundaries of the parameter space to explore (where the different `X` will always belong). The boundaries for each dimension of the explored parameter space must be provided. 
 - `iterations_between_outputs`(integer): number of iterations between outputs, i.e. the output files dump and some message prints at screen.
 
 ##### Function to optimize
@@ -55,7 +55,7 @@ In both cases, the users must ensure that the function does not return `nan`,`-i
 
 ##### Job preparation and management  in a cluster (to complete)
 The users must ensure that these parameters are coherent. e.g. the template job submission script must set the correct name for the simulation log files, etc.
-- `input_parameters_names` (list of `num_dimensions` strings): important to modify the namelist to launch simulations. Currently, ``Discoveri`` assumes that a Python namelist is used by the code, where after a line containing `#External_config` a dictionary will be created by ``Discoveri``, containing the names of the parameters to explore and their values. The namelist of the code must be prepared in order to use this dictionary.
+- `input_parameters_names` (list of `number_of_dimensions` strings): important to modify the namelist to launch simulations. Currently, ``Discoveri`` assumes that a Python namelist is used by the code, where after a line containing `#External_config` a dictionary will be created by ``Discoveri``, containing the names of the parameters to explore and their values. The namelist of the code must be prepared in order to use this dictionary.
 - `starting_directory`(string):                    
 - `home_directory`(string):
 - `path_executable`(string): the path of the executable.
@@ -66,7 +66,7 @@ The users must ensure that these parameters are coherent. e.g. the template job 
 - `command_to_launch_jobs` (string): the command used to launch jobs in the job managing system where the simulations will be launched, e.g. `sbatch submission_scipt.sh` for SLURM. The users must ensure that all the required libraries are charged in the submission script and that this file has all the permissions to be used.
 - `name_log_file_simulations` (string): name of the log file produced by the simulations.
 - `word_marking_end_of_simulation_in_log_file`(string): a word that if present in the `name_log_file_simulations` of a simulation will tell ``Discoveri`` that the simulation has ended and can be postprocessed.
-- `time_to_wait_for_iteration_results` (float): after launching `num_samples` simulations at each iteration, ``Discoveri`` will wait this time in seconds to check if at least one simulation has ended. The simulations that have ended are postprocessed, evaluating the corresponding `f(X)`. If some simulations are still running, ``Discoveri`` will wait again the same amount of time and check again. This process continues until all the `num_samples` simulations have ended and the next iteration can start after all of them are postprocessed. 
+- `time_to_wait_for_iteration_results` (float): after launching `number_of_samples_per_iteration` simulations at each iteration, ``Discoveri`` will wait this time in seconds to check if at least one simulation has ended. The simulations that have ended are postprocessed, evaluating the corresponding `f(X)`. If some simulations are still running, ``Discoveri`` will wait again the same amount of time and check again. This process continues until all the `number_of_samples_per_iteration` simulations have ended and the next iteration can start after all of them are postprocessed. 
 
 
 #### Available optimization methods and their hyperparameters (to do)
@@ -95,7 +95,7 @@ Optimizer hyperparameters:
   - `m` (default value = `10`): the highest value for `m`, the quickest the inertia weight will decrease.
   - `initial_speed_over_search_space_size` (as for the `"Particle Swarm Optimization"`, but default value = `0.1`).
 
-- `"PSO-TPME"` (PSO with Targeted, Position-Mutated Elitism), `optimizer_hyperparameters = [c1,c2,w1,w2,initial_speed_over_search_space_size,Nmax_iterations_bad_particles,portion_of_mean_classification_levels,amplitude_mutated_range_1,amplitude_mutated_range_2]`: version of the PSO based on T. Shaquarin, B. R. Noack, International Journal of Computational Intelligence Systems (2023) 16:6, https://doi.org/10.1007/s44196-023-00183-z In this version of PSO, the inertia linearly decreases from `w1` (<1) to `w2` (<`w1`) and the coefficients `c1` and `c2` (`c1+c2<4`) are fixed. At each iteration, the mean `mean` of the function values found by the particles is computed. Afterwards, two levels for the function value are defined: `mean*(1+portion_of_mean_classification_levels)` and `mean*(1-portion_of_mean_classification_levels)`, where `portion_of_mean_classification_levels<1`. Depending on the function value they have found compared to these two levels, at each iterations particles are classified as `good` (above the highest level), `bad` (below the lowest level) and `fair` (in between). `good` particles will behave only exploring around their personal optimum position i.e. as if `c2=0`), `bad` particles will behave only converging towards the swarm optimum position (i.e. as if `c1=0`). `fair` particles will behave as the particles of a "classic" PSO. Particles remaining `bad` for `Nmax_iterations_bad_particles` will be marked as `hopeless`, i.e. at the next iteration they will be relocated near the swarm optimum position.
+- `"PSO-TPME"` (PSO with Targeted, Position-Mutated Elitism), `optimizer_hyperparameters = [c1,c2,w1,w2,initial_speed_over_search_space_size,Nnumber_of_iterations_bad_particles,portion_of_mean_classification_levels,amplitude_mutated_range_1,amplitude_mutated_range_2]`: version of the PSO based on T. Shaquarin, B. R. Noack, International Journal of Computational Intelligence Systems (2023) 16:6, https://doi.org/10.1007/s44196-023-00183-z In this version of PSO, the inertia linearly decreases from `w1` (<1) to `w2` (<`w1`) and the coefficients `c1` and `c2` (`c1+c2<4`) are fixed. At each iteration, the mean `mean` of the function values found by the particles is computed. Afterwards, two levels for the function value are defined: `mean*(1+portion_of_mean_classification_levels)` and `mean*(1-portion_of_mean_classification_levels)`, where `portion_of_mean_classification_levels<1`. Depending on the function value they have found compared to these two levels, at each iterations particles are classified as `good` (above the highest level), `bad` (below the lowest level) and `fair` (in between). `good` particles will behave only exploring around their personal optimum position i.e. as if `c2=0`), `bad` particles will behave only converging towards the swarm optimum position (i.e. as if `c1=0`). `fair` particles will behave as the particles of a "classic" PSO. Particles remaining `bad` for `Nnumber_of_iterations_bad_particles` will be marked as `hopeless`, i.e. at the next iteration they will be relocated near the swarm optimum position.
 Compared to that reference, the level from which the levels for `bad`, `fair`, `good` particles are computed cannot decrease over the iterations: i.e. the maximum between the mean of the function values found and the mean found at the previous iteration is used as `mean`;
 furthermore, to reinitialize the particles closer to the optimum one, the mutated_amplitude scale is linearly decreasing from `amplitude_mutated_range_1` to `amplitude_mutated_range_2` (`<amplitude_mutated_range_1`) and the distribution of the coordinates in a dimension near the optimum particle is a gaussian proportional to the `search_space` size in that dimension and the mutated amplitude.
 The initial position, velocity of the particles and the boundary conditions are the same of the PSO.
@@ -105,7 +105,7 @@ Optimizer hyperparameters:
   - `portion_of_mean_classification_levels` (default value = `0.02`).
   - `amplitude_mutated_range_1` (default value = `0.4`).
   - `amplitude_mutated_range_2` (default value = `0.01`).
-  - `Nmax_iterations_bad_particles` (default value = `2`).
+  - `Nnumber_of_iterations_bad_particles` (default value = `2`).
   - `initial_speed_over_search_space_size` (as for the `"Particle Swarm Optimization"`, but default value = `0.5`).
   
   

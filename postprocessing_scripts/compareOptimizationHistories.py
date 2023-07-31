@@ -24,8 +24,8 @@ filename_time                                   = "/time_to_complete_iterations.
 
 ##### assuming that all runs have the same shape, find number of iterations and dimensions of first one
 history_particles_positions_and_function_values = np.load(runs_to_read[0]+filename)
-number_of_iterations,num_samples,num_dimensions = np.shape(history_particles_positions_and_function_values)
-num_dimensions                                  = num_dimensions-1 # the last index in the file was used for the function to optimize
+number_of_iterations,number_of_samples_per_iteration,number_of_dimensions = np.shape(history_particles_positions_and_function_values)
+number_of_dimensions                                  = number_of_dimensions-1 # the last index in the file was used for the function to optimize
 iterations                                      = np.linspace(0,number_of_iterations-1,num=number_of_iterations)
 
 #### Read all data from each run
@@ -43,11 +43,11 @@ for run in runs_to_read:
     optimizer_maximum_of_function_to_optimize                       = np.zeros(number_of_iterations)
     optimizer_maximum_of_function_to_optimize_for_this_iteration    = np.zeros(number_of_iterations)
 
-    optimizer_maximum_of_function_to_optimize[0]                    = np.amax(history_particles_positions_and_function_values[0,:,num_dimensions])
+    optimizer_maximum_of_function_to_optimize[0]                    = np.amax(history_particles_positions_and_function_values[0,:,number_of_dimensions])
     optimizer_maximum_of_function_to_optimize_for_this_iteration[0] = optimizer_maximum_of_function_to_optimize[0]
     
     for iteration in range(0,number_of_iterations):
-        optimizer_maximum_of_function_to_optimize[iteration]                    = np.amax(history_particles_positions_and_function_values[iteration,:,num_dimensions])
+        optimizer_maximum_of_function_to_optimize[iteration]                    = np.amax(history_particles_positions_and_function_values[iteration,:,number_of_dimensions])
         optimizer_maximum_of_function_to_optimize_for_this_iteration[iteration] = optimizer_maximum_of_function_to_optimize[iteration]
         optimizer_maximum_of_function_to_optimize[iteration]                    = max(optimizer_maximum_of_function_to_optimize[iteration-1],optimizer_maximum_of_function_to_optimize[iteration])
         

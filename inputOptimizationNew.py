@@ -27,17 +27,20 @@ from toolsSmileiAnalysis import *
 optimization_method                     = "PSO-TPME" #"Bayesian Optimization"
 
 #### Parameter space to explore
-num_dimensions                          = 2 #4 #1 #2
+number_of_dimensions                          = 2 #4 #1 #2
 search_interval                         = [[0.,1.],[0.,1.]]#[[13.,25.],[1.,100.],[1.7,2.],[1.3e18,1.6e18]]#[[0.,1.],[0.,1.]]#[[-20.,20.],[-20.,20.]] ##[[16.,24.]] #[[0.,5.],[0.,5.]]
 input_parameters_names                  = ["dim1","dim2"] #["delay_behind_laser_micron","bunch_charge_pC","a0","plasma_plateau_density_1_ov_cm3"]
 
-num_samples                             = 6 #6 #1 # 10 #3 #3 # for a Particle Swarm Optimization, this corresponds to the number of particles in the swarm
+number_of_samples_per_iteration                             = 6 #6 #1 # 10 #3 #3 # for a Particle Swarm Optimization, this corresponds to the number of particles in the swarm
 
 #### Optimization parameters
 
-max_iterations                          = 30 #100 
+number_of_iterations                          = 30 #100 
 iterations_between_outputs              = 1
 
+
+#### Diagnostic and output dump periodicity
+iterations_between_outputs              = 1
 
 #### Flag used to set if a numpy function or simulation results are optimized: 
 #### if True it optimizes (i.e. maximizes) a numpy function defined in test_function
@@ -72,8 +75,6 @@ else:
 ####################   Job Managing on Cluster     ########################
 ###########################################################################
 
-iterations_between_outputs                 = 1
-
 ####### Commands and parameters to launch and check jobs
 # command to submit job to the system (e.g. SLURM, Condor)
 command_to_launch_jobs                     = "condor_submit submit_smilei_job.sub"
@@ -102,7 +103,11 @@ path_second_submission_script              = home_directory+"/smilei_job.sh" #ho
 
 
 
-#### only the parameters for the chosen optimizer will be used
+###########################################################################
+####################   Optimizer hyperparameters   ########################
+###########################################################################
+
+#### only the hyparameters for the chosen optimizer will be used
 #### the others will be ignored
 #### the order of the elements in the list optimizer_hyperparameters is important
 
@@ -121,9 +126,9 @@ elif (optimization_method=="Particle Swarm Optimization"):
     c1                                         = 0.1 # cognitive parameter, must be <1
     c2                                         = 0.1 # social parameter, must be <1
     w                                          = 0.5 # 0.8 #0.8 # inertia
-    initial_velocity_over_search_space_size    = 0.1#0.3 #0.03 # parameter limiting the initial velocity of particles, must be <1
+    initial_speed_over_search_space_size    = 0.1#0.3 #0.03 # parameter limiting the initial velocity of particles, must be <1
     
-    optimizer_hyperparameters                  = [c1,c2,w,initial_velocity_over_search_space_size]
+    optimizer_hyperparameters                  = [c1,c2,w,initial_speed_over_search_space_size]
     
 elif (optimization_method=="IAPSO"): 
     # Parameters specific to Particle Swarm Optimization version called IAPSO
@@ -132,31 +137,31 @@ elif (optimization_method=="IAPSO"):
     w1                                         = 0.9 # initial inertia weight parameter, must be < 1
     w2                                         = 0.4 # final inertia weight parameter, must be < w1; this value would be reached after an infinite amount of iterations
     m                                          = 10  # inertia weight decay parameter, the higher it is, the faster the inertia weight will decrease
-    initial_velocity_over_search_space_size    = 0.1 #0.3 #0.03 # parameter limiting the initial velocity of particles, must be <1
+    initial_speed_over_search_space_size    = 0.1 #0.3 #0.03 # parameter limiting the initial velocity of particles, must be <1
     
-    optimizer_hyperparameters                  = [w1,w2,m,initial_velocity_over_search_space_size]
+    optimizer_hyperparameters                  = [w1,w2,m,initial_speed_over_search_space_size]
     
 elif (optimization_method=="PSO-TPME"): 
     # Parameters specific to Particle Swarm Optimization version called PSO-TPE
     # (T. Shaquarin, B. R. Noack, International Journal of Computational Intelligence Systems (2023) 16:6, https://doi.org/10.1007/s44196-023-00183-z)
     # (some improvements detailed in the class definition have been made)
-    # maximum speed for a particle, it must be a vector with num_dimensions elements
-    initial_velocity_over_search_space_size    = 0.03
+    # maximum speed for a particle, it must be a vector with number_of_dimensions elements
+    initial_speed_over_search_space_size    = 0.03
     w1                                         = 0.9 # initial inertia weight parameter, must be < 1
     w2                                         = 0.1 # final inertia weight parameter, must be < w1; this value would be reached after an infinite amount of iterations
     c1                                         = 1.5 # cognitive parameter, must be <1
     c2                                         = 1.5 # social parameter, must be <1
-    Nmax_iterations_bad_particles                          = 2 #maximum number of iterations in which "bad" particles are allowed to explore (Ne in the original paper)
+    Nnumber_of_iterations_bad_particles                          = 2 #maximum number of iterations in which "bad" particles are allowed to explore (Ne in the original paper)
     portion_of_mean_classification_levels      = 0.02 # portion of the mean to define the classification levels mean*(1-p), mean*(1+p)
-    # "bad" particles that remain "bad" for more than Nmax_iterations_bad_particlesiterations
+    # "bad" particles that remain "bad" for more than Nnumber_of_iterations_bad_particlesiterations
     # are relocated around the best swarm particle, within an interval (1-a) and (1+a) in all dimensions
     # in this version the coefficient will decrease linearly
     amplitude_mutated_range_1                  = 0.4
     amplitude_mutated_range_2                  = 0.01
     
     optimizer_hyperparameters                  = [c1,c2,w1,w2,                                      \
-                                                 initial_velocity_over_search_space_size,           \
-                                                 Nmax_iterations_bad_particles,                                  \
+                                                 initial_speed_over_search_space_size,           \
+                                                 Nnumber_of_iterations_bad_particles,                                  \
                                                  portion_of_mean_classification_levels,             \
                                                  amplitude_mutated_range_1,amplitude_mutated_range_2]
 
@@ -186,10 +191,10 @@ if __name__ == '__main__':
                                                path_submission_script                     = path_submission_script,                     \
                                                path_second_submission_script              = path_second_submission_script,              \
                                                optimization_method                        = optimization_method,                        \
-                                               num_samples                                = num_samples,                                \
-                                               num_dimensions                             = num_dimensions,                             \
+                                               number_of_samples_per_iteration                                = number_of_samples_per_iteration,                                \
+                                               number_of_dimensions                             = number_of_dimensions,                             \
                                                search_interval                            = search_interval,                            \
-                                               max_iterations                             = max_iterations,                             \
+                                               number_of_iterations                             = number_of_iterations,                             \
                                                optimizer_hyperparameters                  = optimizer_hyperparameters,                  \
                                                time_to_wait_for_iteration_results         = time_to_wait_for_iteration_results,         \
                                                input_parameters_names                     = input_parameters_names,                     \

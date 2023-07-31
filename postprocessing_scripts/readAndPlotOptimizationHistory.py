@@ -25,20 +25,20 @@ if (os.path.isfile(filename)!=True): # the complete history file does not exist
 
 history_particles_positions_and_function_values = np.load(filename)
 
-number_of_iterations,num_particles,num_dimensions = np.shape(history_particles_positions_and_function_values)
+number_of_iterations,num_particles,number_of_dimensions = np.shape(history_particles_positions_and_function_values)
 
-num_dimensions = np.size(history_particles_positions_and_function_values[0,0,:])-1
+number_of_dimensions = np.size(history_particles_positions_and_function_values[0,0,:])-1
 
-num_samples    = np.size(history_particles_positions_and_function_values[0,:,0])
+number_of_samples_per_iteration    = np.size(history_particles_positions_and_function_values[0,:,0])
 
 iterations = np.linspace(0,number_of_iterations-1,num=number_of_iterations)
 
 
 ########## Print optimum over all optimization history
-optimum_function_value       = np.amax(history_particles_positions_and_function_values[:,:,num_dimensions])
-index_optimum_function_value = np.argwhere(history_particles_positions_and_function_values[:,:,num_dimensions] == optimum_function_value)[0]
-optimum_position             = history_particles_positions_and_function_values[index_optimum_function_value[0],index_optimum_function_value[1],0:num_dimensions]
-best_configuration_number    = index_optimum_function_value[0]*num_samples+index_optimum_function_value[1]
+optimum_function_value       = np.amax(history_particles_positions_and_function_values[:,:,number_of_dimensions])
+index_optimum_function_value = np.argwhere(history_particles_positions_and_function_values[:,:,number_of_dimensions] == optimum_function_value)[0]
+optimum_position             = history_particles_positions_and_function_values[index_optimum_function_value[0],index_optimum_function_value[1],0:number_of_dimensions]
+best_configuration_number    = index_optimum_function_value[0]*number_of_samples_per_iteration+index_optimum_function_value[1]
 
 print("\n Optimum function value = ",optimum_function_value,", Found at position ",optimum_position," in Configuration ",best_configuration_number,"\n" )
 
@@ -48,7 +48,7 @@ plt.ion()
 
 ###  plot the value of the function to optimize of all samples over the iterations
 plt.figure()
-for isample in range(0,num_samples):
+for isample in range(0,number_of_samples_per_iteration):
     plt.plot(iterations,history_particles_positions_and_function_values[:,isample,-1],marker='.',label="Sample "+str(isample))
 plt.ylabel("Function value")
 plt.xlabel("Iteration number")
@@ -59,12 +59,12 @@ plt.legend()
 optimizer_maximum_of_function_to_optimize                       = np.zeros(number_of_iterations)
 optimizer_maximum_of_function_to_optimize_for_this_iteration    = np.zeros(number_of_iterations)
 
-optimizer_maximum_of_function_to_optimize[0]                    = np.amax(history_particles_positions_and_function_values[0,:,num_dimensions])
+optimizer_maximum_of_function_to_optimize[0]                    = np.amax(history_particles_positions_and_function_values[0,:,number_of_dimensions])
 optimizer_maximum_of_function_to_optimize_for_this_iteration[0] = optimizer_maximum_of_function_to_optimize[0]
 
 
 for iteration in range(1,number_of_iterations):
-    optimizer_maximum_of_function_to_optimize[iteration]                    = np.amax(history_particles_positions_and_function_values[iteration,:,num_dimensions])
+    optimizer_maximum_of_function_to_optimize[iteration]                    = np.amax(history_particles_positions_and_function_values[iteration,:,number_of_dimensions])
     optimizer_maximum_of_function_to_optimize_for_this_iteration[iteration] = optimizer_maximum_of_function_to_optimize[iteration]
     optimizer_maximum_of_function_to_optimize[iteration]                    = max(optimizer_maximum_of_function_to_optimize[iteration-1],optimizer_maximum_of_function_to_optimize[iteration])
 
@@ -78,7 +78,7 @@ plt.ylabel("Function value")
 ### plots used only in some special cases for the number of dimensions
 
 # optimization in a 1-dimensional parameter space
-if (num_dimensions==1):
+if (number_of_dimensions==1):
     
     # visualize how the samples move in the 1-dimensional space in the whole optimization history
     plt.figure()
@@ -95,7 +95,7 @@ if (num_dimensions==1):
     plt.ylabel("Function value")
     plt.xlim()
 
-elif (num_dimensions==2):
+elif (number_of_dimensions==2):
     
     # visualize how the samples move in the 1-dimensional space in the whole optimization history
     plt.figure()

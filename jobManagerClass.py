@@ -108,10 +108,10 @@ class jobManager:
                 namelist.write(newline)
 
     def checkAndAnalyseSimulations(self, optimizer, list_configurations, iteration):
-        num_samples = optimizer.num_samples
+        number_of_samples_per_iteration = optimizer.number_of_samples_per_iteration
         # create list of sample to keep track which ones are finished
         # this because we do not know in which order the samples will finish thei simulation
-        samples_running_a_simulation = [i for i in range(0,optimizer.num_samples)] 
+        samples_running_a_simulation = [i for i in range(0,optimizer.number_of_samples_per_iteration)] 
         
         ## while while running_simulations_ > 0: 
         while len(list_configurations)>0:

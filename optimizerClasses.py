@@ -44,12 +44,12 @@ class SwarmParticle(Sample):
         self.optimum_function_value = float('-inf')
 
 class Optimizer:
-    def __init__(self, name = "", num_samples = 1, num_dimensions = 1, search_interval = [], max_iterations = 1, **kwargs ):
+    def __init__(self, name = "", number_of_samples_per_iteration = 1, number_of_dimensions = 1, search_interval = [], number_of_iterations = 1, **kwargs ):
         
         self.name                        = name                   # name of the optimizer
-        self.max_iterations              = max_iterations         # maximum number of iterations
-        self.num_samples                 = num_samples            # number of samples drawn at each iteration
-        self.num_dimensions              = num_dimensions         # number of dimensions of the parameter space to explore
+        self.number_of_iterations              = number_of_iterations         # maximum number of iterations
+        self.number_of_samples_per_iteration                 = number_of_samples_per_iteration            # number of samples drawn at each iteration
+        self.number_of_dimensions              = number_of_dimensions         # number of dimensions of the parameter space to explore
         self.optimizer_hyperparameters   = kwargs
         self.search_interval             = search_interval        # list of lists, with the boundaries 
         self.optimum_position            = None                   # optimum position found by the optimizer, yielding the swarm_optimum_function_value
@@ -59,16 +59,16 @@ class Optimizer:
         # history of the positions traveled by the particles
         # dimension 0 : iteration
         # dimension 1 : sample number
-        # dimension 2 : the first num_dimensions indices give the num_dimensions components of the isample position at that iteration,
+        # dimension 2 : the first number_of_dimensions indices give the number_of_dimensions components of the isample position at that iteration,
         #               while the last index gives the value of that function found by isample at that iteration
-        self.history_samples_positions_and_function_values        = np.zeros(shape=(max_iterations,num_samples,num_dimensions+1)) 
+        self.history_samples_positions_and_function_values        = np.zeros(shape=(number_of_iterations,number_of_samples_per_iteration,number_of_dimensions+1)) 
         
         self.initialPrint(**kwargs)   
         
     def initialPrint(self,**kwargs):
         print("\nOptimizer:                          ", self.name)
-        print("Number of iterations:                 ",self.max_iterations)
-        print("Number of dimensions:                 ",self.num_dimensions)
+        print("Number of iterations:                 ",self.number_of_iterations)
+        print("Number of dimensions:                 ",self.number_of_dimensions)
         print("Search interval:                      ",self.search_interval)
         print("Hyperparameters provided by the user: ",kwargs,"\n")
     
@@ -79,15 +79,15 @@ class Optimizer:
         pass
         
     def updateOptimumFunctionValueAndPosition(self):
-        function_values_of_samples   = [self.samples[isample].optimum_function_value for isample in range(0,self.num_samples)]
+        function_values_of_samples   = [self.samples[isample].optimum_function_value for isample in range(0,self.number_of_samples_per_iteration)]
         self.optimum_function_value  = max(function_values_of_samples)
         self.optimum_position        = self.samples[function_values_of_samples.index(self.optimum_function_value)].optimum_position
         
         self.operationsAfterUpdateOfOptimumFunctionValueAndPosition()
     
     def updateSamplePositionAndFunctionHistory(self,iteration,isample,function_value):
-        self.history_samples_positions_and_function_values[iteration,isample,0:self.num_dimensions]     = self.samples[isample].position[:]
-        self.history_samples_positions_and_function_values[iteration,isample,self.num_dimensions]       = function_value
+        self.history_samples_positions_and_function_values[iteration,isample,0:self.number_of_dimensions]     = self.samples[isample].position[:]
+        self.history_samples_positions_and_function_values[iteration,isample,self.number_of_dimensions]       = function_value
     
     def printOptimumFunctionValueAndOptimumPosition(self):
         print("\n# Optimum value    found by the "+self.name+" = ",self.optimum_function_value)
@@ -98,7 +98,7 @@ class Optimizer:
         #plt.colorbar()
         print("\n")
         self.printOptimumFunctionValueAndOptimumPosition()
-        for isample in range(self.num_samples):
+        for isample in range(self.number_of_samples_per_iteration):
             position = self.samples[isample].position
             print("\n=== Sample", isample) #, "Position:", position)
             print("\n=== optimum position found by sample ",isample," until now: ",self.samples[isample].optimum_position)
@@ -119,42 +119,42 @@ class Optimizer:
         
             
 class RandomSearch(Optimizer):
-    def __init__(self, name, num_samples, num_dimensions, search_interval, max_iterations, **kwargs):
-        super().__init__(name, num_samples, num_dimensions, search_interval, max_iterations, **kwargs)
-        self.sampler_for_position     = qmc.Halton(d=self.num_dimensions, scramble=True)
+    def __init__(self, name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs):
+        super().__init__(name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs)
+        self.sampler_for_position     = qmc.Halton(d=self.number_of_dimensions, scramble=True)
         self.total_sample_index       = 0
-        self.random_position_sequence = self.sampler_for_position.random(n=self.num_samples*self.max_iterations)
+        self.random_position_sequence = self.sampler_for_position.random(n=self.number_of_samples_per_iteration*self.number_of_iterations)
         
         self.use_Halton_sequence = kwargs.get('use_Halton_sequence', True)
         # Initialize each sample
-        for isample in range(self.num_samples):
-            position = np.zeros(self.num_dimensions)
+        for isample in range(self.number_of_samples_per_iteration):
+            position = np.zeros(self.number_of_dimensions)
             if (self.use_Halton_sequence==True):
                 # use a Halton sequence to sample more uniformly the parameter space
-                for idim in range(0,self.num_dimensions):
+                for idim in range(0,self.number_of_dimensions):
                     position[idim] = self.search_interval[idim][0]+self.random_position_sequence[isample][idim]*(self.search_interval[idim][1]-self.search_interval[idim][0]) #np.random.uniform(self.search_interval[dimension][0], self.search_interval[dimension][1])
             else: 
                 # do not use Halton sequence
-                for idim in range(0,self.num_dimensions):
+                for idim in range(0,self.number_of_dimensions):
                     random_number  = np.random.uniform(0., 1.)
                     position[idim] = self.search_interval[idim][0]+random_number*(self.search_interval[idim][1]-self.search_interval[idim][0]) 
             random_sample          = RandomSearchSample(position) 
             self.samples.append(random_sample)
             self.total_sample_index = self.total_sample_index+1
             print("\n ---> Sample", isample, "Position:", position)  
-            self.history_samples_positions_and_function_values[0,isample,0:self.num_dimensions] = position[:]
+            self.history_samples_positions_and_function_values[0,isample,0:self.number_of_dimensions] = position[:]
         print("\n RandomSearch initialized")
         
     def pseudorandomlyExtractNewPositionsToExplore(self):
-        for isample in range(0,self.num_samples):
+        for isample in range(0,self.number_of_samples_per_iteration):
             if (self.use_Halton_sequence==True):
                 # use a Halton sequence to sample more uniformly the parameter space
-                for idim in range(self.num_dimensions):
+                for idim in range(self.number_of_dimensions):
                     # extract random number
                     self.samples[isample].position[idim] = self.search_interval[idim][0]+self.random_position_sequence[self.total_sample_index][idim]*(self.search_interval[idim][1]-self.search_interval[idim][0]) #np.random.uniform(self.search_interval[dimension][0],self.search_interval[dimension][1],1)[0]
             else:
                 # do not use Halton sequence
-                for idim in range(0,self.num_dimensions):
+                for idim in range(0,self.number_of_dimensions):
                     random_number                        = np.random.uniform(0., 1.)
                     self.samples[isample].position[idim] = self.search_interval[idim][0]+random_number*(self.search_interval[idim][1]-self.search_interval[idim][0]) 
             self.total_sample_index = self.total_sample_index+1
@@ -165,8 +165,8 @@ class RandomSearch(Optimizer):
     
 class ParticleSwarmOptimization(Optimizer):
     # in this Optimizer, each sample is a particle of the swarm
-    def __init__(self, name, num_samples, num_dimensions, search_interval, max_iterations, **kwargs):
-        super().__init__(name, num_samples, num_dimensions, search_interval, max_iterations, **kwargs)
+    def __init__(self, name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs):
+        super().__init__(name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs)
         
         
         if (self.name=="Particle Swarm Optimization"):
@@ -192,9 +192,9 @@ class ParticleSwarmOptimization(Optimizer):
             default_value_initial_speed_over_search_space_size = 0.1
             self.initial_speed_over_search_space_size          = kwargs.get('initial_speed_over_search_space_size', default_value_initial_speed_over_search_space_size)
             
-            # maximum speed for a particle, it must be a vector with num_dimensions elements
-            default_max_speed = np.zeros(self.num_dimensions)
-            for idim in range(0,self.num_dimensions):
+            # maximum speed for a particle, it must be a vector with number_of_dimensions elements
+            default_max_speed = np.zeros(self.number_of_dimensions)
+            for idim in range(0,self.number_of_dimensions):
                 default_max_speed[idim]   = self.search_interval[idim][1]-self.search_interval[idim][0]
                     
             self.max_speed  = kwargs.get('max_speed', default_max_speed)
@@ -233,9 +233,9 @@ class ParticleSwarmOptimization(Optimizer):
             default_value_initial_speed_over_search_space_size = 0.1
             self.initial_speed_over_search_space_size          = kwargs.get('initial_speed_over_search_space_size', default_value_initial_speed_over_search_space_size)
             
-            # maximum speed for a particle, it must be a vector with num_dimensions elements
-            default_max_speed = np.zeros(self.num_dimensions)
-            for idim in range(0,self.num_dimensions):
+            # maximum speed for a particle, it must be a vector with number_of_dimensions elements
+            default_max_speed = np.zeros(self.number_of_dimensions)
+            for idim in range(0,self.number_of_dimensions):
                 default_max_speed[idim]   = self.search_interval[idim][1]-self.search_interval[idim][0]
                     
             self.max_speed  = kwargs.get('max_speed', default_max_speed)
@@ -290,22 +290,22 @@ class ParticleSwarmOptimization(Optimizer):
             default_value_initial_speed_over_search_space_size = 0.5
             self.initial_speed_over_search_space_size          = kwargs.get('initial_speed_over_search_space_size', default_value_initial_speed_over_search_space_size)
             
-            # maximum speed for a particle, it must be a vector with num_dimensions elements
-            default_max_speed = np.zeros(self.num_dimensions)
-            for idim in range(0,self.num_dimensions):
+            # maximum speed for a particle, it must be a vector with number_of_dimensions elements
+            default_max_speed = np.zeros(self.number_of_dimensions)
+            for idim in range(0,self.number_of_dimensions):
                 default_max_speed[idim]   = self.search_interval[idim][1]-self.search_interval[idim][0]
                     
             self.max_speed  = kwargs.get('max_speed', default_max_speed)
             
             # maximum number of iterations in which "bad" particles are allowed to explore (Ne in the original paper)
-            default_Nmax_iterations_bad_particle = 3
-            self.Nmax_iterations_bad_particles   = kwargs.get('Nmax_iterations_bad_particles', default_Nmax_iterations_bad_particles)
+            default_Nnumber_of_iterations_bad_particle = 3
+            self.Nnumber_of_iterations_bad_particles   = kwargs.get('Nnumber_of_iterations_bad_particles', default_Nnumber_of_iterations_bad_particles)
             
             # percentage p of the mean to define the classification levels mean*(1-p), mean*(1+p)
             default_portion_of_mean_classification_levels = 0.02
             self.portion_of_mean_classification_levels    = kwargs.get('portion_of_mean_classification_levels', default_portion_of_mean_classification_levels )
             
-            # "bad" particles that remain "bad" for more than Nmax_iterations_bad_particlesiterations
+            # "bad" particles that remain "bad" for more than Nnumber_of_iterations_bad_particlesiterations
             # are relocated around the best swarm particle, within an interval (1-a) and (1+a) in all dimensions
             # in this version it will decrease from value a1 to value a2 
             default_amplitude_mutated_range_1    = 0.4
@@ -330,7 +330,7 @@ class ParticleSwarmOptimization(Optimizer):
             print("initial_speed_over_search_space_size  = ",self.initial_speed_over_search_space_size)
             print("max_speed                                = ",self.max_speed )
             print("portion_of_mean_classification_levels    = ",self.portion_of_mean_classification_levels)
-            print("Nmax_iterations_bad_particles            = ",self.Nmax_iterations_bad_particles)
+            print("Nnumber_of_iterations_bad_particles            = ",self.Nnumber_of_iterations_bad_particles)
             print("amplitude_mutated_range_1                = ",self.amplitude_mutated_range_1)
             print("amplitude_mutated_range_2                = ",self.amplitude_mutated_range_2)
             print("")
@@ -341,15 +341,15 @@ class ParticleSwarmOptimization(Optimizer):
         self.particles_number_of_iterations_remained_in_current_category = []
             
         # use scrambled Halton sampler to extract initial positions
-        self.halton_sampler_position                 = qmc.Halton(d=self.num_dimensions, scramble=True)
-        halton_sampler_random_position               = self.halton_sampler_position.random(n=self.num_samples)
-        self.search_interval_size                    = [search_interval[idim][1]-search_interval[idim][0] for idim in range(0,self.num_dimensions)]
+        self.halton_sampler_position                 = qmc.Halton(d=self.number_of_dimensions, scramble=True)
+        halton_sampler_random_position               = self.halton_sampler_position.random(n=self.number_of_samples_per_iteration)
+        self.search_interval_size                    = [search_interval[idim][1]-search_interval[idim][0] for idim in range(0,self.number_of_dimensions)]
         # Initialize each particle the swarm
-        for iparticle in range(0,self.num_samples):
-            position = np.zeros(self.num_dimensions)
-            velocity = np.zeros(self.num_dimensions)
+        for iparticle in range(0,self.number_of_samples_per_iteration):
+            position = np.zeros(self.number_of_dimensions)
+            velocity = np.zeros(self.number_of_dimensions)
             
-            for idim in range(0,self.num_dimensions):
+            for idim in range(0,self.number_of_dimensions):
                 # use a scrambled Halton sequence to sample more uniformly the parameter space
                 position[idim] = self.search_interval[idim][0]+halton_sampler_random_position[iparticle][idim]*self.search_interval_size[idim] #np.random.uniform(search_interval[dimension][0], search_interval[dimension][1])
                 # use initial velocity proportional to the search_space size in this dimension
@@ -362,7 +362,7 @@ class ParticleSwarmOptimization(Optimizer):
                 self.particles_number_of_iterations_remained_in_current_category.append(0)
                 
             print("Particle", iparticle, "Position:", position)  
-            self.history_samples_positions_and_function_values[0,iparticle,0:self.num_dimensions] = position[:]
+            self.history_samples_positions_and_function_values[0,iparticle,0:self.number_of_dimensions] = position[:]
             self.samples[iparticle].optimum_position[:]                                           = position[:]
             del position, velocity
             
@@ -371,26 +371,26 @@ class ParticleSwarmOptimization(Optimizer):
         
             
     def updateParticlePositionAndVelocity(self):
-        search_interval_size = [self.search_interval[idim][1]-self.search_interval[idim][0] for idim in range(0,self.num_dimensions)]
+        search_interval_size = [self.search_interval[idim][1]-self.search_interval[idim][0] for idim in range(0,self.number_of_dimensions)]
         
         if (self.name=="IAPSO"):
-            self.c1 = 2.*np.sin(np.pi*(self.max_iterations-self.iteration_number)/2./self.max_iterations)**2
-            self.c2 = 2.*np.sin(np.pi*(self.iteration_number)/2./self.max_iterations)**2
-            self.w  = self.w2*(self.w1/self.w2)**(1/(1+self.m*self.iteration_number/self.max_iterations))
+            self.c1 = 2.*np.sin(np.pi*(self.number_of_iterations-self.iteration_number)/2./self.number_of_iterations)**2
+            self.c2 = 2.*np.sin(np.pi*(self.iteration_number)/2./self.number_of_iterations)**2
+            self.w  = self.w2*(self.w1/self.w2)**(1/(1+self.m*self.iteration_number/self.number_of_iterations))
             print("\n",self.name," activated; c1 = ",self.c1,"; c2 = ",self.c2,"; w = ",self.w,"\n")
             
         elif (self.name=="PSO-TPME"):
-            self.w  = self.w1-(self.iteration_number+2)*(self.w1-self.w2)/self.max_iterations
-            self.amplitude_mutated_range  = self.amplitude_mutated_range_1-(self.iteration_number+2)*(self.amplitude_mutated_range_1-self.amplitude_mutated_range_2)/self.max_iterations
+            self.w  = self.w1-(self.iteration_number+2)*(self.w1-self.w2)/self.number_of_iterations
+            self.amplitude_mutated_range  = self.amplitude_mutated_range_1-(self.iteration_number+2)*(self.amplitude_mutated_range_1-self.amplitude_mutated_range_2)/self.number_of_iterations
             print("\n ",self.name," activated; w = ",self.w,", mutation range =",self.amplitude_mutated_range )
             
         
-        for iparticle in range(0,self.num_samples):
+        for iparticle in range(0,self.number_of_samples_per_iteration):
             particle = self.samples[iparticle]
             velocity = particle.velocity
         
             if ((self.name=="Particle Swarm Optimization") or (self.name=="IAPSO")):
-                for idim in range(self.num_dimensions):
+                for idim in range(self.number_of_dimensions):
                     # extract two random numbers
                     r1                  = random.random()
                     r2                  = random.random()
@@ -403,13 +403,13 @@ class ParticleSwarmOptimization(Optimizer):
 
                 # Update individual particle position
                 # limit the velocity to the interval [-max_speed,max_speed]
-                for idim in range(0,self.num_dimensions):
+                for idim in range(0,self.number_of_dimensions):
                     self.samples[iparticle].velocity[idim]      = np.clip(velocity[idim],-self.max_speed[idim],self.max_speed[idim])
                     self.samples[iparticle].position           += velocity
             
             elif (self.name=="PSO-TPME"):
                 if (self.particle_category[iparticle]=="good"): # update position only using exploitation of personal best
-                    for idim in range(self.num_dimensions):
+                    for idim in range(self.number_of_dimensions):
                         # extract one random numbers
                         r1                  = random.random()
                         # compute cognitive velocity, based on the individual particle's exploration
@@ -419,12 +419,12 @@ class ParticleSwarmOptimization(Optimizer):
 
                     # Update individual particle position
                     # limit the velocity to the interval [-max_speed,max_speed]
-                    for idim in range(0,self.num_dimensions):
+                    for idim in range(0,self.number_of_dimensions):
                         self.samples[iparticle].velocity[idim]      = np.clip(velocity[idim],-self.max_speed[idim],self.max_speed[idim])
                         self.samples[iparticle].position           += velocity
                 
                 elif (self.particle_category[iparticle]=="fair"): # update position as in a classic PSO
-                    for idim in range(self.num_dimensions):
+                    for idim in range(self.number_of_dimensions):
                         # extract two random numbers
                         r1                  = random.random()
                         r2                  = random.random()
@@ -437,12 +437,12 @@ class ParticleSwarmOptimization(Optimizer):
 
                     # Update individual particle position
                     # limit the velocity to the interval [-max_speed,max_speed]
-                    for idim in range(0,self.num_dimensions):
+                    for idim in range(0,self.number_of_dimensions):
                         self.samples[iparticle].velocity[idim]      = np.clip(velocity[idim],-self.max_speed[idim],self.max_speed[idim])
                         self.samples[iparticle].position           += velocity
                     
                 elif (self.particle_category[iparticle]=="bad"):
-                    for idim in range(self.num_dimensions):
+                    for idim in range(self.number_of_dimensions):
                         # keep converging towards the best position of the swarm
                         # extract one random number
                         r2                  = random.random()
@@ -453,14 +453,14 @@ class ParticleSwarmOptimization(Optimizer):
                     
                     # Update individual particle position
                     # limit the velocity to the interval [-max_speed,max_speed]
-                    for idim in range(0,self.num_dimensions):
+                    for idim in range(0,self.number_of_dimensions):
                         self.samples[iparticle].velocity[idim]      = np.clip(velocity[idim],-self.max_speed[idim],self.max_speed[idim])
                         self.samples[iparticle].position           += velocity
                         
                 elif (self.particle_category[iparticle]=="hopeless"): 
                     # extract one random number
                     # eta                  = random.random()
-                    for idim in range(self.num_dimensions):
+                    for idim in range(self.number_of_dimensions):
                         # case of "hopeless particle" ---> relocate it arounf the best position so far
                         #mutation_amplitude   = 2*eta*self.amplitude_mutated_range+(1-self.amplitude_mutated_range)
                         random_number_gaussian = np.random.normal(0, 1, 1)[0]
@@ -477,7 +477,7 @@ class ParticleSwarmOptimization(Optimizer):
             # if the particle exits the search_interval in one of its position coordinates,
             # reassign that coordinate randomly
             # don't change the velocity
-            for dimension in range(self.num_dimensions):
+            for dimension in range(self.number_of_dimensions):
                 if ((self.samples[iparticle].position[dimension] < self.search_interval[dimension][0]) or (self.samples[iparticle].position[dimension] > self.search_interval[dimension][1])):
                     self.samples[iparticle].position[dimension] = self.search_interval[dimension][0]+np.random.uniform(0., 1.)*(self.search_interval[dimension][1]-self.search_interval[dimension][0])
                     #self.samples[iparticle].velocity[dimension] = self.initial_speed_over_search_space_size*np.random.uniform(-1, 1)*search_interval_size[dimension]
@@ -490,7 +490,7 @@ class ParticleSwarmOptimization(Optimizer):
         
     def operationsAfterUpdateOfOptimumFunctionValueAndPosition(self):
         if (self.name=="PSO-TPME"):
-            average_function_value_of_swarm = np.average(self.history_samples_positions_and_function_values[self.iteration_number,:,self.num_dimensions])
+            average_function_value_of_swarm = np.average(self.history_samples_positions_and_function_values[self.iteration_number,:,self.number_of_dimensions])
             average_function_value_of_swarm = np.maximum(average_function_value_of_swarm,self.best_average_function_value)
             if (average_function_value_of_swarm > self.best_average_function_value):
                 self.best_average_function_value = average_function_value_of_swarm
@@ -500,13 +500,13 @@ class ParticleSwarmOptimization(Optimizer):
             print("\n PSO-TPME: Bad, average and good function value levels :",bad_function_value_level,average_function_value_of_swarm,good_function_value_level)
             old_particle_category       = self.particle_category
             
-            for isample in range(0,self.num_samples):
+            for isample in range(0,self.number_of_samples_per_iteration):
                     
-                if self.history_samples_positions_and_function_values[self.iteration_number,isample,self.num_dimensions] > good_function_value_level:
+                if self.history_samples_positions_and_function_values[self.iteration_number,isample,self.number_of_dimensions] > good_function_value_level:
                     self.particle_category[isample] = "good"
                     self.particles_number_of_iterations_remained_in_current_category[isample] = 1
-                elif self.history_samples_positions_and_function_values[self.iteration_number,isample,self.num_dimensions]< bad_function_value_level:
-                    if (self.particles_number_of_iterations_remained_in_current_category[isample]>self.Nmax_iterations_bad_particles-1):
+                elif self.history_samples_positions_and_function_values[self.iteration_number,isample,self.number_of_dimensions]< bad_function_value_level:
+                    if (self.particles_number_of_iterations_remained_in_current_category[isample]>self.Nnumber_of_iterations_bad_particles-1):
                         self.particle_category[isample] = "hopeless"
                         self.particles_number_of_iterations_remained_in_current_category[isample] = 1
                     else:
@@ -524,7 +524,7 @@ class ParticleSwarmOptimization(Optimizer):
                     self.particle_category[isample] = "fair"
                     self.particles_number_of_iterations_remained_in_current_category[isample] = 1
      
-                print("Particle ",isample,"with function value ","{:.3f}".format(self.history_samples_positions_and_function_values[self.iteration_number,isample,self.num_dimensions])," is classified as ",self.particle_category[isample], \
+                print("Particle ",isample,"with function value ","{:.3f}".format(self.history_samples_positions_and_function_values[self.iteration_number,isample,self.number_of_dimensions])," is classified as ",self.particle_category[isample], \
                             ", remained in this category for",self.particles_number_of_iterations_remained_in_current_category[isample]," iterations")
                         
                      
@@ -534,37 +534,37 @@ class ParticleSwarmOptimization(Optimizer):
         
 
 class BayesianOptimization(Optimizer):
-    def __init__(self, name, num_samples, num_dimensions, search_interval, max_iterations, **kwargs):
-        super().__init__(name, num_samples, num_dimensions, search_interval, max_iterations, **kwargs)
+    def __init__(self, name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs):
+        super().__init__(name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs)
         self.num_tests     = 100    # number of points to test through the surrogate function when choosing new samples to draw
         # Define the model for the kernel of the Gaussian process
         # For multidimensional search spaces it is important to use an anisotropic kernel, i.e. with a different scale in each dimension
-        self.length_scales = [self.search_interval[idim][1] - self.search_interval[idim][0] for idim in range(self.num_dimensions)] # length scales of the kernel in all dimensions
+        self.length_scales = [self.search_interval[idim][1] - self.search_interval[idim][0] for idim in range(self.number_of_dimensions)] # length scales of the kernel in all dimensions
         self.kernel        = ConstantKernel(1.0, constant_value_bounds="fixed") * Matern(length_scale=self.length_scales, nu=1.5)
         self.model         = GaussianProcessRegressor(kernel=self.kernel,optimizer="fmin_l_bfgs_b")
-        self.Xsamples      = np.zeros(shape=(self.num_samples, self.num_dimensions))   # new samples for the new iteration iteration
+        self.Xsamples      = np.zeros(shape=(self.number_of_samples_per_iteration, self.number_of_dimensions))   # new samples for the new iteration iteration
         # Initial sparse sample
-        self.halton_sampler_position   = qmc.Halton(d=self.num_dimensions, scramble=True)
-        halton_sampler_random_position = self.halton_sampler_position.random(n=self.num_samples)
+        self.halton_sampler_position   = qmc.Halton(d=self.number_of_dimensions, scramble=True)
+        halton_sampler_random_position = self.halton_sampler_position.random(n=self.number_of_samples_per_iteration)
         
 
-        self.X = np.zeros(shape=(self.num_samples, self.num_dimensions))    # all positions explored by the Bayesian optimization
-        self.y = np.zeros((self.num_samples,1))                             # all the function values found by the Bayesian optimization
+        self.X = np.zeros(shape=(self.number_of_samples_per_iteration, self.number_of_dimensions))    # all positions explored by the Bayesian optimization
+        self.y = np.zeros((self.number_of_samples_per_iteration,1))                             # all the function values found by the Bayesian optimization
         # Initialize each sample
-        for isample in range(self.num_samples):
-            position = np.zeros(self.num_dimensions)
+        for isample in range(self.number_of_samples_per_iteration):
+            position = np.zeros(self.number_of_dimensions)
             # use a Halton sequence to sample more uniformly the parameter space
-            for idim in range(0,self.num_dimensions):
+            for idim in range(0,self.number_of_dimensions):
                 position[idim]       = search_interval[idim][0]+halton_sampler_random_position[isample][idim]*(search_interval[idim][1]-search_interval[idim][0]) #np.random.uniform(self.search_interval[dimension][0], self.search_interval[dimension][1])
                 self.X[isample,idim] = position[idim]
             random_sample            = RandomSearchSample(position) 
             self.samples.append(random_sample)
             print("\n ---> Sample", isample, "Position:", position)  
-            self.history_samples_positions_and_function_values[0,isample,0:self.num_dimensions] = position[:]
+            self.history_samples_positions_and_function_values[0,isample,0:self.number_of_dimensions] = position[:]
                 
-        # for isample in range(self.num_samples):
-        #     for idim in range(0,self.num_dimensions):
-        #         self.X[isample,idim] = np.random.uniform(self.search_interval[idim][0], self.search_interval[idim][1])   #, size=num_dimensions)
+        # for isample in range(self.number_of_samples_per_iteration):
+        #     for idim in range(0,self.number_of_dimensions):
+        #         self.X[isample,idim] = np.random.uniform(self.search_interval[idim][0], self.search_interval[idim][1])   #, size=number_of_dimensions)
         #     self.y[isample] = objective(X[isample], noise=0.)
         # 
         # # Initial Fit the model to the initial sparse data
@@ -598,13 +598,13 @@ class BayesianOptimization(Optimizer):
 
     # Optimize the acquisition function
     def optimizeAcquisitionFunction(self):
-        X_test   = np.zeros(shape=(self.num_tests, self.num_dimensions))
+        X_test   = np.zeros(shape=(self.num_tests, self.number_of_dimensions))
         for itest in range(0,self.num_tests):
-    	       for idim in range(0,self.num_dimensions):
-    		             X_test[itest,idim] = np.random.uniform(self.search_interval[idim][0], self.search_interval[idim][1])#, size=(num_tests, num_dimensions))
+    	       for idim in range(0,self.number_of_dimensions):
+    		             X_test[itest,idim] = np.random.uniform(self.search_interval[idim][0], self.search_interval[idim][1])#, size=(num_tests, number_of_dimensions))
         scores = self.getAcquisitionFunctionResult(X_test)  # Calculate acquisition scores on test points
     
-        for isample in range(self.num_samples):
+        for isample in range(self.number_of_samples_per_iteration):
             best_index         = np.argmax(scores)   # Find the index with the highest acquisition score
             scores[best_index] = float('-inf')       # Set the acquisition score of the selected index to negative infinity
             self.Xsamples[isample]  = X_test[best_index]  # Select the corresponding sample
@@ -613,7 +613,7 @@ class BayesianOptimization(Optimizer):
     
     def chooseNewPositionsToExplore(self):
         Xsamples = self.optimizeAcquisitionFunction()
-        for isample in range(self.num_samples):
+        for isample in range(self.number_of_samples_per_iteration):
             self.samples[isample].position[:] = Xsamples[isample]
             
     def updateSamplesForExploration(self):
@@ -624,13 +624,13 @@ class BayesianOptimization(Optimizer):
     def operationsAfterUpdateOfOptimumFunctionValueAndPosition(self):
         # perform some special operations for the data structure needed by the Bayesian Optimization kernel
         if self.iteration_number == 0:
-            for isample in range(0,self.num_samples):
-                self.y[isample] = self.history_samples_positions_and_function_values[self.iteration_number,isample,self.num_dimensions]
+            for isample in range(0,self.number_of_samples_per_iteration):
+                self.y[isample] = self.history_samples_positions_and_function_values[self.iteration_number,isample,self.number_of_dimensions]
             self.model.fit(self.X, self.y)
         else:
-            for isample in range(0,self.num_samples):
+            for isample in range(0,self.number_of_samples_per_iteration):
                 self.X = np.vstack((self.X, self.Xsamples[isample]))
-                self.y = np.vstack((self.y, self.history_samples_positions_and_function_values[self.iteration_number,isample,self.num_dimensions]))
+                self.y = np.vstack((self.y, self.history_samples_positions_and_function_values[self.iteration_number,isample,self.number_of_dimensions]))
             self.model.fit(self.X, self.y)
         
             

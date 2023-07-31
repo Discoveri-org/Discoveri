@@ -37,8 +37,8 @@ class optimizationRun:
                  name_log_file_simulations="", word_marking_end_of_simulation_in_log_file="",
                  path_executable="", path_input_namelist="", name_input_namelist="",
                  path_submission_script="", path_second_submission_script="",
-                 optimization_method="", num_samples=1, num_dimensions=1, search_interval=[[0., 1.]],
-                 max_iterations=1,time_to_wait_for_iteration_results = 1.,
+                 optimization_method="", number_of_samples_per_iteration=1, number_of_dimensions=1, search_interval=[[0., 1.]],
+                 number_of_iterations=1,time_to_wait_for_iteration_results = 1.,
                  input_parameters_names=[],use_test_function=True,test_function=None,simulation_postprocessing_function=None,iterations_between_outputs=1,**kwargs):
                  
         printLogo()
@@ -87,20 +87,20 @@ class optimizationRun:
 
         if (self.optimization_method == "Random Search"):
             self.optimizer             = RandomSearch         (name=optimization_method,                                      \
-                                                              num_samples=num_samples, num_dimensions=num_dimensions,         \
-                                                              search_interval=search_interval, max_iterations=max_iterations, \
+                                                              number_of_samples_per_iteration=number_of_samples_per_iteration, number_of_dimensions=number_of_dimensions,         \
+                                                              search_interval=search_interval, number_of_iterations=number_of_iterations, \
                                                               **kwargs )
                                                               #additional_arguments=[use_Halton_sequence])
         elif (self.optimization_method == "Bayesian Optimization"):
             self.optimizer             = BayesianOptimization (name=optimization_method,                                      \
-                                                              num_samples=num_samples, num_dimensions=num_dimensions,         \
-                                                              search_interval=search_interval, max_iterations=max_iterations, \
+                                                              number_of_samples_per_iteration=number_of_samples_per_iteration, number_of_dimensions=number_of_dimensions,         \
+                                                              search_interval=search_interval, number_of_iterations=number_of_iterations, \
                                                               **kwargs )
         elif (self.optimization_method   == "Particle Swarm Optimization"):
             # initialize a swarm of particles
             self.optimizer             = ParticleSwarmOptimization(name=optimization_method,                                  \
-                                                              num_samples=num_samples, num_dimensions=num_dimensions,         \
-                                                              search_interval=search_interval, max_iterations=max_iterations, \
+                                                              number_of_samples_per_iteration=number_of_samples_per_iteration, number_of_dimensions=number_of_dimensions,         \
+                                                              search_interval=search_interval, number_of_iterations=number_of_iterations, \
                                                               **kwargs )
                                                               #additional_arguments=[max_speed,initial_speed_over_search_space_size,c1,c2,w], \
                                                               #)
@@ -108,19 +108,19 @@ class optimizationRun:
         elif (self.optimization_method   == "IAPSO"):
             # initialize a swarm of particles
             self.optimizer             = ParticleSwarmOptimization(name=optimization_method,                                  \
-                                                              num_samples=num_samples, num_dimensions=num_dimensions,         \
-                                                              search_interval=search_interval, max_iterations=max_iterations, \
+                                                              number_of_samples_per_iteration=number_of_samples_per_iteration, number_of_dimensions=number_of_dimensions,         \
+                                                              search_interval=search_interval, number_of_iterations=number_of_iterations, \
                                                               **kwargs )
                                                               #additional_arguments=[max_speed,initial_speed_over_search_space_size])
                                                               
         elif (self.optimization_method == "PSO-TPME"):
             # initialize a swarm of particles
             self.optimizer             = ParticleSwarmOptimization(name=optimization_method, \
-                                                              num_samples=num_samples, num_dimensions=num_dimensions, \
-                                                              search_interval=search_interval, max_iterations=max_iterations, \
+                                                              number_of_samples_per_iteration=number_of_samples_per_iteration, number_of_dimensions=number_of_dimensions, \
+                                                              search_interval=search_interval, number_of_iterations=number_of_iterations, \
                                                               **kwargs )
                                                               #additional_arguments = [max_speed,initial_speed_over_search_space_size,c1,c2],\
-                                                              #Nmax_iterations_bad_particles=Nmax_iterations_bad_particles, \
+                                                              #Nnumber_of_iterations_bad_particles=Nnumber_of_iterations_bad_particles, \
                                                               #portion_of_mean_classification_levels=portion_of_mean_classification_levels, \
                                                               #amplitude_mutated_range_2=amplitude_mutated_range_2,\
                                                               #amplitude_mutated_range_1=amplitude_mutated_range_1,\
@@ -143,7 +143,7 @@ class optimizationRun:
         print("\n Start of the optimization run \n\n")
 
         # execute first iteration with the initial particle positions
-        print("\n\n\n\n Iteration:", iteration+1,"/",self.optimizer.max_iterations,"\n\n\n")
+        print("\n\n\n\n Iteration:", iteration+1,"/",self.optimizer.number_of_iterations,"\n\n\n")
 
         self.starting_time          = time.time()
 
@@ -153,7 +153,7 @@ class optimizationRun:
         
         ######### Perform a iteration = 0 to evaluate the function to optimise at the first random points
 
-        for isample in range(0,self.optimizer.num_samples):
+        for isample in range(0,self.optimizer.number_of_samples_per_iteration):
             # launch the simulation corresponding to isample
             input_parameters   = self.optimizer.samples[isample].position
             new_simulation_directory, configuration_parameters = self.job_manager.launchSimulation(self.config_id,input_parameters)    
@@ -183,8 +183,8 @@ class optimizationRun:
         ######### Optimization loop, iterations > 1
 
         # Repeat until the last iteration
-        for iteration in range(1,self.optimizer.max_iterations):
-            print("\n\n\n\n Iteration:", iteration+1,"/",self.optimizer.max_iterations)
+        for iteration in range(1,self.optimizer.number_of_iterations):
+            print("\n\n\n\n Iteration:", iteration+1,"/",self.optimizer.number_of_iterations)
             time_start_new_iteration = time.time()-self.starting_time
             self.time_to_complete_iterations.append(time_start_new_iteration)
             print("\n Total time lapsed from the start of the optimization = ",time_start_new_iteration," s\n\n\n" )
@@ -196,7 +196,7 @@ class optimizationRun:
             self.optimizer.updateSamplesForExploration()
     
             # Launching the simulations - one simulation corresponding to each particle of the swarm
-            for isample in range(0,self.optimizer.num_samples):
+            for isample in range(0,self.optimizer.number_of_samples_per_iteration):
         
                 # launch the simulation corresponding to isample
                 input_parameters   = self.optimizer.samples[isample].position
@@ -233,12 +233,12 @@ class optimizationRun:
         ######### Print all the optimization history
 
         print("\n\n\n\n End of the optimization\n\n\n")
-        print("\n",self.optimizer.max_iterations," iterations were completed")
+        print("\n",self.optimizer.number_of_iterations," iterations were completed")
         print("\n Total time for the optimization = ",time.time()-self.starting_time," s\n\n" )
         self.time_to_complete_iterations.append(time.time()-self.starting_time)
         self.time_to_complete_iterations = np.asarray(self.time_to_complete_iterations)
         #print("\n Explored positions and function values during the optimization:")
-        #print("iteration | isample | particle position (num_dimensions columns) | function value")
+        #print("iteration | isample | particle position (number_of_dimensions columns) | function value")
         #print(optimizer.history_samples_positions_and_function_values)
 
         optimum_function_value,optimum_position,best_configuration_number = getOptimumPositionAndFunctionValueAfterOptimization(self.optimizer)
@@ -258,8 +258,8 @@ def createOptimizationRun(starting_directory=None, home_directory="", command_to
                          name_log_file_simulations="", word_marking_end_of_simulation_in_log_file="",
                          path_executable="", path_input_namelist="", name_input_namelist="",
                          path_submission_script="", path_second_submission_script="",
-                         optimization_method="", num_samples=1, num_dimensions=1, search_interval=[[0., 1.]],
-                         max_iterations=1,time_to_wait_for_iteration_results = 1.,
+                         optimization_method="", number_of_samples_per_iteration=1, number_of_dimensions=1, search_interval=[[0., 1.]],
+                         number_of_iterations=1,time_to_wait_for_iteration_results = 1.,
                          input_parameters_names=[],use_test_function=True,test_function=None,simulation_postprocessing_function=None,iterations_between_outputs=1,**kwargs ):
     return optimizationRun(starting_directory=starting_directory, home_directory=home_directory,
                            command_to_launch_jobs=command_to_launch_jobs,
@@ -268,9 +268,9 @@ def createOptimizationRun(starting_directory=None, home_directory="", command_to
                            path_executable=path_executable, path_input_namelist=path_input_namelist,
                            name_input_namelist=name_input_namelist, path_submission_script=path_submission_script,
                            path_second_submission_script=path_second_submission_script,
-                           optimization_method=optimization_method, num_samples=num_samples,
-                           num_dimensions=num_dimensions, search_interval=search_interval,
-                           max_iterations=max_iterations,
+                           optimization_method=optimization_method, number_of_samples_per_iteration=number_of_samples_per_iteration,
+                           number_of_dimensions=number_of_dimensions, search_interval=search_interval,
+                           number_of_iterations=number_of_iterations,
                            time_to_wait_for_iteration_results = time_to_wait_for_iteration_results,
                            input_parameters_names=input_parameters_names,use_test_function=use_test_function,
                            test_function=test_function,simulation_postprocessing_function=simulation_postprocessing_function,iterations_between_outputs=iterations_between_outputs,**kwargs)

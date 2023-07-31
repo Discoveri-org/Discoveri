@@ -23,11 +23,11 @@ filename = "history_particles_positions_and_function_values.npy"
 #filename = "history_particles_positions_and_function_values_iteration_00028.npy"
 
 history_particles_positions_and_function_values = np.load(runs_to_read[0]+"/"+filename)
-number_of_iterations,num_samples,num_dimensions = np.shape(history_particles_positions_and_function_values)
-num_dimensions = num_dimensions-1
+number_of_iterations,number_of_samples_per_iteration,number_of_dimensions = np.shape(history_particles_positions_and_function_values)
+number_of_dimensions = number_of_dimensions-1
 iterations = np.linspace(0,number_of_iterations-1,num=number_of_iterations)
 
-data_optimizations = np.zeros(shape=(number_of_iterations*len(runs_to_read),num_samples,num_dimensions+1))
+data_optimizations = np.zeros(shape=(number_of_iterations*len(runs_to_read),number_of_samples_per_iteration,number_of_dimensions+1))
 
 
 index_run = 0
@@ -42,7 +42,7 @@ for run in runs_to_read:
 np.save("data_optimizations.npy",data_optimizations)
 
 ### Transform into pandas dataframe
-data_optimizations_reshaped = data_optimizations.reshape((len(runs_to_read)*number_of_iterations*num_samples,num_dimensions+1))
+data_optimizations_reshaped = data_optimizations.reshape((len(runs_to_read)*number_of_iterations*number_of_samples_per_iteration,number_of_dimensions+1))
 #labels = ["delay_behind_laser_micron","bunch_charge_pC","a0","plasma_plateau_density_1_ov_cm3","function_to_optimize"]
 labels = ['x_focus_um', 'dopant_N_concentration', 'a0', 'plasma_plateau_density_1_ov_cm3','function_to_optimize']
 df = pd.DataFrame(data_optimizations_reshaped, columns = labels)
