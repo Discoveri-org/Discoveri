@@ -38,7 +38,7 @@ class jobManager:
                  self.path_submission_script                     = path_submission_script
                  self.path_second_submission_script              = path_second_submission_script
                  self.time_to_wait_for_iteration_results         = time_to_wait_for_iteration_results
-                 self.input_parameter_names                      = input_parameters_names
+                 self.input_parameters_names                      = input_parameters_names
                  self.use_test_function                          = use_test_function
                  self.test_function                              = test_function
                  self.simulation_postprocessing_function         = simulation_postprocessing_function
