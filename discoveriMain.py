@@ -120,7 +120,7 @@ class optimizationRun:
                                                               search_interval=search_interval, number_of_iterations=number_of_iterations, \
                                                               **kwargs )
                                                               #additional_arguments = [max_speed,initial_speed_over_search_space_size,c1,c2],\
-                                                              #Nnumber_of_iterations_bad_particles=Nnumber_of_iterations_bad_particles, \
+                                                              #Number_of_iterations_bad_particles=Number_of_iterations_bad_particles, \
                                                               #portion_of_mean_classification_levels=portion_of_mean_classification_levels, \
                                                               #amplitude_mutated_range_2=amplitude_mutated_range_2,\
                                                               #amplitude_mutated_range_1=amplitude_mutated_range_1,\

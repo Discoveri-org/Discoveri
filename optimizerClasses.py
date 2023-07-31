@@ -299,13 +299,13 @@ class ParticleSwarmOptimization(Optimizer):
             
             # maximum number of iterations in which "bad" particles are allowed to explore (Ne in the original paper)
             default_Nnumber_of_iterations_bad_particle = 3
-            self.Nnumber_of_iterations_bad_particles   = kwargs.get('Nnumber_of_iterations_bad_particles', default_Nnumber_of_iterations_bad_particles)
+            self.Number_of_iterations_bad_particles   = kwargs.get('Number_of_iterations_bad_particles', default_Number_of_iterations_bad_particles)
             
             # percentage p of the mean to define the classification levels mean*(1-p), mean*(1+p)
             default_portion_of_mean_classification_levels = 0.02
             self.portion_of_mean_classification_levels    = kwargs.get('portion_of_mean_classification_levels', default_portion_of_mean_classification_levels )
             
-            # "bad" particles that remain "bad" for more than Nnumber_of_iterations_bad_particlesiterations
+            # "bad" particles that remain "bad" for more than Number_of_iterations_bad_particlesiterations
             # are relocated around the best swarm particle, within an interval (1-a) and (1+a) in all dimensions
             # in this version it will decrease from value a1 to value a2 
             default_amplitude_mutated_range_1    = 0.4
@@ -330,7 +330,7 @@ class ParticleSwarmOptimization(Optimizer):
             print("initial_speed_over_search_space_size  = ",self.initial_speed_over_search_space_size)
             print("max_speed                                = ",self.max_speed )
             print("portion_of_mean_classification_levels    = ",self.portion_of_mean_classification_levels)
-            print("Nnumber_of_iterations_bad_particles            = ",self.Nnumber_of_iterations_bad_particles)
+            print("Number_of_iterations_bad_particles            = ",self.Number_of_iterations_bad_particles)
             print("amplitude_mutated_range_1                = ",self.amplitude_mutated_range_1)
             print("amplitude_mutated_range_2                = ",self.amplitude_mutated_range_2)
             print("")
@@ -506,7 +506,7 @@ class ParticleSwarmOptimization(Optimizer):
                     self.particle_category[isample] = "good"
                     self.particles_number_of_iterations_remained_in_current_category[isample] = 1
                 elif self.history_samples_positions_and_function_values[self.iteration_number,isample,self.number_of_dimensions]< bad_function_value_level:
-                    if (self.particles_number_of_iterations_remained_in_current_category[isample]>self.Nnumber_of_iterations_bad_particles-1):
+                    if (self.particles_number_of_iterations_remained_in_current_category[isample]>self.Number_of_iterations_bad_particles-1):
                         self.particle_category[isample] = "hopeless"
                         self.particles_number_of_iterations_remained_in_current_category[isample] = 1
                     else:

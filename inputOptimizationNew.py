@@ -151,9 +151,9 @@ elif (optimization_method=="PSO-TPME"):
     w2                                         = 0.1 # final inertia weight parameter, must be < w1; this value would be reached after an infinite amount of iterations
     c1                                         = 1.5 # cognitive parameter, must be <1
     c2                                         = 1.5 # social parameter, must be <1
-    Nnumber_of_iterations_bad_particles                          = 2 #maximum number of iterations in which "bad" particles are allowed to explore (Ne in the original paper)
+    Number_of_iterations_bad_particles                          = 2 #maximum number of iterations in which "bad" particles are allowed to explore (Ne in the original paper)
     portion_of_mean_classification_levels      = 0.02 # portion of the mean to define the classification levels mean*(1-p), mean*(1+p)
-    # "bad" particles that remain "bad" for more than Nnumber_of_iterations_bad_particlesiterations
+    # "bad" particles that remain "bad" for more than Number_of_iterations_bad_particlesiterations
     # are relocated around the best swarm particle, within an interval (1-a) and (1+a) in all dimensions
     # in this version the coefficient will decrease linearly
     amplitude_mutated_range_1                  = 0.4
@@ -161,7 +161,7 @@ elif (optimization_method=="PSO-TPME"):
     
     optimizer_hyperparameters                  = [c1,c2,w1,w2,                                      \
                                                  initial_speed_over_search_space_size,           \
-                                                 Nnumber_of_iterations_bad_particles,                                  \
+                                                 Number_of_iterations_bad_particles,                                  \
                                                  portion_of_mean_classification_levels,             \
                                                  amplitude_mutated_range_1,amplitude_mutated_range_2]
 
