@@ -330,7 +330,7 @@ class ParticleSwarmOptimization(Optimizer):
             print("initial_speed_over_search_space_size  = ",self.initial_speed_over_search_space_size)
             print("max_speed                                = ",self.max_speed )
             print("portion_of_mean_classification_levels    = ",self.portion_of_mean_classification_levels)
-            print("Number_of_iterations_bad_particles            = ",self.Number_of_iterations_bad_particles)
+            print("Number_of_iterations_bad_particles       = ",self.Number_of_iterations_bad_particles)
             print("amplitude_mutated_range_1                = ",self.amplitude_mutated_range_1)
             print("amplitude_mutated_range_2                = ",self.amplitude_mutated_range_2)
             print("")
