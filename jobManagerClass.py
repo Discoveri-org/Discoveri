@@ -57,7 +57,7 @@ class jobManager:
         
             # prepare namelist writing the parameter configuration 
             line_to_write_in_namelist = self.generateConfigurationToWriteOnNamelist(input_parameters)
-            self.writeConfigurationDictionaryInNamelist(line_to_write_in_namelist,self.name_input_namelist,self.path_input_namelist)
+            self.writeConfigurationDictionaryInNamelist(line_to_write_in_namelist)
         else:
             line_to_write_in_namelist = ""
         
