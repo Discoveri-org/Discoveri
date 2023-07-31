@@ -189,8 +189,8 @@ class ParticleSwarmOptimization(Optimizer):
             self.w           = kwargs.get('w', default_value_w)
             # # To avoid too quick particles, this parameter is used to make velocity components 
             # proportional to the search space size in each dimension
-            default_value_initial_velocity_over_search_space_size = 0.1
-            self.initial_velocity_over_search_space_size          = kwargs.get('initial_velocity_over_search_space_size', default_value_initial_velocity_over_search_space_size)
+            default_value_initial_speed_over_search_space_size = 0.1
+            self.initial_speed_over_search_space_size          = kwargs.get('initial_speed_over_search_space_size', default_value_initial_speed_over_search_space_size)
             
             # maximum speed for a particle, it must be a vector with num_dimensions elements
             default_max_speed = np.zeros(self.num_dimensions)
@@ -203,7 +203,7 @@ class ParticleSwarmOptimization(Optimizer):
             print("c1                                       = ",self.c1)
             print("c2                                       = ",self.c2)
             print("w                                        = ",self.w)
-            print("initial_velocity_over_search_space_size  = ",self.initial_velocity_over_search_space_size)
+            print("initial_speed_over_search_space_size  = ",self.initial_speed_over_search_space_size)
             print("max_speed                                = ",self.max_speed )
             print("")
 
@@ -223,7 +223,7 @@ class ParticleSwarmOptimization(Optimizer):
             # m (inertia weight decay parameter): the higher this value is, the faster the inertia weight will decrease
             self.m                                       = optimizer_hyperparameters[2]
             # To avoid too quick particles, this parameter is used to make velocity components proportional to the search space size in each dimension
-            self.initial_velocity_over_search_space_size = optimizer_hyperparameters[3]
+            self.initial_speed_over_search_space_size = optimizer_hyperparameters[3]
             # maximum speed for a particle, it must be a vector with num_dimensions elements
             self.max_speed                               = optimizer_hyperparameters[4]
             
@@ -239,7 +239,7 @@ class ParticleSwarmOptimization(Optimizer):
             print("w1                                       = ",self.w1)
             print("w2                                       = ",self.w2)
             print("m                                        = ",self.m)
-            print("initial_velocity_over_search_space_size  = ",self.initial_velocity_over_search_space_size)
+            print("initial_speed_over_search_space_size  = ",self.initial_speed_over_search_space_size)
             print("max_speed                                = ",self.max_speed )
             print("")
             
@@ -273,8 +273,8 @@ class ParticleSwarmOptimization(Optimizer):
             
             # # To avoid too quick particles, this parameter is used to make velocity components 
             # proportional to the search space size in each dimension
-            default_value_initial_velocity_over_search_space_size = 0.5
-            self.initial_velocity_over_search_space_size          = kwargs.get('initial_velocity_over_search_space_size', default_value_initial_velocity_over_search_space_size)
+            default_value_initial_speed_over_search_space_size = 0.5
+            self.initial_speed_over_search_space_size          = kwargs.get('initial_speed_over_search_space_size', default_value_initial_speed_over_search_space_size)
             
             # maximum speed for a particle, it must be a vector with num_dimensions elements
             default_max_speed = np.zeros(self.num_dimensions)
@@ -313,7 +313,7 @@ class ParticleSwarmOptimization(Optimizer):
             print("c2                                       = ",self.c2)
             print("w1                                       = ",self.w1)
             print("w2                                       = ",self.w2)
-            print("initial_velocity_over_search_space_size  = ",self.initial_velocity_over_search_space_size)
+            print("initial_speed_over_search_space_size  = ",self.initial_speed_over_search_space_size)
             print("max_speed                                = ",self.max_speed )
             print("portion_of_mean_classification_levels    = ",self.portion_of_mean_classification_levels)
             print("Nmax_iterations_bad_particles            = ",self.Nmax_iterations_bad_particles)
@@ -339,7 +339,7 @@ class ParticleSwarmOptimization(Optimizer):
                 # use a scrambled Halton sequence to sample more uniformly the parameter space
                 position[idim] = self.search_interval[idim][0]+halton_sampler_random_position[iparticle][idim]*self.search_interval_size[idim] #np.random.uniform(search_interval[dimension][0], search_interval[dimension][1])
                 # use initial velocity proportional to the search_space size in this dimension
-                velocity[idim] = self.initial_velocity_over_search_space_size*np.random.uniform(-1, 1)*self.search_interval_size[idim]
+                velocity[idim] = self.initial_speed_over_search_space_size*np.random.uniform(-1, 1)*self.search_interval_size[idim]
                 particle       = SwarmParticle(position,velocity) 
 
             self.samples.append(particle)
@@ -456,7 +456,7 @@ class ParticleSwarmOptimization(Optimizer):
                         self.samples[iparticle].position [idim] = self.optimum_position[idim]*(1+mutation_amplitude)
                         # reinitialize velocity to avoid being stuck if new position will become best position
                         # use initial velocity proportional to the search_space size in this dimension
-                        self.samples[iparticle].velocity[idim] = self.initial_velocity_over_search_space_size*np.random.uniform(-1, 1)*self.search_interval_size[idim] 
+                        self.samples[iparticle].velocity[idim] = self.initial_speed_over_search_space_size*np.random.uniform(-1, 1)*self.search_interval_size[idim] 
                     print("\n PSO-TPE mutation of sample ",iparticle,"to position ",self.samples[iparticle].position)
                                     
             # Boundary condition on position:
@@ -466,7 +466,7 @@ class ParticleSwarmOptimization(Optimizer):
             for dimension in range(self.num_dimensions):
                 if ((self.samples[iparticle].position[dimension] < self.search_interval[dimension][0]) or (self.samples[iparticle].position[dimension] > self.search_interval[dimension][1])):
                     self.samples[iparticle].position[dimension] = self.search_interval[dimension][0]+np.random.uniform(0., 1.)*(self.search_interval[dimension][1]-self.search_interval[dimension][0])
-                    #self.samples[iparticle].velocity[dimension] = self.initial_velocity_over_search_space_size*np.random.uniform(-1, 1)*search_interval_size[dimension]
+                    #self.samples[iparticle].velocity[dimension] = self.initial_speed_over_search_space_size*np.random.uniform(-1, 1)*search_interval_size[dimension]
                 
     
     def updateSamplesForExploration(self):

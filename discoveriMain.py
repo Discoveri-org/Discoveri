@@ -102,7 +102,7 @@ class optimizationRun:
                                                               num_samples=num_samples, num_dimensions=num_dimensions,         \
                                                               search_interval=search_interval, max_iterations=max_iterations, \
                                                               **kwargs )
-                                                              #additional_arguments=[max_speed,initial_velocity_over_search_space_size,c1,c2,w], \
+                                                              #additional_arguments=[max_speed,initial_speed_over_search_space_size,c1,c2,w], \
                                                               #)
                                                               
         elif (self.optimization_method   == "IAPSO"):
@@ -111,7 +111,7 @@ class optimizationRun:
                                                               num_samples=num_samples, num_dimensions=num_dimensions,         \
                                                               search_interval=search_interval, max_iterations=max_iterations, \
                                                               **kwargs )
-                                                              #additional_arguments=[max_speed,initial_velocity_over_search_space_size])
+                                                              #additional_arguments=[max_speed,initial_speed_over_search_space_size])
                                                               
         elif (self.optimization_method == "PSO-TPME"):
             # initialize a swarm of particles
@@ -119,7 +119,7 @@ class optimizationRun:
                                                               num_samples=num_samples, num_dimensions=num_dimensions, \
                                                               search_interval=search_interval, max_iterations=max_iterations, \
                                                               **kwargs )
-                                                              #additional_arguments = [max_speed,initial_velocity_over_search_space_size,c1,c2],\
+                                                              #additional_arguments = [max_speed,initial_speed_over_search_space_size,c1,c2],\
                                                               #Nmax_iterations_bad_particles=Nmax_iterations_bad_particles, \
                                                               #portion_of_mean_classification_levels=portion_of_mean_classification_levels, \
                                                               #amplitude_mutated_range_2=amplitude_mutated_range_2,\
