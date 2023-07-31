@@ -62,4 +62,4 @@ def weighted_median(data, weights):
             w_median = np.mean(s_data[idx:idx+2])
         else:
             w_median = s_data[idx+1]
-     return w_median
+    return w_median
