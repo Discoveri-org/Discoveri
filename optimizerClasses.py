@@ -44,12 +44,13 @@ class SwarmParticle(Sample):
         self.optimum_function_value = float('-inf')
 
 class Optimizer:
-    def __init__(self, name = "", num_samples = 1, num_dimensions = 1, search_interval = [], max_iterations = 1, optimizer_hyperparameters = [] ):
+    def __init__(self, name = "", num_samples = 1, num_dimensions = 1, search_interval = [], max_iterations = 1, **kwargs ):
+        
         self.name                        = name                   # name of the optimizer
         self.max_iterations              = max_iterations         # maximum number of iterations
         self.num_samples                 = num_samples            # number of samples drawn at each iteration
         self.num_dimensions              = num_dimensions         # number of dimensions of the parameter space to explore
-        self.optimizer_hyperparameters   = optimizer_hyperparameters
+        self.optimizer_hyperparameters   = kwargs
         self.search_interval             = search_interval        # list of lists, with the boundaries 
         self.optimum_position            = None                   # optimum position found by the optimizer, yielding the swarm_optimum_function_value
         self.optimum_function_value      = float('-inf')          # maximum value found of the function to optimize, in all the the swarm
@@ -60,7 +61,16 @@ class Optimizer:
         # dimension 1 : sample number
         # dimension 2 : the first num_dimensions indices give the num_dimensions components of the isample position at that iteration,
         #               while the last index gives the value of that function found by isample at that iteration
-        self.history_samples_positions_and_function_values        = np.zeros(shape=(max_iterations,num_samples,num_dimensions+1))
+        self.history_samples_positions_and_function_values        = np.zeros(shape=(max_iterations,num_samples,num_dimensions+1)) 
+        
+        self.initialPrint(**kwargs)   
+        
+    def initialPrint(self,**kwargs):
+        print("\nOptimizer:                          ", self.name)
+        print("Number of iterations:                 ",self.max_iterations)
+        print("Number of dimensions:                 ",self.num_dimensions)
+        print("Search interval:                      ",self.search_interval)
+        print("Hyperparameters provided by the user: ",kwargs,"\n")
     
     def updateSamplesForExploration():
         print("In an optimizer, you must define a way to pick new positions to explore for each sample")
@@ -109,12 +119,13 @@ class Optimizer:
         
             
 class RandomSearch(Optimizer):
-    def __init__(self, name, num_samples, num_dimensions, search_interval, max_iterations, optimizer_hyperparameters):
-        super().__init__(name, num_samples, num_dimensions, search_interval, max_iterations,optimizer_hyperparameters)
+    def __init__(self, name, num_samples, num_dimensions, search_interval, max_iterations, **kwargs):
+        super().__init__(name, num_samples, num_dimensions, search_interval, max_iterations, **kwargs)
         self.sampler_for_position     = qmc.Halton(d=self.num_dimensions, scramble=True)
         self.total_sample_index       = 0
         self.random_position_sequence = self.sampler_for_position.random(n=self.num_samples*self.max_iterations)
-        self.use_Halton_sequence      = optimizer_hyperparameters[0]
+        
+        self.use_Halton_sequence = kwargs.get('use_Halton_sequence', True)
         # Initialize each sample
         for isample in range(self.num_samples):
             position = np.zeros(self.num_dimensions)
@@ -154,25 +165,47 @@ class RandomSearch(Optimizer):
     
 class ParticleSwarmOptimization(Optimizer):
     # in this Optimizer, each sample is a particle of the swarm
-    def __init__(self, name, num_samples, num_dimensions, search_interval, max_iterations, optimizer_hyperparameters):
-        super().__init__(name, num_samples, num_dimensions, search_interval, max_iterations, optimizer_hyperparameters)
+    def __init__(self, name, num_samples, num_dimensions, search_interval, max_iterations, **kwargs):
+        super().__init__(name, num_samples, num_dimensions, search_interval, max_iterations, **kwargs)
         
-        self.last_particle_in_position_and_velociy_update = self.num_samples
         
         if (self.name=="Particle Swarm Optimization"):
 
             # "classic" version of Particle Swarm Optimization, but using an inertia term to avoid divergence
+            # as described in Y. Shi, R.C. Eberhart, 1998, https://ieeexplore.ieee.org/document/69914
             
-            # c1 (cognitive parameter): It determines the weight or influence of the particle's personal optimum position on its velocity update. A higher value of c1 gives more importance to the particle's historical optimum position and encourages exploration.
-            self.c1                                      = optimizer_hyperparameters[0]
-            # c2 (social parameter): It determines the weight or influence of the swarm's swarm optimum position on the particle's velocity update. A higher value of c2 gives more importance to the swarm optimum position and encourages exploitation.
-            self.c2                                      = optimizer_hyperparameters[1]
-            # w (inertia weight): It controls the impact of the particle's previous velocity on the current velocity update. A higher value of w emphasizes the influence of the particle's momentum, promoting exploration. On the other hand, a lower value of w emphasizes the influence of the current optimum positions, promoting exploitation.
-            self.w                                       = optimizer_hyperparameters[2]
-            # To avoid too quick particles, this parameter is used to make velocity components proportional to the search space size in each dimension
-            self.initial_velocity_over_search_space_size = optimizer_hyperparameters[3]
+            # c1 (cognitive parameter): It determines the weight or influence of the particle's personal optimum position on its velocity update
+            # A higher value of c1 gives more importance to the particle's historical optimum position and encourages exploration.
+            default_value_c1 = 0.5
+            self.c1          = kwargs.get('c1', default_value_c1)
+            # c2 (social parameter): It determines the weight or influence of the swarm's swarm optimum position on the particle's velocity update.
+            # A higher value of c2 gives more importance to the swarm optimum position and encourages its exploitation.
+            default_value_c2 = 0.5
+            self.c2          = kwargs.get('c2', default_value_c2)
+            # w (inertia weight): It controls the impact of the particle's previous velocity on the current velocity update. 
+            # A higher value of w emphasizes the influence of the particle's momentum, promoting exploration.
+            # On the other hand, a lower value of w emphasizes the influence of the current optimum positions, promoting exploitation.
+            default_value_w  = 0.5
+            self.w           = kwargs.get('w', default_value_w)
+            # # To avoid too quick particles, this parameter is used to make velocity components 
+            # proportional to the search space size in each dimension
+            default_value_initial_velocity_over_search_space_size = 0.1
+            self.initial_velocity_over_search_space_size          = kwargs.get('initial_velocity_over_search_space_size', default_value_initial_velocity_over_search_space_size)
+            
             # maximum speed for a particle, it must be a vector with num_dimensions elements
-            self.max_speed                               = optimizer_hyperparameters[4]
+            default_max_speed = np.zeros(self.num_dimensions)
+            for idim in range(0,self.num_dimensions):
+                default_max_speed[idim]   = self.search_interval[idim][1]-self.search_interval[idim][0]
+                    
+            self.max_speed  = kwargs.get('max_speed', default_max_speed)
+            
+            print("\n -- hyperparameters used by the optimizer -- ")
+            print("c1                                       = ",self.c1)
+            print("c2                                       = ",self.c2)
+            print("w                                        = ",self.w)
+            print("initial_velocity_over_search_space_size  = ",self.initial_velocity_over_search_space_size)
+            print("max_speed                                = ",self.max_speed )
+            print("")
 
         elif (self.name=="IAPSO"):
             # from Wanli Yang et al 2021 J. Phys.: Conf. Ser. 1754 012195, doi:10.1088/1742-6596/1754/1/012195
@@ -202,6 +235,14 @@ class ParticleSwarmOptimization(Optimizer):
             # w (inertia weight): It controls the impact of the particle's previous velocity on the current velocity update. A higher value of w emphasizes the influence of the particle's momentum, promoting exploration. On the other hand, a lower value of w emphasizes the influence of the current optimum positions, promoting exploitation.
             self.w                                       = self.w1 
             
+            print("\n -- hyperparameters used by the optimizer -- ")
+            print("w1                                       = ",self.w1)
+            print("w2                                       = ",self.w2)
+            print("m                                        = ",self.m)
+            print("initial_velocity_over_search_space_size  = ",self.initial_velocity_over_search_space_size)
+            print("max_speed                                = ",self.max_speed )
+            print("")
+            
         elif (self.name=="PSO-TPME"):
             # parameters of the  Particle Swarm Optimization variant described in
             # T. Shaquarin, B. R. Noack, International Journal of Computational Intelligence Systems (2023) 16:6, https://doi.org/10.1007/s44196-023-00183-z
@@ -212,28 +253,53 @@ class ParticleSwarmOptimization(Optimizer):
             # - to reinitialize the particles closer to the optimum one, the mutated_amplitude is linearly decreasing,
             #   and the distribution of the coordinates near the optimum particle is a gaussian proportional to the search space size
             #   in that dimension and the mutated amplitude
-                 
-            # c1 (cognitive parameter): It determines the weight or influence of the particle's personal optimum position on its velocity update. A higher value of c1 gives more importance to the particle's historical optimum position and encourages exploration.
-            self.c1                                      = optimizer_hyperparameters[0]
-            # c2 (social parameter): It determines the weight or influence of the swarm's swarm optimum position on the particle's velocity update. A higher value of c2 gives more importance to the swarm optimum position and encourages exploitation.
-            self.c2                                      = optimizer_hyperparameters[1] 
+            
+            # c1 (cognitive parameter): It determines the weight or influence of the particle's personal optimum position on its velocity update
+            # A higher value of c1 gives more importance to the particle's historical optimum position and encourages exploration.
+            default_value_c1 = 1.5
+            self.c1          = kwargs.get('c1', default_value_c1)
+            # c2 (social parameter): It determines the weight or influence of the swarm's swarm optimum position on the particle's velocity update.
+            # A higher value of c2 gives more importance to the swarm optimum position and encourages its exploitation.
+            default_value_c2 = 1.5
+            self.c2          = kwargs.get('c2', default_value_c2)
+            
             # w1 (initial inertia weight)
-            self.w1                                      = optimizer_hyperparameters[2] 
-            # w2 (final inertia weight); this value would be reached after an infinite amount of iterations
-            self.w2                                      = optimizer_hyperparameters[3]
-            # To avoid too quick particles, this parameter is used to make velocity components proportional to the search space size in each dimension
-            self.initial_velocity_over_search_space_size = optimizer_hyperparameters[4]
+            default_value_w1  = 0.9
+            self.w1           = kwargs.get('w1', default_value_w)
+            
+            # w2 (final inertia weight)
+            default_value_w2  = 0.4
+            self.w2           = kwargs.get('w2', default_value_w)
+            
+            # # To avoid too quick particles, this parameter is used to make velocity components 
+            # proportional to the search space size in each dimension
+            default_value_initial_velocity_over_search_space_size = 0.5
+            self.initial_velocity_over_search_space_size          = kwargs.get('initial_velocity_over_search_space_size', default_value_initial_velocity_over_search_space_size)
+            
+            # maximum speed for a particle, it must be a vector with num_dimensions elements
+            default_max_speed = np.zeros(self.num_dimensions)
+            for idim in range(0,self.num_dimensions):
+                default_max_speed[idim]   = self.search_interval[idim][1]-self.search_interval[idim][0]
+                    
+            self.max_speed  = kwargs.get('max_speed', default_max_speed)
+            
             # maximum number of iterations in which "bad" particles are allowed to explore (Ne in the original paper)
-            self.Nmax_iterations_bad_particles                       = optimizer_hyperparameters[5] 
+            default_Nmax_iterations_bad_particle = 3
+            self.Nmax_iterations_bad_particles   = kwargs.get('Nmax_iterations_bad_particles', default_Nmax_iterations_bad_particles)
+            
             # percentage p of the mean to define the classification levels mean*(1-p), mean*(1+p)
-            self.portion_of_mean_classification_levels   = optimizer_hyperparameters[6]
+            default_portion_of_mean_classification_levels = 0.02
+            self.portion_of_mean_classification_levels    = kwargs.get('portion_of_mean_classification_levels', default_portion_of_mean_classification_levels )
+            
             # "bad" particles that remain "bad" for more than Nmax_iterations_bad_particlesiterations
             # are relocated around the best swarm particle, within an interval (1-a) and (1+a) in all dimensions
             # in this version it will decrease from value a1 to value a2 
-            self.amplitude_mutated_range_1               = optimizer_hyperparameters[7] 
-            self.amplitude_mutated_range_2               = optimizer_hyperparameters[8] 
-            # maximum speed for a particle, it must be a vector with num_dimensions elements
-            self.max_speed                               = optimizer_hyperparameters[9]
+            default_amplitude_mutated_range_1    = 0.4
+            self.amplitude_mutated_range_1       = kwargs.get('amplitude_mutated_range_1', default_amplitude_mutated_range_1 )
+            
+            default_amplitude_mutated_range_2    = 0.01
+            self.amplitude_mutated_range_2       = kwargs.get('amplitude_mutated_range_2', default_amplitude_mutated_range_2 ) 
+            
             ### Initialize inertia and amplitude of the mutated range
             # w (inertia weight): It controls the impact of the particle's previous velocity on the current velocity update. A higher value of w emphasizes the influence of the particle's momentum, promoting exploration. On the other hand, a lower value of w emphasizes the influence of the current optimum positions, promoting exploitation.
             self.w                                       = self.w1
@@ -241,6 +307,19 @@ class ParticleSwarmOptimization(Optimizer):
             self.amplitude_mutated_range                 = self.amplitude_mutated_range_1
             # value of the last average_function_value_of_swarm
             self.best_average_function_value             = float('-inf')
+            
+            print("\n -- hyperparameters used by the optimizer -- ")
+            print("c1                                       = ",self.c1)
+            print("c2                                       = ",self.c2)
+            print("w1                                       = ",self.w1)
+            print("w2                                       = ",self.w2)
+            print("initial_velocity_over_search_space_size  = ",self.initial_velocity_over_search_space_size)
+            print("max_speed                                = ",self.max_speed )
+            print("portion_of_mean_classification_levels    = ",self.portion_of_mean_classification_levels)
+            print("Nmax_iterations_bad_particles            = ",self.Nmax_iterations_bad_particles)
+            print("amplitude_mutated_range_1                = ",self.amplitude_mutated_range_1)
+            print("amplitude_mutated_range_2                = ",self.amplitude_mutated_range_2)
+            print("")
         
         # if PSO-TPME is used, we need an array with the classification of each particle
         # and the total number of iterations in which that particle has remained in the same category
@@ -252,7 +331,7 @@ class ParticleSwarmOptimization(Optimizer):
         halton_sampler_random_position               = self.halton_sampler_position.random(n=self.num_samples)
         self.search_interval_size                    = [search_interval[idim][1]-search_interval[idim][0] for idim in range(0,self.num_dimensions)]
         # Initialize each particle the swarm
-        for iparticle in range(0,self.last_particle_in_position_and_velociy_update):
+        for iparticle in range(0,self.num_samples):
             position = np.zeros(self.num_dimensions)
             velocity = np.zeros(self.num_dimensions)
             
@@ -292,7 +371,7 @@ class ParticleSwarmOptimization(Optimizer):
             print("\n ",self.name," activated; w = ",self.w,", mutation range =",self.amplitude_mutated_range )
             
         
-        for iparticle in range(0,self.last_particle_in_position_and_velociy_update):
+        for iparticle in range(0,self.num_samples):
             particle = self.samples[iparticle]
             velocity = particle.velocity
         
@@ -441,8 +520,8 @@ class ParticleSwarmOptimization(Optimizer):
         
 
 class BayesianOptimization(Optimizer):
-    def __init__(self, name, num_samples, num_dimensions, search_interval, max_iterations, optimizer_hyperparameters):
-        super().__init__(name, num_samples, num_dimensions, search_interval, max_iterations, optimizer_hyperparameters)
+    def __init__(self, name, num_samples, num_dimensions, search_interval, max_iterations, **kwargs):
+        super().__init__(name, num_samples, num_dimensions, search_interval, max_iterations, **kwargs)
         self.num_tests     = 100    # number of points to test through the surrogate function when choosing new samples to draw
         # Define the model for the kernel of the Gaussian process
         # For multidimensional search spaces it is important to use an anisotropic kernel, i.e. with a different scale in each dimension

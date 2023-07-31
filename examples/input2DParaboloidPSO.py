@@ -35,7 +35,7 @@ num_samples                             = 6
 
 #### Optimization parameters
 
-max_iterations                          = 20 
+max_iterations                          = 15 
 iterations_between_outputs              = 1
 
 #### Diagnostic and output dump periodicity
@@ -56,20 +56,6 @@ def my_test_function(position):
     
 test_function                           = my_test_function
 
-    
-###########################################################################
-####################   Optimizer hyperparameters   ########################
-###########################################################################
-
-# Parameters specific to Particle Swarm Optimization
-# "classic Particle Swarm Optimization", but using an inertia term w to avoid velocity divergence
-c1                                         = 0.1 # cognitive parameter, must be <1
-c2                                         = 0.1 # social parameter, must be <1
-w                                          = 0.5 # 0.8 #0.8 # inertia
-initial_velocity_over_search_space_size    = 0.1#0.3 #0.03 # parameter limiting the initial velocity of particles, must be <1
-    
-optimizer_hyperparameters                  = [c1,c2,w,initial_velocity_over_search_space_size]
-
 ###########################################################################
 ##################### Parameters for Random Search ########################
 ###########################################################################
@@ -83,13 +69,13 @@ if __name__ == '__main__':
     
     starting_directory = os.getcwd()
     # initialize an optimization run 
+    # the optimizer hyperparameters will be the default ones
     optimization_run   = createOptimizationRun(starting_directory                         = starting_directory,                         \
                                                optimization_method                        = optimization_method,                        \
                                                num_samples                                = num_samples,                                \
                                                num_dimensions                             = num_dimensions,                             \
                                                search_interval                            = search_interval,                            \
                                                max_iterations                             = max_iterations,                             \
-                                               optimizer_hyperparameters                  = optimizer_hyperparameters,                  \
                                                use_test_function                          = use_test_function,                          \
                                                test_function                              = test_function,                              \
                                                iterations_between_outputs                 = iterations_between_outputs                  )

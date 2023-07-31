@@ -38,9 +38,11 @@ class optimizationRun:
                  path_executable="", path_input_namelist="", name_input_namelist="",
                  path_submission_script="", path_second_submission_script="",
                  optimization_method="", num_samples=1, num_dimensions=1, search_interval=[[0., 1.]],
-                 max_iterations=1, optimizer_hyperparameters=[],time_to_wait_for_iteration_results = 1.,
-                 input_parameters_names=[],use_test_function=True,test_function=None,simulation_postprocessing_function=None,iterations_between_outputs=1):
+                 max_iterations=1,time_to_wait_for_iteration_results = 1.,
+                 input_parameters_names=[],use_test_function=True,test_function=None,simulation_postprocessing_function=None,iterations_between_outputs=1,**kwargs):
                  
+        printLogo()
+        
         if starting_directory is None:
             self.starting_directory = os.getcwd()
         else:
@@ -87,48 +89,36 @@ class optimizationRun:
             self.optimizer             = RandomSearch         (name=optimization_method,                                      \
                                                               num_samples=num_samples, num_dimensions=num_dimensions,         \
                                                               search_interval=search_interval, max_iterations=max_iterations, \
-                                                              optimizer_hyperparameters = optimizer_hyperparameters )
+                                                              **kwargs )
                                                               #additional_arguments=[use_Halton_sequence])
         elif (self.optimization_method == "Bayesian Optimization"):
             self.optimizer             = BayesianOptimization (name=optimization_method,                                      \
                                                               num_samples=num_samples, num_dimensions=num_dimensions,         \
                                                               search_interval=search_interval, max_iterations=max_iterations, \
-                                                              optimizer_hyperparameters = optimizer_hyperparameters )
+                                                              **kwargs )
         elif (self.optimization_method   == "Particle Swarm Optimization"):
             # initialize a swarm of particles
-            max_speed = np.zeros(num_dimensions)
-            for idim in range(0,num_dimensions):
-                max_speed[idim]   = search_interval[idim][1]-search_interval[idim][0]
-            optimizer_hyperparameters.append(max_speed)
             self.optimizer             = ParticleSwarmOptimization(name=optimization_method,                                  \
                                                               num_samples=num_samples, num_dimensions=num_dimensions,         \
                                                               search_interval=search_interval, max_iterations=max_iterations, \
-                                                              optimizer_hyperparameters = optimizer_hyperparameters)
+                                                              **kwargs )
                                                               #additional_arguments=[max_speed,initial_velocity_over_search_space_size,c1,c2,w], \
                                                               #)
                                                               
         elif (self.optimization_method   == "IAPSO"):
             # initialize a swarm of particles
-            max_speed = np.zeros(num_dimensions)
-            for idim in range(0,num_dimensions):
-                max_speed[idim]   = search_interval[idim][1]-search_interval[idim][0]
-            optimizer_hyperparameters.append(max_speed)
             self.optimizer             = ParticleSwarmOptimization(name=optimization_method,                                  \
                                                               num_samples=num_samples, num_dimensions=num_dimensions,         \
                                                               search_interval=search_interval, max_iterations=max_iterations, \
-                                                              optimizer_hyperparameters = optimizer_hyperparameters)
+                                                              **kwargs )
                                                               #additional_arguments=[max_speed,initial_velocity_over_search_space_size])
                                                               
         elif (self.optimization_method == "PSO-TPME"):
             # initialize a swarm of particles
-            max_speed = np.zeros(num_dimensions)    
-            for idim in range(0,num_dimensions):
-                max_speed[idim]   = search_interval[idim][1]-search_interval[idim][0]
-            optimizer_hyperparameters.append(max_speed)
             self.optimizer             = ParticleSwarmOptimization(name=optimization_method, \
                                                               num_samples=num_samples, num_dimensions=num_dimensions, \
                                                               search_interval=search_interval, max_iterations=max_iterations, \
-                                                              optimizer_hyperparameters = optimizer_hyperparameters)
+                                                              **kwargs )
                                                               #additional_arguments = [max_speed,initial_velocity_over_search_space_size,c1,c2],\
                                                               #Nmax_iterations_bad_particles=Nmax_iterations_bad_particles, \
                                                               #portion_of_mean_classification_levels=portion_of_mean_classification_levels, \
@@ -146,8 +136,6 @@ class optimizationRun:
     def execute(self):
         
         iteration              = 0
-                                                                              
-        printLogo()
 
         # create file to store all the simulation launched
         os.system("touch list_configurations.csv")
@@ -271,8 +259,8 @@ def createOptimizationRun(starting_directory=None, home_directory="", command_to
                          path_executable="", path_input_namelist="", name_input_namelist="",
                          path_submission_script="", path_second_submission_script="",
                          optimization_method="", num_samples=1, num_dimensions=1, search_interval=[[0., 1.]],
-                         max_iterations=1, optimizer_hyperparameters=[],time_to_wait_for_iteration_results = 1.,
-                         input_parameters_names=[],use_test_function=True,test_function=None,simulation_postprocessing_function=None,iterations_between_outputs=1 ):
+                         max_iterations=1,time_to_wait_for_iteration_results = 1.,
+                         input_parameters_names=[],use_test_function=True,test_function=None,simulation_postprocessing_function=None,iterations_between_outputs=1,**kwargs ):
     return optimizationRun(starting_directory=starting_directory, home_directory=home_directory,
                            command_to_launch_jobs=command_to_launch_jobs,
                            name_log_file_simulations=name_log_file_simulations,
@@ -282,10 +270,10 @@ def createOptimizationRun(starting_directory=None, home_directory="", command_to
                            path_second_submission_script=path_second_submission_script,
                            optimization_method=optimization_method, num_samples=num_samples,
                            num_dimensions=num_dimensions, search_interval=search_interval,
-                           max_iterations=max_iterations, optimizer_hyperparameters=optimizer_hyperparameters,
+                           max_iterations=max_iterations,
                            time_to_wait_for_iteration_results = time_to_wait_for_iteration_results,
                            input_parameters_names=input_parameters_names,use_test_function=use_test_function,
-                           test_function=test_function,simulation_postprocessing_function=simulation_postprocessing_function,iterations_between_outputs=iterations_between_outputs)
+                           test_function=test_function,simulation_postprocessing_function=simulation_postprocessing_function,iterations_between_outputs=iterations_between_outputs,**kwargs)
 
             
 
