@@ -29,36 +29,42 @@ Once an optimization run of ``Discoveri`` is launched, at each of the `max_itera
 
 ### Input file for ``Discoveri`` (to do)
 
-#### General parameters (to do)
+#### General parameters
 
 ##### Optimization parameters
-- `optimization_method`
-- `num_samples`
-- `num_dimensions`
-- `search_interval`
-- `max_iterations`
-- `input_parameters_names`
-- `iterations_between_outputs`
-- `optimizer_hyperparameters`
+- `optimization_method`(string): the derivative-free optimization techniques that will try to maximise `f(X)`.
+At the moment the available options are:
+  - `"Random Search"`
+  - `"Bayesian Optimization"`
+  - `"Particle Swarm Optimization"`
+  - `"IAPSO"`
+  - `"PSO-TPME"`
+- `max_iterations`(integer): the number of iterations of the optimization process.
+- `num_samples`(integer): the number of samples chosen/drawn at each iterations, each evaluating `f(X)` at a different `X`.
+- `num_dimensions` (integer): number of dimensions of the parameter space where the maximum of `f(X)` is searched.
+- `search_interval`(list of `num_dimensions` lists of 2 elements): in this list, the inferior and superior boundaries of the parameter space to explore (where the different `X` will always belong). The boundaries for each dimension of the explored parameter space must be provided. 
+- `iterations_between_outputs`(integer): number of iterations between outputs, i.e. the output files dump and some message prints at screen.
 
 ##### Function to optimize
-- `use_test_function`                  
-- `test_function`  
-- `simulation_postprocessing_function`
+- `use_test_function`: if `True`, the function `f(X)` to optimize, i.e. maximize, will be `test_function`. Otherwise, it will be `simulation_postprocessing_function`. For both cases, it is recommended to limit the orders of magnitude spanned by the function, e.g. using a `log(f(X))`, instead of `f(X)`. The best technique to limit the orders of magnitude will depend on the considered case.
+In both cases, the users must ensure that the function does not return `nan`,`-inf`,`inf`, and that a real result is always obtained.
+- `test_function`: a real-valued `numpy` function of the position `X`.
+- `simulation_postprocessing_function`: a real-valued function that returns the result of a postprocessing (defined by the users) of a simulation, e.g. the average energy of tracked particles of a Smilei simulation. ``Discoveri`` will prepare the simulation directories, launch the simulations corresponding to the sampled `X` positions and postprocess the results. The users must ensure that the namelist of the used code can be modified to use the parameters in `X` as inputs. For more details, see the next section and the examples folder. 
 
-##### Job preparation and management  in a cluster
-- `starting_directory`                     
-- `home_directory`
-- `path_executable`
-- `path_input_namelist`
-- `path_submission_script`
-- `path_second_submission_script`
-- `input_parameters_names`
-- `name_input_namelist`
-- `command_to_launch_jobs`
-- `name_log_file_simulations`
-- `word_marking_end_of_simulation_in_log_file`
-- `time_to_wait_for_iteration_results`
+##### Job preparation and management  in a cluster (to complete)
+The users must ensure that these parameters are coherent. e.g. the template job submission script must set the correct name for the simulation log files, etc.
+- `input_parameters_names` (list of `num_dimensions` strings): important to modify the namelist to launch simulations. Currently, ``Discoveri`` assumes that a Python namelist is used by the code, where after a line containing `#External_config` a dictionary will be created by ``Discoveri``, containing the names of the parameters to explore and their values. The namelist of the code must be prepared in order to use this dictionary.
+- `starting_directory`(string):                    
+- `home_directory`(string):
+- `path_executable`(string): the path of the executable.
+- `path_input_namelist`(string): the name of the namelist template to launch simulations. This template will be copied and modified by ``Discoveri`` in each simulation folder to include the dictionary with the `input_parameters_names` and the elements of `X`.
+- `path_submission_script`(string): path of the submission script for the job manager system where the simulations will be launched. 
+- `path_second_submission_script`(string): path of the second submission script for the job manager system where the simulations will be launched (f needed).
+- `name_input_namelist`(string): name of the file for the input namelist.
+- `command_to_launch_jobs` (string): the command used to launch jobs in the job managing system where the simulations will be launched, e.g. `sbatch submission_scipt.sh` for SLURM. The users must ensure that all the required libraries are charged in the submission script and that this file has all the permissions to be used.
+- `name_log_file_simulations` (string): name of the log file produced by the simulations.
+- `word_marking_end_of_simulation_in_log_file`(string): a word that if present in the `name_log_file_simulations` of a simulation will tell ``Discoveri`` that the simulation has ended and can be postprocessed.
+- `time_to_wait_for_iteration_results` (float): after launching `num_samples` simulations at each iteration, ``Discoveri`` will wait this time in seconds to check if at least one simulation has ended. The simulations that have ended are postprocessed, evaluating the corresponding `f(X)`. If some simulations are still running, ``Discoveri`` will wait again the same amount of time and check again. This process continues until all the `num_samples` simulations have ended and the next iteration can start after all of them are postprocessed. 
 
 
 #### Available optimization methods and their hyperparameters (to do)
