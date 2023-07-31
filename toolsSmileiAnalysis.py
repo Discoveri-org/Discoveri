@@ -82,7 +82,6 @@ def get_sqrtCharge_times_median_Energy_over_MAD_Energy():
     bool_array = ( (E*electron_mass_MeV>(median_Energy-MAD_Energy)) & (E*electron_mass_MeV>(median_Energy-MAD_Energy)) )
     Q = abs(np.sum(w[bool_array])*charge_conversion_factor); #print("Q = ",Q," pC")
     result = math.sqrt(Q)*median_Energy/MAD_Energy
-    print (Q,MAD_Energy,result,math.isinf(result),math.isinf(np.log(result)) )
     
     try:
         # compute median energy
