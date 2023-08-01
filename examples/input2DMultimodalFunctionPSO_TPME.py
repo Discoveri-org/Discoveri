@@ -78,7 +78,6 @@ if __name__ == '__main__':
                                                number_of_iterations            = number_of_iterations,             \
                                                use_test_function               = use_test_function,                \
                                                test_function                   = test_function,                    \
-                                               iterations_between_outputs      = iterations_between_outputs,       \
-                                               amplitude_mutated_range_2       = 0.1 )
+                                               iterations_between_outputs      = iterations_between_outputs,       )
     # execute optimization run
     optimization_run.execute()
