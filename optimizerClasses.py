@@ -295,39 +295,39 @@ class ParticleSwarmOptimization(Optimizer):
             for idim in range(0,self.number_of_dimensions):
                 default_max_speed[idim]   = self.search_interval[idim][1]-self.search_interval[idim][0]
                     
-            self.max_speed  = kwargs.get('max_speed', default_max_speed)
+            self.max_speed                                     = kwargs.get('max_speed', default_max_speed)
             
             # maximum number of iterations in which "bad" particles are allowed to explore (Ne in the original paper)
-            default_Number_of_iterations_bad_particles = 3
-            self.Number_of_iterations_bad_particles   = kwargs.get('Number_of_iterations_bad_particles', default_Number_of_iterations_bad_particles)
+            default_Number_of_iterations_bad_particles         = 3
+            self.Number_of_iterations_bad_particles            = kwargs.get('Number_of_iterations_bad_particles', default_Number_of_iterations_bad_particles)
             
             # percentage p of the mean to define the classification levels mean*(1-p), mean*(1+p)
-            default_portion_of_mean_classification_levels = 0.02
-            self.portion_of_mean_classification_levels    = kwargs.get('portion_of_mean_classification_levels', default_portion_of_mean_classification_levels )
+            default_portion_of_mean_classification_levels      = 0.02
+            self.portion_of_mean_classification_levels         = kwargs.get('portion_of_mean_classification_levels', default_portion_of_mean_classification_levels )
             
             # "bad" particles that remain "bad" for more than Number_of_iterations_bad_particlesiterations
             # are relocated around the best swarm particle, within an interval (1-a) and (1+a) in all dimensions
             # in this version it will decrease from value a1 to value a2 
-            default_amplitude_mutated_range_1    = 0.4
-            self.amplitude_mutated_range_1       = kwargs.get('amplitude_mutated_range_1', default_amplitude_mutated_range_1 )
+            default_amplitude_mutated_range_1                  = 0.4
+            self.amplitude_mutated_range_1                     = kwargs.get('amplitude_mutated_range_1', default_amplitude_mutated_range_1 )
             
-            default_amplitude_mutated_range_2    = 0.01
-            self.amplitude_mutated_range_2       = kwargs.get('amplitude_mutated_range_2', default_amplitude_mutated_range_2 ) 
+            default_amplitude_mutated_range_2                  = 0.01
+            self.amplitude_mutated_range_2                     = kwargs.get('amplitude_mutated_range_2', default_amplitude_mutated_range_2 ) 
             
             ### Initialize inertia and amplitude of the mutated range
             # w (inertia weight): It controls the impact of the particle's previous velocity on the current velocity update. A higher value of w emphasizes the influence of the particle's momentum, promoting exploration. On the other hand, a lower value of w emphasizes the influence of the current optimum positions, promoting exploitation.
-            self.w                                       = self.w1
+            self.w                                             = self.w1
             # the rms width of the gaussian distribution used to relocate hopeless particles is proportional to this amplitude_mutated_range
-            self.amplitude_mutated_range                 = self.amplitude_mutated_range_1
+            self.amplitude_mutated_range                       = self.amplitude_mutated_range_1
             # value of the last average_function_value_of_swarm
-            self.best_average_function_value             = float('-inf')
+            self.best_average_function_value                   = float('-inf')
             
             print("\n -- hyperparameters used by the optimizer -- ")
             print("c1                                       = ",self.c1)
             print("c2                                       = ",self.c2)
             print("w1                                       = ",self.w1)
             print("w2                                       = ",self.w2)
-            print("initial_speed_over_search_space_size  = ",self.initial_speed_over_search_space_size)
+            print("initial_speed_over_search_space_size     = ",self.initial_speed_over_search_space_size)
             print("max_speed                                = ",self.max_speed )
             print("portion_of_mean_classification_levels    = ",self.portion_of_mean_classification_levels)
             print("Number_of_iterations_bad_particles       = ",self.Number_of_iterations_bad_particles)
