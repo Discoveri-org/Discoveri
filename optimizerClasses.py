@@ -465,6 +465,8 @@ class ParticleSwarmOptimization(Optimizer):
                         #mutation_amplitude   = 2*eta*self.amplitude_mutated_range+(1-self.amplitude_mutated_range)
                         random_number_gaussian = np.random.normal(0, 1, 1)[0]
                         mutation_amplitude     = random_number_gaussian*self.amplitude_mutated_range*(self.search_interval_size[idim])
+                        mutation_amplitude     = np.minimum(mutation_amplitude, 3.*self.amplitude_mutated_range*(self.search_interval_size[idim]))
+                        mutation_amplitude     = np.maximum(mutation_amplitude,-3.*self.amplitude_mutated_range*(self.search_interval_size[idim]))
                         # relocate particle around the swarm's optimum position
                         #self.samples[iparticle].position [idim] = self.optimum_position[idim]*mutation_amplitude
                         self.samples[iparticle].position [idim] = self.optimum_position[idim]*(1+mutation_amplitude)
