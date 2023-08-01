@@ -28,14 +28,14 @@ from toolsSmileiAnalysis import *
 optimization_method                     = "Particle Swarm Optimization" 
 
 #### Parameter space to explore
-number_of_dimensions                          = 2 
+number_of_dimensions                    = 2 
 search_interval                         = [[-10.,10.],[-10.,10.]]
 
-number_of_samples_per_iteration                             = 6 
+number_of_samples_per_iteration         = 6 
 
 #### Optimization parameters
 
-number_of_iterations                          = 15 
+number_of_iterations                    = 15 
 iterations_between_outputs              = 1
 
 #### Diagnostic and output dump periodicity
@@ -70,15 +70,15 @@ if __name__ == '__main__':
     starting_directory = os.getcwd()
     # initialize an optimization run 
     # the optimizer hyperparameters will be the default ones
-    optimization_run   = createOptimizationRun(starting_directory                         = starting_directory,                         \
-                                               optimization_method                        = optimization_method,                        \
-                                               number_of_samples_per_iteration                                = number_of_samples_per_iteration,                                \
-                                               number_of_dimensions                             = number_of_dimensions,                             \
-                                               search_interval                            = search_interval,                            \
-                                               number_of_iterations                             = number_of_iterations,                             \
-                                               use_test_function                          = use_test_function,                          \
-                                               test_function                              = test_function,                              \
-                                               iterations_between_outputs                 = iterations_between_outputs,                 \
+    optimization_run   = createOptimizationRun(starting_directory              = starting_directory,              \
+                                               optimization_method             = optimization_method,             \
+                                               number_of_samples_per_iteration = number_of_samples_per_iteration, \
+                                               number_of_dimensions            = number_of_dimensions,            \
+                                               search_interval                 = search_interval,                 \
+                                               number_of_iterations            = number_of_iterations,            \
+                                               use_test_function               = use_test_function,               \
+                                               test_function                   = test_function,                   \
+                                               iterations_between_outputs      = iterations_between_outputs,      \
                                                c1=0.4,c2=0.4,w=0.6)
     # execute optimization run
     optimization_run.execute()

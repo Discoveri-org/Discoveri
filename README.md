@@ -1,8 +1,8 @@
-# Discoveri
+# :Discoveri
 ## Data-driven Investigation through Simulations on Clusters for the Optimization of the physical Variables' Effects in Regimes of Interest
 
-### About ``Discoveri``
-``Discoveri`` is a Python code to optimize/maximize a function with derivative-free methods. This function can be a `numpy` function or the result of a postprocessing function of simulations on a cluster. In both cases the user can define the function to optimize. In the latter case, ``Discoveri`` prepares and launches automatically the simulations that sample the function to optimize. At the moment, the following optimization methods are implemented: `"Random Search"`,`"Bayesian Optimization"`, `"Particle Swarm Optimization"` (and two of its variants called `"IAPSO"` and `"PSO-TPME"`).
+### About ``:Discoveri``
+``:Discoveri`` is a Python code to optimize/maximize a function with derivative-free methods. This function can be a `numpy` function or the result of a postprocessing function of simulations on a cluster. In both cases the user can define the function to optimize. In the latter case, ``:Discoveri`` prepares and launches automatically the simulations that sample the function to optimize. At the moment, the following optimization methods are implemented: `"Random Search"`,`"Bayesian Optimization"`, `"Particle Swarm Optimization"` (and two of its variants called `"IAPSO"` and `"PSO-TPME"`).
 
 ### Python libraries used
 - `numpy`
@@ -19,7 +19,7 @@
 - `datetime`
 If ``Discoveri`` is used to optimize the result of ``Smilei`` simulations, then also the postprocessing library `happi` will be necessary.
 
-### Basic concepts and terminology used in ``Discoveri``
+### Basic concepts and terminology used in ``:Discoveri``
 ``Discoveri`` optimizes/maximizes the result of `f(X)`, where `f` is a real-valued function of an array `X` called position, with `number_of_dimensions` dimensions. The elements of `X` can vary continuously in the real numbers space. The whole search space from which `X` is drawn is called `search_interval`.
 
 ``Discoveri`` uses derivative-free (also called black-box) optimization methods, used to optimize a function `f` that is costly to evaluate and/or unknown. 
@@ -27,7 +27,7 @@ If the gradients of this function are known, probably there are more efficient m
 
 Once an optimization run of ``Discoveri`` is launched, at each of the `number_of_iterations` iterations the code will perform `number_of_samples_per_iteration` evaluations of the function specified by the user, where each sample is characterized by a different array `X`. If the function is a `numpy` function `f`, these evaluations will simply compute the value of `f(X)`. If the function is a function `f` that computes the result of postprocessing of a simulation, the code will automatically launch the required simulations, wait for their results and postprocess them. Each simulation will have `num_dimension` varying physical quantities stored in its own array `X`.
 
-### Input file for ``Discoveri`` (to do)
+### Input file for ``:Discoveri`` (to do)
 ...
 
 #### General parameters
@@ -48,34 +48,34 @@ At the moment the available options are:
 - `iterations_between_outputs`(integer): number of iterations between outputs, i.e. the output files dump and some message prints at screen.
 
 ##### Function to optimize
-- `use_test_function`: if `True`, the function `f(X)` to optimize, i.e. maximize, will be `test_function`. Otherwise, it will be `simulation_postprocessing_function`. For both cases, it is recommended to limit the orders of magnitude spanned by the function, e.g. using a `log(f(X))`, instead of `f(X)`. The best technique to limit the orders of magnitude will depend on the considered case.
+- `use_test_function`: if `True`, the function `f(X)` to optimize, i.e. maximize, will be `test_function`. Otherwise, it will be `simulation_postprocessing_function`. 
 In both cases, the users must ensure that the function does not return `nan`,`-inf`,`inf`, and that a real result is always obtained.
 - `test_function`: a real-valued `numpy` function of the position `X`.
-- `simulation_postprocessing_function`: a real-valued function that returns the result of a postprocessing (defined by the users) of a simulation, e.g. the average energy of tracked particles of a Smilei simulation. ``Discoveri`` will prepare the simulation directories, launch the simulations corresponding to the sampled `X` positions and postprocess the results. The users must ensure that the namelist of the used code can be modified to use the parameters in `X` as inputs. For more details, see the next section and the examples folder. 
+- `simulation_postprocessing_function`: a real-valued function that returns the result of a postprocessing (defined by the users) of a simulation, e.g. the average energy of tracked particles of a Smilei simulation. ``:Discoveri`` will prepare the simulation directories, launch the simulations corresponding to the sampled `X` positions and postprocess the results. The users must ensure that the namelist of the used code can be modified to use the parameters in `X` as inputs. For more details, see the next section and the examples folder. 
 
 ##### Job preparation and management  in a cluster (to complete)
 The users must ensure that these parameters are coherent. e.g. the template job submission script must set the correct name for the simulation log files, etc.
-- `input_parameters_names` (list of `number_of_dimensions` strings): important to modify the namelist to launch simulations. Currently, ``Discoveri`` assumes that a Python namelist is used by the code, where after a line containing `#External_config` a dictionary will be created by ``Discoveri``, containing the names of the parameters to explore and their values. The namelist of the code must be prepared in order to use this dictionary.
+- `input_parameters_names` (list of `number_of_dimensions` strings): important to modify the namelist to launch simulations. Currently, ``:Discoveri`` assumes that a Python namelist is used by the code, where after a line containing `#External_config` a dictionary will be created by ``:Discoveri``, containing the names of the parameters to explore and their values. The namelist of the code must be prepared in order to use this dictionary.
 - `starting_directory`(string):                    
 - `home_directory`(string):
 - `path_executable`(string): the path of the executable.
-- `path_input_namelist`(string): the name of the namelist template to launch simulations. This template will be copied and modified by ``Discoveri`` in each simulation folder to include the dictionary with the `input_parameters_names` and the elements of `X`.
+- `path_input_namelist`(string): the name of the namelist template to launch simulations. This template will be copied and modified by ``:Discoveri`` in each simulation folder to include the dictionary with the `input_parameters_names` and the elements of `X`.
 - `path_submission_script`(string): path of the submission script for the job manager system where the simulations will be launched. 
 - `path_second_submission_script`(string): path of the second submission script for the job manager system where the simulations will be launched (f needed).
 - `name_input_namelist`(string): name of the file for the input namelist.
 - `command_to_launch_jobs` (string): the command used to launch jobs in the job managing system where the simulations will be launched, e.g. `sbatch submission_scipt.sh` for SLURM. The users must ensure that all the required libraries are charged in the submission script and that this file has all the permissions to be used.
 - `name_log_file_simulations` (string): name of the log file produced by the simulations.
-- `word_marking_end_of_simulation_in_log_file`(string): a word that if present in the `name_log_file_simulations` of a simulation will tell ``Discoveri`` that the simulation has ended and can be postprocessed.
-- `time_to_wait_for_iteration_results` (float): after launching `number_of_samples_per_iteration` simulations at each iteration, ``Discoveri`` will wait this time in seconds to check if at least one simulation has ended. The simulations that have ended are postprocessed, evaluating the corresponding `f(X)`. If some simulations are still running, ``Discoveri`` will wait again the same amount of time and check again. This process continues until all the `number_of_samples_per_iteration` simulations have ended and the next iteration can start after all of them are postprocessed. 
+- `word_marking_end_of_simulation_in_log_file`(string): a word that if present in the `name_log_file_simulations` of a simulation will tell ``:Discoveri`` that the simulation has ended and can be postprocessed.
+- `time_to_wait_for_iteration_results` (float): after launching `number_of_samples_per_iteration` simulations at each iteration, ``:Discoveri`` will wait this time in seconds to check if at least one simulation has ended. The simulations that have ended are postprocessed, evaluating the corresponding `f(X)`. If some simulations are still running, ``:Discoveri`` will wait again the same amount of time and check again. This process continues until all the `number_of_samples_per_iteration` simulations have ended and the next iteration can start after all of them are postprocessed. 
 
 
 #### Available optimization methods and their hyperparameters (to do)
-Following are the optimization techniques currently supported by ``Discoveri``, as well as their hyperparameters. 
+Following are the optimization techniques currently supported by ``:Discoveri``, as well as their hyperparameters. 
 
 - `"Random Search"`: in this optimization method, the array `X` for each sample of each iteration is generated pseudo-randomly, with a uniform distribution within the `search_interval`. 
 Optimizer hyperparameter:
   - `use_Halton_sequence` (default value = `True`): if `True`, a scrambled Halton sequence (https://en.wikipedia.org/wiki/Halton_sequence) is used to draw the samples. Otherwise, they are drawn using `numpy.random.uniform` scaled and shifted for each dimension to draw `X` from the `search_interval` of interest.
-- `"Bayesian Optimization"`: based on the implementation of Gaussian process regression (GPR) provided by the `scikit-learn` library, with an anisotropic Matérn kernel with `nu=1.5`. The length scale of the Matérn kernel was optimized by maximizing the log-marginal-likelihood every time new data is fitted to the model. An expected improvement acquisition function is used.
+- `"Bayesian Optimization"`: based on the implementation of Gaussian process regression (GPR) provided by the `scikit-learn` library, with an anisotropic Matérn kernel with `nu=1.5`. The length scale of the Matérn kernel was optimized by maximizing the log-marginal-likelihood every time new data is fitted to the model. An expected improvement acquisition function is used. Sometimes convergence can be improved by limiting the orders of magnitude spanned by the function to optimize `f(X)`, e.g. using a `log(f(X))`, instead of `f(X)`. The best technique to limit the orders of magnitude will depend on the considered case.
 - `"Particle Swarm Optimization"`: the most common version of Particle Swarm Optimization (PSO), where an inertia term is added to the velocity update, as described in Y. Shi, R.C. Eberhart, 1998 https://ieeexplore.ieee.org/document/699146 . The `num_sample` samples represent the particles of the swarm, with position `X` and a velocity. At each iteration the velocity of the particles are updated adding a cognitive velocity component (proportional to a constant coefficient `c1`), a social velocity component (proportional to a constant coefficient `c2`, `c1+c1<4`) and the velocity at the last iteration multiplied by the constant inertia weight `w` (which must be `<1` to avoid velocity divergence). At each iteration, for each dimension `k`, the velocity component `V_k` and the position component `X_k` of each particle `i` at iteration `t+1` will be updated at each iteration using 
 `V_k(t+1)=w*V_k(t)+c1*rand1*[Best_X_i_k-X_k(t)]+c2*rand2*[Best_X_swarm_k-X_k(t)]` 
 and 
