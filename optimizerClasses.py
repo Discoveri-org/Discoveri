@@ -10,6 +10,9 @@ import os,sys
 from scipy.stats import qmc
 import math
 
+# this import is needed for Adaptive Particle Swarm Optimization
+from generalUtilities import *
+
 # these imports are necessary for the Bayesian Optimization
 import warnings
 from scipy.stats import norm
@@ -113,10 +116,9 @@ class Optimizer:
         self.updateSamplePositionAndFunctionHistory(iteration,isample,function_value)
         # update the optimum value found by the individual swarm particle if necessary 
         sample = self.samples[isample]
-        print("\n ---> Sample", isample, "Position:", sample.position," --> function value at this iteration = ",function_value)           
+        print("\n ---> Sample", isample, "Position:", sample.position," --> function value at this iteration = ",function_value)
         if function_value>sample.optimum_function_value:
-            self.updateSampleOptimumFunctionValueAndOptimumPosition(isample,function_value,sample.position[:])
-        
+            self.updateSampleOptimumFunctionValueAndOptimumPosition(isample,function_value,sample.position[:])          
             
 class RandomSearch(Optimizer):
     def __init__(self, name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs):
@@ -203,30 +205,29 @@ class ParticleSwarmOptimization(Optimizer):
             print("c1                                       = ",self.c1)
             print("c2                                       = ",self.c2)
             print("w                                        = ",self.w)
-            print("initial_speed_over_search_space_size  = ",self.initial_speed_over_search_space_size)
+            print("initial_speed_over_search_space_size     = ",self.initial_speed_over_search_space_size)
             print("max_speed                                = ",self.max_speed )
             print("")
 
-        elif (self.name=="IAPSO"):
-            # from Wanli Yang et al 2021 J. Phys.: Conf. Ser. 1754 012195, doi:10.1088/1742-6596/1754/1/012195
+        elif (self.name=="Adaptive Particle Swarm Optimization"):
+            # from Z.-H. Zhan, J. Zhang, Y. Li; H. S.-H. Chung
+            # IEEE Transactions on Systems, Man, and Cybernetics, Part B (Cybernetics) 39, 6 (2009)
+            # https://ieeexplore.ieee.org/document/4812104
             # in this version of PSO: 
-            #     the c1 coefficient decreases from 2 to 0 with a sin^2 function;
-            #     the c2 coefficient increases from 0 to 2 with a sin^2 function;
-            #     the inertia weight decreases exponentially from w1 to w2
-            # improvement: the velocities are updated and then the positions, like in a PSO, 
-            # and not like in a SPSO, where the position is directly updated (hence the name used in the article IASPSO and the name IAPSO used here).
+            #     the c1,c2,w coefficient are adapted based on the evolutionary state of the swarm
+            #     compared to the version in that reference, no fuzzy transition rule state, i.e. only the values of mu_Sx will be used
             
             # w1 (initial inertia weight)
-            default_value_w1  = 0.9
-            self.w1           = kwargs.get('w1', default_value_w1)
+            default_value_w   = 0.9
+            self.w            = kwargs.get('w', default_value_w)
             
             # w2 (final inertia weight)
-            default_value_w2  = 0.4
-            self.w2           = kwargs.get('w2', default_value_w2)
+            default_value_c1  = 2.
+            self.c1           = kwargs.get('c1', default_value_c1)
             
             # w2 (final inertia weight)
-            default_value_m   = 10
-            self.w2           = kwargs.get('w2', default_value_m)
+            default_value_c2  = 2.
+            self.c2           = kwargs.get('c2', default_value_c2)
             
             # # To avoid too quick particles, this parameter is used to make velocity components 
             # proportional to the search space size in each dimension
@@ -238,23 +239,27 @@ class ParticleSwarmOptimization(Optimizer):
             for idim in range(0,self.number_of_dimensions):
                 default_max_speed[idim]   = self.search_interval[idim][1]-self.search_interval[idim][0]
                     
-            self.max_speed  = kwargs.get('max_speed', default_max_speed)
+            self.max_speed     = kwargs.get('max_speed', default_max_speed)
+            
+            self.history_w     = np.zeros(self.number_of_iterations)
+            self.history_c1    = np.zeros(self.number_of_iterations)
+            self.history_c2    = np.zeros(self.number_of_iterations)
+            self.history_f     = np.zeros(self.number_of_iterations)
+            
+            self.history_w[0]  = self.w 
+            self.history_c1[0] = self.c1
+            self.history_c2[0] = self.c2
+            self.f             = 0.      # evolutionary factor of the swarm
             
             
-            #### Initialize the acceleration coefficients and the inertia
-            # c1 (cognitive parameter): It determines the weight or influence of the particle's personal optimum position on its velocity update. A higher value of c1 gives more importance to the particle's historical optimum position and encourages exploration.
-            self.c1                                      = 2.
-            # c2 (social parameter): It determines the weight or influence of the swarm's swarm optimum position on the particle's velocity update. A higher value of c2 gives more importance to the swarm optimum position and encourages exploitation.
-            self.c2                                      = 1.
-            # w (inertia weight): It controls the impact of the particle's previous velocity on the current velocity update. A higher value of w emphasizes the influence of the particle's momentum, promoting exploration. On the other hand, a lower value of w emphasizes the influence of the current optimum positions, promoting exploitation.
-            self.w                                       = self.w1 
+            self.history_evolutionary_state = []
             
             print("\n -- hyperparameters used by the optimizer -- ")
-            print("w1                                       = ",self.w1)
-            print("w2                                       = ",self.w2)
-            print("m                                        = ",self.m)
+            print("c1 (initial)                          = ",self.c1)
+            print("c2 (initial)                          = ",self.c2)
+            print("w  (initial)                          = ",self.w)
             print("initial_speed_over_search_space_size  = ",self.initial_speed_over_search_space_size)
-            print("max_speed                                = ",self.max_speed )
+            print("max_speed                             = ",self.max_speed )
             print("")
             
         elif (self.name=="PSO-TPME"):
@@ -343,7 +348,7 @@ class ParticleSwarmOptimization(Optimizer):
         # use scrambled Halton sampler to extract initial positions
         self.halton_sampler_position                 = qmc.Halton(d=self.number_of_dimensions, scramble=True)
         halton_sampler_random_position               = self.halton_sampler_position.random(n=self.number_of_samples_per_iteration)
-        self.search_interval_size                    = [search_interval[idim][1]-search_interval[idim][0] for idim in range(0,self.number_of_dimensions)]
+        self.search_interval_size                    = [self.search_interval[idim][1]-self.search_interval[idim][0] for idim in range(0,self.number_of_dimensions)]
         # Initialize each particle the swarm
         for iparticle in range(0,self.number_of_samples_per_iteration):
             position = np.zeros(self.number_of_dimensions)
@@ -371,15 +376,8 @@ class ParticleSwarmOptimization(Optimizer):
         
             
     def updateParticlePositionAndVelocity(self):
-        search_interval_size = [self.search_interval[idim][1]-self.search_interval[idim][0] for idim in range(0,self.number_of_dimensions)]
-        
-        if (self.name=="IAPSO"):
-            self.c1 = 2.*np.sin(np.pi*(self.number_of_iterations-self.iteration_number)/2./self.number_of_iterations)**2
-            self.c2 = 2.*np.sin(np.pi*(self.iteration_number)/2./self.number_of_iterations)**2
-            self.w  = self.w2*(self.w1/self.w2)**(1/(1+self.m*self.iteration_number/self.number_of_iterations))
-            print("\n",self.name," activated; c1 = ",self.c1,"; c2 = ",self.c2,"; w = ",self.w,"\n")
-            
-        elif (self.name=="PSO-TPME"):
+                    
+        if (self.name=="PSO-TPME"):
             self.w  = self.w1-(self.iteration_number+2)*(self.w1-self.w2)/self.number_of_iterations
             self.amplitude_mutated_range  = self.amplitude_mutated_range_1-(self.iteration_number+2)*(self.amplitude_mutated_range_1-self.amplitude_mutated_range_2)/self.number_of_iterations
             print("\n ",self.name," activated; w = ",self.w,", mutation range =",self.amplitude_mutated_range )
@@ -389,7 +387,7 @@ class ParticleSwarmOptimization(Optimizer):
             particle = self.samples[iparticle]
             velocity = particle.velocity
         
-            if ((self.name=="Particle Swarm Optimization") or (self.name=="IAPSO")):
+            if ((self.name=="Particle Swarm Optimization") or (self.name=="Adaptive Particle Swarm Optimization")):
                 for idim in range(self.number_of_dimensions):
                     # extract two random numbers
                     r1                  = random.random()
@@ -486,11 +484,86 @@ class ParticleSwarmOptimization(Optimizer):
                 
     
     def updateSamplesForExploration(self):
+        if (self.name=="Adaptive Particle Swarm Optimization"):
+            self.evaluateEvolutionStateAndAdaptHyperparameters()
         # update position and velocity of particles, store position history
         self.updateParticlePositionAndVelocity()
         self.iteration_number = self.iteration_number+1
         
+    def evaluateEvolutionStateAndAdaptHyperparameters(self):
+        # based on the implementation in the pymoo project https://pymoo.org 
+        # (which is probably more efficient than the one you will find in the next lines of code)
+        
+        # compute for each particle its mean distance from the other particles
+        average_distance_from_other_particles = np.zeros(self.number_of_samples_per_iteration)
+        for iparticle1 in range(0,self.number_of_samples_per_iteration):
+            for iparticle2 in range(0,self.number_of_samples_per_iteration):
+                if (iparticle2==iparticle1):
+                    normalized_distance_1_from_2 = 0.
+                else:
+                    normalized_distance_1_from_2 = normalized_euclidean_distance(self.samples[iparticle1].position,self.samples[iparticle2].position,self.search_interval_size)
+                #print("normalized distance from particle ",iparticle1," to particle ",iparticle2,"is ",normalized_distance_1_from_2)
+                average_distance_from_other_particles[iparticle1] = average_distance_from_other_particles[iparticle1] + normalized_distance_1_from_2
+            average_distance_from_other_particles[iparticle1] = average_distance_from_other_particles[iparticle1]/(self.number_of_samples_per_iteration-1.)
+            #print("average normalized distances from other particles: ",average_distance_from_other_particles[iparticle1])
+        
+        # compute average distance from the other particles of the globally best particle
+        index_globally_best_partice = np.argmax(self.history_samples_positions_and_function_values[self.iteration_number,:,self.number_of_dimensions])
+        d_g                         = average_distance_from_other_particles[index_globally_best_partice]
+        
+        # compute evolutionary factor f
+        d_min  = np.amin(average_distance_from_other_particles)
+        d_max  = np.amax(average_distance_from_other_particles)
+        self.f = (d_g-d_min)/(d_max-d_min+1e-15) # add a small constant to avoid division by 0.
+        self.history_f[self.iteration_number] = self.f
+
+        # compute value of the membership functions mu_Sx for x=1,2,3,4
+        mu_values = np.array([mu_S1(self.f), mu_S2(self.f), mu_S3(self.f), mu_S4(self.f)])
+        
+        # find the highest value for mu_Sx and extract evolutionary state of the Swarm
+        # simple evaluation of the evolutionary state, without the transition rule of the original paper
+        self.evolutionary_state = mu_values.argmax() + 1
+        
+        dictionary_evolutionary_state_swarm = {1:"Exploration",2:"Exploitation",3:"Convergence",4:"Jumping Out"}
+        
+        # set inertia weight based on evolutionary factor f
+        self.w = 1. / (1. + 1.5 * np.exp(-2.6 * self.f))
+        
+        # change acceleration coefficients based on the evolutionary state of the swarm
+        delta = 0.05*(1+np.random.random())
+        
+        if self.evolutionary_state == 1: # Exploration
+            self.c1 = self.c1 + delta
+            self.c2 = self.c2 - delta
+        elif self.evolutionary_state == 2: # Exploitation
+            self.c1 = self.c1 + 0.5 * delta
+            self.c2 = self.c2 - 0.5 * delta
+        elif self.evolutionary_state == 3: # Convergence
+            self.c1 = self.c1 + 0.5 * delta
+            self.c2 = self.c2 + 0.5 * delta
+        elif self.evolutionary_state == 4: # Jumping Out
+            self.c1 = self.c1 - delta
+            self.c2 = self.c2 + delta
+            
+        self.c1 = max(1.5, min(2.5, self.c1))
+        self.c2 = max(1.5, min(2.5, self.c2))
+        
+        if (self.c1 + self.c2) > 4.0:
+            self.c1 = 4.0 * (self.c1 / (self.c1 + self.c2))
+            self.c2 = 4.0 * (self.c2 / (self.c1 + self.c2))
+            
+        # store some history of the varying terms    
+        self.history_c1[self.iteration_number] = self.c1
+        self.history_c2[self.iteration_number] = self.c2
+        self.history_w [self.iteration_number] = self.w
+        self.history_evolutionary_state.append(self.evolutionary_state)
+        
+        print("\n",self.name,", f = ",self.f,"--> evolutionary state: ",dictionary_evolutionary_state_swarm[self.evolutionary_state],"; c1 = ",self.c1,"; c2 = ",self.c2,"; w = ",self.w,"\n")
+
+        
+        
     def operationsAfterUpdateOfOptimumFunctionValueAndPosition(self):
+        
         if (self.name=="PSO-TPME"):
             average_function_value_of_swarm = np.average(self.history_samples_positions_and_function_values[self.iteration_number,:,self.number_of_dimensions])
             average_function_value_of_swarm = np.maximum(average_function_value_of_swarm,self.best_average_function_value)
@@ -528,9 +601,17 @@ class ParticleSwarmOptimization(Optimizer):
      
                 print("Particle ",isample,"with function value ","{:.3f}".format(self.history_samples_positions_and_function_values[self.iteration_number,isample,self.number_of_dimensions])," is classified as ",self.particle_category[isample], \
                             ", remained in this category for",self.particles_number_of_iterations_remained_in_current_category[isample]," iterations")
-                        
-                     
-                     
+                            
+    def APSOLastEvaluationAndDumpHyperparameters(self): # used only for Adaptive Particle Swarm Optimization
+        self.evaluateEvolutionStateAndAdaptHyperparameters()
+        with open('history_evolutionary_factor_f.npy', 'wb') as f:
+            np.save( f, self.history_f)
+        with open('history_c1.npy', 'wb') as f:
+            np.save( f, self.history_c1)
+        with open('history_c2.npy', 'wb') as f:
+            np.save( f, self.history_c2)
+        with open('history_w.npy', 'wb') as f:
+            np.save( f, self.history_w)
                      
             
         
@@ -550,8 +631,8 @@ class BayesianOptimization(Optimizer):
         halton_sampler_random_position = self.halton_sampler_position.random(n=self.number_of_samples_per_iteration)
         
 
-        self.X = np.zeros(shape=(self.number_of_samples_per_iteration, self.number_of_dimensions))    # all positions explored by the Bayesian optimization
-        self.y = np.zeros((self.number_of_samples_per_iteration,1))                             # all the function values found by the Bayesian optimization
+        self.X = np.zeros(shape=(self.number_of_samples_per_iteration, self.number_of_dimensions)) # all positions explored by the Bayesian Optimization
+        self.y = np.zeros((self.number_of_samples_per_iteration,1))                                # all the function values found by the Bayesian Optimization
         # Initialize each sample
         for isample in range(self.number_of_samples_per_iteration):
             position = np.zeros(self.number_of_dimensions)

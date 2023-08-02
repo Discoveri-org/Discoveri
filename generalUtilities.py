@@ -39,7 +39,53 @@ def getOptimumPositionAndFunctionValueAfterOptimization(optimizer):
     return optimum_function_value,optimum_position,best_configuration_number
 
 
-                  
+#### membership functions for Adaptive Particle Swarm Optimization
+def mu_S1(f):
+    if f <= 0.4:
+        return 0
+    elif 0.4 < f <= 0.6:
+        return 5 * f - 2
+    elif 0.6 < f <= 0.7:
+        return 1
+    elif 0.7 < f <= 0.8:
+        return -10 * f + 8
+    elif 0.8 < f:
+        return 0
+
+def mu_S2(f):
+    if f <= 0.2:
+        return 0
+    elif 0.2 < f <= 0.3:
+        return 10 * f - 2
+    elif 0.3 < f <= 0.4:
+        return 1
+    elif 0.4 < f <= 0.6:
+        return -5 * f + 3
+    elif 0.6 < f:
+        return 0
+
+def mu_S3(f):
+    if f <= 0.1:
+        return 1
+    elif 0.1 < f <= 0.3:
+        return -5 * f + 1.5
+    elif 0.3 < f:
+        return 0
+
+def mu_S4(f):
+    if f <= 0.7:
+        return 0
+    elif 0.7 < f <= 0.9:
+        return 5 * f - 3.5
+    elif 0.9 < f:
+        return 1  
+        
+#### end membership functions for Adaptive Particle Swarm Optimization
+
+def normalized_euclidean_distance(position1,position2,search_interval_size):
+    num_dimensions             = np.size(position1)
+    array_search_interval_size = np.asarray(search_interval_size)
+    return np.sqrt( np.sum( np.square( np.divide( (position1 - position2), array_search_interval_size) ) ) )
                   
                   
                   

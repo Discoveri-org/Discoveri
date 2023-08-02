@@ -57,7 +57,7 @@ for run in runs_to_read:
 ##### Plot averages of optimization history, individual optimization histories and error bars
 
 color               = "b"
-optimization_method = "Particle Swarm Optimization" #"Bayesian Optimization"#"Random Search with Halton Sequence"#"Bayesian Optimization"
+optimization_method = "Bayesian Optimization" #"Bayesian Optimization"#"Random Search with Halton Sequence"#"Bayesian Optimization"
 plt.ion()
 plt.figure(1)
 

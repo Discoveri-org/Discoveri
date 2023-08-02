@@ -2,7 +2,7 @@
 ## Data-driven Investigation through Simulations on Clusters for the Optimization of the physical Variables' Effects in Regimes of Interest
 
 ### About ``:Discoveri``
-``:Discoveri`` is a Python code to optimize/maximize a function with derivative-free methods. This function can be a `numpy` function or the result of a postprocessing function of simulations on a cluster. In both cases the user can define the function to optimize. In the latter case, ``:Discoveri`` prepares and launches automatically the simulations that sample the function to optimize. At the moment, the following optimization methods are implemented: `"Random Search"`,`"Bayesian Optimization"`, `"Particle Swarm Optimization"` (and two of its variants called `"IAPSO"` and `"PSO-TPME"`).
+``:Discoveri`` is a Python code to optimize/maximize a function with derivative-free methods. This function can be a `numpy` function or the result of a postprocessing function of simulations on a cluster. In both cases the user can define the function to optimize. In the latter case, ``:Discoveri`` prepares and launches automatically the simulations that sample the function to optimize. At the moment, the following optimization methods are implemented: `"Random Search"`,`"Bayesian Optimization"`, `"Particle Swarm Optimization"` (and two of its variants called `"Adaptive Particle Swarm Optimization"` and `"PSO-TPME"`).
 
 ### Python libraries used
 - `numpy`
@@ -39,7 +39,7 @@ At the moment the available options are:
   - `"Random Search"`
   - `"Bayesian Optimization"`
   - `"Particle Swarm Optimization"`
-  - `"IAPSO"`
+  - `"Adaptive Particle Swarm Optimization"`
   - `"PSO-TPME"`
 - `number_of_iterations`(integer): the number of iterations of the optimization process.
 - `number_of_samples_per_iteration`(integer): the number of samples chosen/drawn at each iteration, each evaluating `f(X)` at a different sample `X`.
@@ -88,14 +88,14 @@ Optimizer hyperparameters:
   - `w` (inertia weight, default value = `0.5`): high values of this coefficient reduce the variations of the velocity of the particle. If provided by the users, they must ensure that it is `<1` to avoid velocity divergence.
   - `initial_speed_over_search_space_size` (default value = `0.1`): the initial velocities of particles in each dimension are drawn from a uniform distribution with boundaries proportional to `initial_speed_over_search_space_size` in that dimension and to the `search_interval` size in that dimension.
   - `max_speed` (maximum speed, default value: an array with elements equal to the respective size of `search_interval` in each dimension).
-- `"IAPSO"` (Inertia weight and Acceleration coefficients PSO): version of PSO based on Wanli Yang et al 2021 J. Phys.: Conf. Ser. 1754 012195, https://iopscience.iop.org/article/10.1088/1742-6596/1754/1/012195
-In this version of PSO the `c1` coefficient decreases from 2 to 0 with a `sin^2` function and the `c2` coefficient increases from 0 to 2 with a `sin^2` function (Eq. 10 of the original article); the inertia weight decreases exponentially from `w1` (<1) to `w2` (<`w1`) (Eq. 7 of the original article), with a speed controlled by the number `m` . Compared to that reference, the velocities are updated and then the positions, like in a PSO and not like in a SPSO, where the position is directly updated (hence the name IAPSO instead of IASPSO used in the article). The initial position, velocity of the particles and the boundary conditions are the same of the PSO.
+- `"Adaptive Particle Swarm Optimization"` (Adaptive PSO): based on from Z.-H. Zhan et al., IEEE Transactions on Systems, Man, and Cybernetics, Part B (Cybernetics) 39, 6 (2009) https://ieeexplore.ieee.org/document/4812104 .
+Based on the evolutionary state of the swarm, the coefficients `c1`, `c2` and the inertia weight `w` are updated as described in that article. Compared to the description in the original reference, no transition base rule is used.
 Optimizer hyperparameters:
-  - `w1` (default value = `0.9`): initial inertia weight.
-  - `w2` (default value = `0.4`): final inertia weight.
-  - `m` (default value = `10`): the highest value for `m`, the quickest the inertia weight will decrease.
+  - `c1` (cognitive acceleration coefficient, default value = `2.0`): as in the `"Particle Swarm Optimization"`, but the value provided by the user is just the initial value of the coefficient.
+  - `c2` (cognitive acceleration coefficient, default value = `2.0`): as in the `"Particle Swarm Optimization"`, but the value provided by the user is just the initial value of the coefficient.
+  - `w` (inertia weight, default value = `0.9`): as in the `"Particle Swarm Optimization"`, but the value provided by the user is just the initial value of the inertia weight.
   - `initial_speed_over_search_space_size` (as for the `"Particle Swarm Optimization"`, but default value = `0.1`).
-
+  - `max_speed`: as in the `"Particle Swarm Optimization"`.
 - `"PSO-TPME"` (PSO with Targeted, Position-Mutated Elitism), `optimizer_hyperparameters = [c1,c2,w1,w2,initial_speed_over_search_space_size,Number_of_iterations_bad_particles,portion_of_mean_classification_levels,amplitude_mutated_range_1,amplitude_mutated_range_2]`: version of the PSO based on T. Shaquarin, B. R. Noack, International Journal of Computational Intelligence Systems (2023) 16:6, https://doi.org/10.1007/s44196-023-00183-z In this version of PSO, the inertia linearly decreases from `w1` (<1) to `w2` (<`w1`) and the coefficients `c1` and `c2` (`c1+c2<4`) are fixed. At each iteration, the mean `mean` of the function values found by the particles is computed. Afterwards, two levels for the function value are defined: `mean*(1+portion_of_mean_classification_levels)` and `mean*(1-portion_of_mean_classification_levels)`, where `portion_of_mean_classification_levels<1`. Depending on the function value they have found compared to these two levels, at each iterations particles are classified as `good` (above the highest level), `bad` (below the lowest level) and `fair` (in between). `good` particles will behave only exploring around their personal optimum position i.e. as if `c2=0`), `bad` particles will behave only converging towards the swarm optimum position (i.e. as if `c1=0`). `fair` particles will behave as the particles of a "classic" PSO. Particles remaining `bad` for `Number_of_iterations_bad_particles` will be marked as `hopeless`, i.e. at the next iteration they will be relocated near the swarm optimum position.
 Compared to that reference, the level from which the levels for `bad`, `fair`, `good` particles are computed cannot decrease over the iterations: i.e. the maximum between the mean of the function values found and the mean found at the previous iteration is used as `mean`;
 furthermore, to reinitialize the particles closer to the optimum one, the mutated_amplitude scale is linearly decreasing from `amplitude_mutated_range_1` to `amplitude_mutated_range_2` (`<amplitude_mutated_range_1`) and the distribution of the coordinates in a dimension near the optimum particle is a gaussian proportional to the `search_space` size in that dimension and the mutated amplitude.
@@ -108,5 +108,6 @@ Optimizer hyperparameters:
   - `amplitude_mutated_range_2` (default value = `0.01`).
   - `Number_of_iterations_bad_particles` (default value = `2`).
   - `initial_speed_over_search_space_size` (as for the `"Particle Swarm Optimization"`, but default value = `0.5`).
+  - `max_speed`: as in the `"Particle Swarm Optimization"`.
   
   
