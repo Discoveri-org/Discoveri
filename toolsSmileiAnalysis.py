@@ -76,12 +76,6 @@ def get_sqrtCharge_times_median_Energy_over_MAD_Energy():
         E              = np.sqrt((1.+p**2))                                   # Particles energy
         # weights
         w              = particle_chunk["w"]
-    median_Energy = electron_mass_MeV*weighted_median( E, weights = w); #print("Median Energy = ",median_Energy," MeV")
-    Energy_deviation = electron_mass_MeV*E-median_Energy    #np.average(E,weights=w))
-    abs_Energy_deviation = np.abs(Energy_deviation);MAD_Energy = weighted_median(abs_Energy_deviation,weights=w)
-    bool_array = ( (E*electron_mass_MeV>(median_Energy-MAD_Energy)) & (E*electron_mass_MeV>(median_Energy-MAD_Energy)) )
-    Q = abs(np.sum(w[bool_array])*charge_conversion_factor); #print("Q = ",Q," pC")
-    result = math.sqrt(Q)*median_Energy/MAD_Energy
     
     try:
         # compute median energy
@@ -134,12 +128,6 @@ def get_sqrtCharge_times_median_Energy_over_MAD_Energy_Percent():
         E              = np.sqrt((1.+p**2))                                   # Particles energy
         # weights
         w              = particle_chunk["w"]
-    median_Energy = electron_mass_MeV*weighted_median( E, weights = w); #print("Median Energy = ",median_Energy," MeV")
-    Energy_deviation = electron_mass_MeV*E-median_Energy    #np.average(E,weights=w))
-    abs_Energy_deviation = np.abs(Energy_deviation);MAD_Energy = weighted_median(abs_Energy_deviation,weights=w)
-    bool_array = ( (E*electron_mass_MeV>(median_Energy-MAD_Energy)) & (E*electron_mass_MeV>(median_Energy-MAD_Energy)) )
-    Q = abs(np.sum(w[bool_array])*charge_conversion_factor); #print("Q = ",Q," pC")
-    result = math.sqrt(Q)*median_Energy/MAD_Energy
     
     try:
         # compute median energy
