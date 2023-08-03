@@ -49,16 +49,16 @@ class SwarmParticle(Sample):
 class Optimizer:
     def __init__(self, name = "", number_of_samples_per_iteration = 1, number_of_dimensions = 1, search_interval = [], number_of_iterations = 1, **kwargs ):
         
-        self.name                        = name                   # name of the optimizer
-        self.number_of_iterations              = number_of_iterations         # maximum number of iterations
-        self.number_of_samples_per_iteration                 = number_of_samples_per_iteration            # number of samples drawn at each iteration
-        self.number_of_dimensions              = number_of_dimensions         # number of dimensions of the parameter space to explore
-        self.optimizer_hyperparameters   = kwargs
-        self.search_interval             = search_interval        # list of lists, with the boundaries 
-        self.optimum_position            = None                   # optimum position found by the optimizer, yielding the swarm_optimum_function_value
-        self.optimum_function_value      = float('-inf')          # maximum value found of the function to optimize, in all the the swarm
-        self.samples                     = []                     # array containing the explored samples at the present iterations
-        self.iteration_number            = 0                      # present iteration number 
+        self.name                            = name                   # name of the optimizer
+        self.number_of_iterations            = number_of_iterations         # maximum number of iterations
+        self.number_of_samples_per_iteration = number_of_samples_per_iteration            # number of samples drawn at each iteration
+        self.number_of_dimensions            = number_of_dimensions         # number of dimensions of the parameter space to explore
+        self.optimizer_hyperparameters       = kwargs
+        self.search_interval                 = search_interval        # list of lists, with the boundaries 
+        self.optimum_position                = None                   # optimum position found by the optimizer, yielding the swarm_optimum_function_value
+        self.optimum_function_value          = float('-inf')          # maximum value found of the function to optimize, in all the the swarm
+        self.samples                         = []                     # array containing the explored samples at the present iterations
+        self.iteration_number                = 0                      # present iteration number 
         # history of the positions traveled by the particles
         # dimension 0 : iteration
         # dimension 1 : sample number

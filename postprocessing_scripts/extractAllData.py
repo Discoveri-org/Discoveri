@@ -1,6 +1,5 @@
 ##### Author      : Francesco Massimo (Laboratoire de Physique des Gaz et des Plasmas, CNRS)
 ##### Purpose     : extract and visualize all data from all runs in the current working directory
-##### Last update : 29/07/2023
 
 import numpy as np
 import matplotlib.pyplot as plt
