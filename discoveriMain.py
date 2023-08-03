@@ -224,7 +224,9 @@ class optimizationRun:
                 with open('history_particles_positions_and_function_values_iteration_'+str(iteration).zfill(5)+'.npy', 'wb') as f:
                     np.save( f, self.optimizer.history_samples_positions_and_function_values[0:iteration+1,:,:] )
                 with open('time_to_complete_iterations_up_to_iteration_'+str(iteration).zfill(5)+'.npy', 'wb') as f:
-                    np.save( f,np.asarray(self.time_to_complete_iterations))
+                    np.save( f,np.asarray(self.time_to_complete_iterations[0:iteration+1]))
+                if (self.optimizer.name=="Adaptive Particle Swarm Optimization"):
+                    self.optimizer.APSOSavePartialHyperparametersHistory()
               
     
 

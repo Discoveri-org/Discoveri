@@ -659,6 +659,17 @@ class ParticleSwarmOptimization(Optimizer):
             np.save( f, self.history_c2)
         with open('history_w.npy', 'wb') as f:
             np.save( f, self.history_w)
+            
+    def APSOSavePartialHyperparametersHistory(self):
+        with open('history_evolutionary_factor_f_up_to_iteration_'+str(self.iteration_number).zfill(5)+'.npy', 'wb') as f:
+            np.save( f, self.history_f[0:self.iteration_number])
+        with open('history_c1_up_to_iteration_'+str(self.iteration_number).zfill(5)+'.npy', 'wb') as f:
+            np.save( f, self.history_c1[0:self.iteration_number])
+        with open('history_c2_up_to_iteration_'+str(self.iteration_number).zfill(5)+'.npy', 'wb') as f:
+            np.save( f, self.history_c2[0:self.iteration_number])
+        with open('history_w_up_to_iteration_'+str(self.iteration_number).zfill(5)+'.npy', 'wb') as f:
+            np.save( f, self.history_w[0:self.iteration_number])
+        
                      
             
         
