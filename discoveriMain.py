@@ -90,7 +90,12 @@ class optimizationRun:
                                                               number_of_samples_per_iteration=number_of_samples_per_iteration, number_of_dimensions=number_of_dimensions,         \
                                                               search_interval=search_interval, number_of_iterations=number_of_iterations, \
                                                               **kwargs )
-                                                              #additional_arguments=[use_Halton_sequence])
+        elif (self.optimization_method == "Grid Search"):
+            self.optimizer             = GridSearch           (name=optimization_method,                                      \
+                                                              number_of_samples_per_iteration=number_of_samples_per_iteration, number_of_dimensions=number_of_dimensions,         \
+                                                              search_interval=search_interval, number_of_iterations=number_of_iterations, \
+                                                              **kwargs )
+                                                              
         elif (self.optimization_method == "Bayesian Optimization"):
             self.optimizer             = BayesianOptimization (name=optimization_method,                                      \
                                                               number_of_samples_per_iteration=number_of_samples_per_iteration, number_of_dimensions=number_of_dimensions,         \

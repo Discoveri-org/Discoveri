@@ -18,13 +18,6 @@ from toolsSmileiAnalysis import *
 ############# Parameters for a generic optimization method ################
 ###########################################################################
 
-
-#### Optimization method options: 
-#### - "Particle Swarm Optmization"
-#### - "Random Search"
-#### - "Bayesian Optimization"
-#### - "Adaptive Particle Swarm Optimization"
-#### - "PSO-TPME"
 optimization_method                     = "PSO-TPME" 
 
 #### Parameter space to explore

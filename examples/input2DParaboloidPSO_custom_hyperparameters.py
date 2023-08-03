@@ -20,11 +20,7 @@ from toolsSmileiAnalysis import *
 
 
 #### Optimization method options: 
-#### - "Particle Swarm Optmization"
-#### - "Random Search"
-#### - "Bayesian Optimization"
-#### - "Adaptive Particle Swarm Optimization"
-#### - "PSO-TPME"
+
 optimization_method                     = "Particle Swarm Optimization" 
 
 #### Parameter space to explore

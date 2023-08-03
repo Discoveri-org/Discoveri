@@ -2,7 +2,7 @@
 ## Data-driven Investigation through Simulations on Clusters for the Optimization of the physical Variables' Effects in Regimes of Interest
 
 ### About ``:Discoveri``
-``:Discoveri`` is a Python code to optimize/maximize a function with derivative-free methods. This function can be a `numpy` function or the result of a postprocessing function of simulations on a cluster. In both cases the user can define the function to optimize. In the latter case, ``:Discoveri`` prepares and launches automatically the simulations that sample the function to optimize. At the moment, the following optimization methods are implemented: `"Random Search"`,`"Bayesian Optimization"`, `"Particle Swarm Optimization"` (and two of its variants called `"Adaptive Particle Swarm Optimization"` and `"PSO-TPME"`).
+``:Discoveri`` is a Python code to optimize/maximize a function with derivative-free methods. This function can be a `numpy` function or the result of a postprocessing function of simulations on a cluster. In both cases the user can define the function to optimize. In the latter case, ``:Discoveri`` prepares and launches automatically the simulations that sample the function to optimize. At the moment, the following optimization methods are implemented: `"Grid Search"`, `"Random Search"`,`"Bayesian Optimization"`, `"Particle Swarm Optimization"` (and two of its variants called `"Adaptive Particle Swarm Optimization"` and `"PSO-TPME"`).
 
 ### Python libraries used
 - `numpy`
@@ -17,6 +17,7 @@
 - `math`
 - `random`
 - `datetime`
+
 If ``Discoveri`` is used to optimize the result of ``Smilei`` simulations, then also the postprocessing library `happi` will be necessary.
 
 ### Basic concepts and terminology used in ``:Discoveri``
@@ -36,6 +37,7 @@ Once an optimization run of ``Discoveri`` is launched, at each of the `number_of
 ##### Optimization parameters
 - `optimization_method`(string): the derivative-free optimization techniques that will try to maximise `f(X)`.
 At the moment the available options are:
+  - `"Grid Search"`
   - `"Random Search"`
   - `"Bayesian Optimization"`
   - `"Particle Swarm Optimization"`
@@ -72,6 +74,10 @@ The users must ensure that these parameters are coherent. e.g. the template job 
 #### Available optimization methods and their hyperparameters (to do)
 Following are the optimization techniques currently supported by ``:Discoveri``, as well as their hyperparameters. 
 
+- `"Grid Search"`: the arrays `X` of the `number_of_samples_per_iteration` samples are evenly distributed in each dimension `idim` between `search_interval[idim][0]` and `search_interval[idim][1]`, with `samples_per_dimension[idim]` samples.
+NOTE: this optimizer only supports `number_of_iterations = 1`.
+Optimizer hyperparameters:
+  - `samples_per_dimension` a list of `number_of_dimensions` integers, whose product must be equal to `number_of_samples_per_iteration`.
 - `"Random Search"`: in this optimization method, the array `X` for each sample of each iteration is generated pseudo-randomly, with a uniform distribution within the `search_interval`. 
 Optimizer hyperparameter:
   - `use_Halton_sequence` (default value = `True`): if `True`, a scrambled Halton sequence (https://en.wikipedia.org/wiki/Halton_sequence) is used to draw the samples. Otherwise, they are drawn using `numpy.random.uniform` scaled and shifted for each dimension to draw `X` from the `search_interval` of interest.

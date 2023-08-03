@@ -144,7 +144,7 @@ def get_sqrtCharge_times_median_Energy_over_MAD_Energy_Percent():
         Energy_spread_percent = (MAD_Energy)/(median_Energy+1.e-15)*100.
         result = math.sqrt(Q)/Energy_spread_percent
         #print (Q,MAD_Energy,result,math.isinf(result),math.isinf(np.log(result)) )
-        if (math.isinf(result) or math.isnan(result) or (MAD_Energy<1.e-2) or (result<1.e-1) or (Q<10.) :
+        if (math.isinf(result) or math.isnan(result) or (MAD_Energy<1.e-2) or (result<1.e-1) or (Q<10.)) :
             return 0.
         else:
             return np.maximum(result,0.)

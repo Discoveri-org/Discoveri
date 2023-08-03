@@ -127,7 +127,10 @@ class RandomSearch(Optimizer):
         self.total_sample_index       = 0
         self.random_position_sequence = self.sampler_for_position.random(n=self.number_of_samples_per_iteration*self.number_of_iterations)
         
-        self.use_Halton_sequence = kwargs.get('use_Halton_sequence', True)
+        
+        default_value_use_Halton_sequence  = True
+        self.use_Halton_sequence           = kwargs.get('use_Halton_sequence', default_value_use_Halton_sequence)
+
         # Initialize each sample
         for isample in range(self.number_of_samples_per_iteration):
             position = np.zeros(self.number_of_dimensions)
@@ -145,7 +148,7 @@ class RandomSearch(Optimizer):
             self.total_sample_index = self.total_sample_index+1
             print("\n ---> Sample", isample, "Position:", position)  
             self.history_samples_positions_and_function_values[0,isample,0:self.number_of_dimensions] = position[:]
-        print("\n RandomSearch initialized")
+        print("\n Random Search initialized")
         
     def pseudorandomlyExtractNewPositionsToExplore(self):
         for isample in range(0,self.number_of_samples_per_iteration):
@@ -164,6 +167,50 @@ class RandomSearch(Optimizer):
     def updateSamplesForExploration(self):
         # randomly choose new samples, store position history
         self.pseudorandomlyExtractNewPositionsToExplore()
+
+class GridSearch(Optimizer):
+    def __init__(self, name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs):
+        super().__init__(name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs)
+        
+        if ( self.number_of_iterations != 1 ):
+            print("ERROR: Grid Search only supports number_of_iterations = 1")
+            sys.exit()
+            
+        default_samples_per_dimension  = [self.number_of_samples_per_iteration]
+        self.samples_per_dimension     = kwargs.get('samples_per_dimension', default_samples_per_dimension)
+        
+        self.samples_per_dimension     = np.asarray(self.samples_per_dimension)
+        
+        if ( np.size(self.samples_per_dimension) != self.number_of_dimensions):
+            print("ERROR: samples_per_dimension must be a list of number_of_dimensions integers")
+            sys.exit()
+        
+        if ( np.prod(self.samples_per_dimension) != self.number_of_samples_per_iteration ):
+            print("ERROR: samples_per_dimension must be a list of integers, whose product is number_of_samples_per_iteration")
+            sys.exit()
+        
+        print("\n -- hyperparameters used by the optimizer -- ")
+        print("samples_per_dimension : ",self.samples_per_dimension)
+        
+        
+        # create population of samples 
+        for isample in range(self.number_of_samples_per_iteration):
+            random_sample          = RandomSearchSample(np.zeros(self.number_of_dimensions))
+            self.samples.append(random_sample)
+        
+        # fill the population with the correct position, print and save
+        position_arrays_along_dimensions = [np.linspace(self.search_interval[idim][0], self.search_interval[idim][1], num=self.samples_per_dimension[idim]) for idim in range(self.number_of_dimensions)]
+        mesh_grid       = np.meshgrid(*position_arrays_along_dimensions, indexing='ij')
+        flat_mesh_grid  = np.array(mesh_grid).reshape(number_of_dimensions, -1).T; #print(flat_mesh_grid)
+        
+        for isample in range(0,self.number_of_samples_per_iteration):
+            for idim in range(self.number_of_dimensions):
+                self.samples[isample].position[idim]=flat_mesh_grid[isample, idim] 
+            print("\n ---> Sample", isample, "Position:", self.samples[isample].position)  
+            self.history_samples_positions_and_function_values[0,isample,0:self.number_of_dimensions] = self.samples[isample].position[:]
+            
+        print("\n Grid Search initialized")
+
     
 class ParticleSwarmOptimization(Optimizer):
     # in this Optimizer, each sample is a particle of the swarm
