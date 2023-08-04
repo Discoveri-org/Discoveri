@@ -218,6 +218,15 @@ class ParticleSwarmOptimization(Optimizer):
         super().__init__(name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs)
         
         
+        
+        # maximum speed for a particle, it must be a vector with number_of_dimensions elements
+        default_max_speed = np.zeros(self.number_of_dimensions)
+        for idim in range(0,self.number_of_dimensions):
+            default_max_speed[idim]   = 0.2*(self.search_interval[idim][1]-self.search_interval[idim][0])
+                
+        self.max_speed                                     = kwargs.get('max_speed', default_max_speed)
+        
+        
         if (self.name=="Particle Swarm Optimization"):
 
             # "classic" version of Particle Swarm Optimization, but using an inertia term to avoid divergence
@@ -240,13 +249,6 @@ class ParticleSwarmOptimization(Optimizer):
             # proportional to the search space size in each dimension
             default_value_initial_speed_over_search_space_size = 0.1
             self.initial_speed_over_search_space_size          = kwargs.get('initial_speed_over_search_space_size', default_value_initial_speed_over_search_space_size)
-            
-            # maximum speed for a particle, it must be a vector with number_of_dimensions elements
-            default_max_speed = np.zeros(self.number_of_dimensions)
-            for idim in range(0,self.number_of_dimensions):
-                default_max_speed[idim]   = self.search_interval[idim][1]-self.search_interval[idim][0]
-                    
-            self.max_speed  = kwargs.get('max_speed', default_max_speed)
             
             print("\n -- hyperparameters used by the optimizer -- ")
             print("c1                                       = ",self.c1)
@@ -280,13 +282,6 @@ class ParticleSwarmOptimization(Optimizer):
             # proportional to the search space size in each dimension
             default_value_initial_speed_over_search_space_size = 0.1
             self.initial_speed_over_search_space_size          = kwargs.get('initial_speed_over_search_space_size', default_value_initial_speed_over_search_space_size)
-            
-            # maximum speed for a particle, it must be a vector with number_of_dimensions elements
-            default_max_speed = np.zeros(self.number_of_dimensions)
-            for idim in range(0,self.number_of_dimensions):
-                default_max_speed[idim]   = self.search_interval[idim][1]-self.search_interval[idim][0]
-                    
-            self.max_speed     = kwargs.get('max_speed', default_max_speed)
             
             self.history_w     = np.zeros(self.number_of_iterations)
             self.history_c1    = np.zeros(self.number_of_iterations)
@@ -341,13 +336,6 @@ class ParticleSwarmOptimization(Optimizer):
             # proportional to the search space size in each dimension
             default_value_initial_speed_over_search_space_size = 0.5
             self.initial_speed_over_search_space_size          = kwargs.get('initial_speed_over_search_space_size', default_value_initial_speed_over_search_space_size)
-            
-            # maximum speed for a particle, it must be a vector with number_of_dimensions elements
-            default_max_speed = np.zeros(self.number_of_dimensions)
-            for idim in range(0,self.number_of_dimensions):
-                default_max_speed[idim]   = self.search_interval[idim][1]-self.search_interval[idim][0]
-                    
-            self.max_speed                                     = kwargs.get('max_speed', default_max_speed)
             
             # maximum number of iterations in which "bad" particles are allowed to explore (Ne in the original paper)
             default_Number_of_iterations_bad_particles         = 3
@@ -450,7 +438,8 @@ class ParticleSwarmOptimization(Optimizer):
                 # limit the velocity to the interval [-max_speed,max_speed]
                 for idim in range(0,self.number_of_dimensions):
                     self.samples[iparticle].velocity[idim]      = np.clip(velocity[idim],-self.max_speed[idim],self.max_speed[idim])
-                    self.samples[iparticle].position           += velocity
+                self.samples[iparticle].position += self.samples[iparticle].velocity
+                
             
             elif (self.name=="PSO-TPME"):
                 if (self.particle_category[iparticle]=="good"): # update position only using exploitation of personal best
@@ -466,7 +455,7 @@ class ParticleSwarmOptimization(Optimizer):
                     # limit the velocity to the interval [-max_speed,max_speed]
                     for idim in range(0,self.number_of_dimensions):
                         self.samples[iparticle].velocity[idim]      = np.clip(velocity[idim],-self.max_speed[idim],self.max_speed[idim])
-                        self.samples[iparticle].position           += velocity
+                    self.samples[iparticle].position           += self.samples[iparticle].velocity
                 
                 elif (self.particle_category[iparticle]=="fair"): # update position as in a classic PSO
                     for idim in range(self.number_of_dimensions):
@@ -484,7 +473,7 @@ class ParticleSwarmOptimization(Optimizer):
                     # limit the velocity to the interval [-max_speed,max_speed]
                     for idim in range(0,self.number_of_dimensions):
                         self.samples[iparticle].velocity[idim]      = np.clip(velocity[idim],-self.max_speed[idim],self.max_speed[idim])
-                        self.samples[iparticle].position           += velocity
+                    self.samples[iparticle].position           += self.samples[iparticle].velocity
                     
                 elif (self.particle_category[iparticle]=="bad"):
                     for idim in range(self.number_of_dimensions):
@@ -542,6 +531,7 @@ class ParticleSwarmOptimization(Optimizer):
         # (which is probably more efficient than the one you will find in the next lines of code)
         
         # compute for each particle its mean distance from the other particles
+        #print(self.history_samples_positions_and_function_values)
         average_distance_from_other_particles = np.zeros(self.number_of_samples_per_iteration)
         for iparticle1 in range(0,self.number_of_samples_per_iteration):
             for iparticle2 in range(0,self.number_of_samples_per_iteration):
@@ -555,8 +545,8 @@ class ParticleSwarmOptimization(Optimizer):
             #print("average normalized distances from other particles: ",average_distance_from_other_particles[iparticle1])
         
         # compute average distance from the other particles of the globally best particle
-        index_globally_best_partice = np.argmax(self.history_samples_positions_and_function_values[self.iteration_number,:,self.number_of_dimensions])
-        d_g                         = average_distance_from_other_particles[index_globally_best_partice]
+        index_globally_best_particle = np.argmax(self.history_samples_positions_and_function_values[self.iteration_number,:,self.number_of_dimensions])
+        d_g                         = average_distance_from_other_particles[index_globally_best_particle]
         
         # compute evolutionary factor f
         d_min  = np.amin(average_distance_from_other_particles)
