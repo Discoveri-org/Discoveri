@@ -218,44 +218,48 @@ class ParticleSwarmOptimization(Optimizer):
         super().__init__(name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs)
         
         
+        # c1 (cognitive parameter): It determines the weight or influence of the particle's personal optimum position on its velocity update
+        # A higher value of c1 gives more importance to the particle's historical optimum position and encourages exploration.
+        default_value_c1  = 2.
+        self.c1           = kwargs.get('c1', default_value_c1)
+        
+        # c2 (social parameter): It determines the weight or influence of the swarm's swarm optimum position on the particle's velocity update.
+        # A higher value of c2 gives more importance to the swarm optimum position and encourages its exploitation.
+        default_value_c2  = 2.
+        self.c2           = kwargs.get('c2', default_value_c2)
         
         # maximum speed for a particle, it must be a vector with number_of_dimensions elements
         default_max_speed = np.zeros(self.number_of_dimensions)
         for idim in range(0,self.number_of_dimensions):
-            default_max_speed[idim]   = 0.2*(self.search_interval[idim][1]-self.search_interval[idim][0])
+            default_max_speed[idim]   = 0.3*(self.search_interval[idim][1]-self.search_interval[idim][0])
                 
         self.max_speed                                     = kwargs.get('max_speed', default_max_speed)
         
+        # # To avoid too quick particles, this parameter is used to make velocity components 
+        # proportional to the search space size in each dimension
+        default_value_initial_speed_over_search_space_size = 0.1
+        self.initial_speed_over_search_space_size          = kwargs.get('initial_speed_over_search_space_size', default_value_initial_speed_over_search_space_size)
+        
+        print("\n -- hyperparameters used by the optimizer -- ")
+        
+        print("initial_speed_over_search_space_size     = ",self.initial_speed_over_search_space_size)
+        print("max_speed                                = ",self.max_speed )
         
         if (self.name=="Particle Swarm Optimization"):
 
             # "classic" version of Particle Swarm Optimization, but using an inertia term to avoid divergence
             # as described in Y. Shi, R.C. Eberhart, 1998, https://ieeexplore.ieee.org/document/69914
+            # the acceleration coefficients and the inertia weight are kept constant
             
-            # c1 (cognitive parameter): It determines the weight or influence of the particle's personal optimum position on its velocity update
-            # A higher value of c1 gives more importance to the particle's historical optimum position and encourages exploration.
-            default_value_c1 = 0.5
-            self.c1          = kwargs.get('c1', default_value_c1)
-            # c2 (social parameter): It determines the weight or influence of the swarm's swarm optimum position on the particle's velocity update.
-            # A higher value of c2 gives more importance to the swarm optimum position and encourages its exploitation.
-            default_value_c2 = 0.5
-            self.c2          = kwargs.get('c2', default_value_c2)
             # w (inertia weight): It controls the impact of the particle's previous velocity on the current velocity update. 
             # A higher value of w emphasizes the influence of the particle's momentum, promoting exploration.
             # On the other hand, a lower value of w emphasizes the influence of the current optimum positions, promoting exploitation.
-            default_value_w  = 0.5
+            default_value_w  = 0.9
             self.w           = kwargs.get('w', default_value_w)
-            # # To avoid too quick particles, this parameter is used to make velocity components 
-            # proportional to the search space size in each dimension
-            default_value_initial_speed_over_search_space_size = 0.1
-            self.initial_speed_over_search_space_size          = kwargs.get('initial_speed_over_search_space_size', default_value_initial_speed_over_search_space_size)
             
-            print("\n -- hyperparameters used by the optimizer -- ")
             print("c1                                       = ",self.c1)
             print("c2                                       = ",self.c2)
             print("w                                        = ",self.w)
-            print("initial_speed_over_search_space_size     = ",self.initial_speed_over_search_space_size)
-            print("max_speed                                = ",self.max_speed )
             print("")
 
         elif (self.name=="Adaptive Particle Swarm Optimization"):
@@ -267,21 +271,8 @@ class ParticleSwarmOptimization(Optimizer):
             #     compared to the version in that reference, no fuzzy transition rule state, i.e. only the values of mu_Sx will be used
             
             # w1 (initial inertia weight)
-            default_value_w   = 0.9
-            self.w            = kwargs.get('w', default_value_w)
-            
-            # w2 (final inertia weight)
-            default_value_c1  = 2.
-            self.c1           = kwargs.get('c1', default_value_c1)
-            
-            # w2 (final inertia weight)
-            default_value_c2  = 2.
-            self.c2           = kwargs.get('c2', default_value_c2)
-            
-            # # To avoid too quick particles, this parameter is used to make velocity components 
-            # proportional to the search space size in each dimension
-            default_value_initial_speed_over_search_space_size = 0.1
-            self.initial_speed_over_search_space_size          = kwargs.get('initial_speed_over_search_space_size', default_value_initial_speed_over_search_space_size)
+            default_value_w    = 0.9
+            self.w             = kwargs.get('w', default_value_w)
             
             self.history_w     = np.zeros(self.number_of_iterations)
             self.history_c1    = np.zeros(self.number_of_iterations)
@@ -296,12 +287,9 @@ class ParticleSwarmOptimization(Optimizer):
             
             self.history_evolutionary_state = []
             
-            print("\n -- hyperparameters used by the optimizer -- ")
             print("c1 (initial)                          = ",self.c1)
             print("c2 (initial)                          = ",self.c2)
             print("w  (initial)                          = ",self.w)
-            print("initial_speed_over_search_space_size  = ",self.initial_speed_over_search_space_size)
-            print("max_speed                             = ",self.max_speed )
             print("")
             
         elif (self.name=="PSO-TPME"):
@@ -315,15 +303,6 @@ class ParticleSwarmOptimization(Optimizer):
             #   and the distribution of the coordinates near the optimum particle is a gaussian proportional to the search space size
             #   in that dimension and the mutated amplitude
             
-            # c1 (cognitive parameter): It determines the weight or influence of the particle's personal optimum position on its velocity update
-            # A higher value of c1 gives more importance to the particle's historical optimum position and encourages exploration.
-            default_value_c1 = 1.5
-            self.c1          = kwargs.get('c1', default_value_c1)
-            # c2 (social parameter): It determines the weight or influence of the swarm's swarm optimum position on the particle's velocity update.
-            # A higher value of c2 gives more importance to the swarm optimum position and encourages its exploitation.
-            default_value_c2 = 1.5
-            self.c2          = kwargs.get('c2', default_value_c2)
-            
             # w1 (initial inertia weight)
             default_value_w1  = 0.9
             self.w1           = kwargs.get('w1', default_value_w1)
@@ -331,11 +310,6 @@ class ParticleSwarmOptimization(Optimizer):
             # w2 (final inertia weight)
             default_value_w2  = 0.4
             self.w2           = kwargs.get('w2', default_value_w2)
-            
-            # # To avoid too quick particles, this parameter is used to make velocity components 
-            # proportional to the search space size in each dimension
-            default_value_initial_speed_over_search_space_size = 0.5
-            self.initial_speed_over_search_space_size          = kwargs.get('initial_speed_over_search_space_size', default_value_initial_speed_over_search_space_size)
             
             # maximum number of iterations in which "bad" particles are allowed to explore (Ne in the original paper)
             default_Number_of_iterations_bad_particles         = 3
@@ -362,13 +336,10 @@ class ParticleSwarmOptimization(Optimizer):
             # value of the last average_function_value_of_swarm
             self.best_average_function_value                   = float('-inf')
             
-            print("\n -- hyperparameters used by the optimizer -- ")
             print("c1                                       = ",self.c1)
             print("c2                                       = ",self.c2)
             print("w1                                       = ",self.w1)
             print("w2                                       = ",self.w2)
-            print("initial_speed_over_search_space_size     = ",self.initial_speed_over_search_space_size)
-            print("max_speed                                = ",self.max_speed )
             print("portion_of_mean_classification_levels    = ",self.portion_of_mean_classification_levels)
             print("Number_of_iterations_bad_particles       = ",self.Number_of_iterations_bad_particles)
             print("amplitude_mutated_range_1                = ",self.amplitude_mutated_range_1)

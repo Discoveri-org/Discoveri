@@ -85,7 +85,7 @@ class optimizationRun:
         
         print("\n Initializing the optimizer\n\n")
 
-        if (self.optimization_method == "Random Search"):
+        if (self.optimization_method   == "Random Search"):
             self.optimizer             = RandomSearch         (name=optimization_method,                                      \
                                                               number_of_samples_per_iteration=number_of_samples_per_iteration, number_of_dimensions=number_of_dimensions,         \
                                                               search_interval=search_interval, number_of_iterations=number_of_iterations, \
@@ -101,7 +101,7 @@ class optimizationRun:
                                                               number_of_samples_per_iteration=number_of_samples_per_iteration, number_of_dimensions=number_of_dimensions,         \
                                                               search_interval=search_interval, number_of_iterations=number_of_iterations, \
                                                               **kwargs )
-        elif (self.optimization_method   == "Particle Swarm Optimization"):
+        elif (self.optimization_method == "Particle Swarm Optimization"):
             # initialize a swarm of particles
             self.optimizer             = ParticleSwarmOptimization(name=optimization_method,                                  \
                                                               number_of_samples_per_iteration=number_of_samples_per_iteration, number_of_dimensions=number_of_dimensions,         \
@@ -109,7 +109,7 @@ class optimizationRun:
                                                               **kwargs )
                                                               
                                                               
-        elif (self.optimization_method   == "Adaptive Particle Swarm Optimization"):
+        elif (self.optimization_method == "Adaptive Particle Swarm Optimization"):
             # initialize a swarm of particles
             self.optimizer             = ParticleSwarmOptimization(name=optimization_method,                                  \
                                                               number_of_samples_per_iteration=number_of_samples_per_iteration, number_of_dimensions=number_of_dimensions,         \

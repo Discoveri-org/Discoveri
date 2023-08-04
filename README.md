@@ -89,11 +89,11 @@ and
 where `rand1` and `rand2` are two random numbers from between `0` and `1`, and `Best_X_i_k` and `Best_X_swarm` are the best positions `X` found so far respectively by the particle `i` and by the entire swarm.
 The optimum positions `Best_X_i` are updated if better positions are found the particles `i`. Coherently, if one of these positions is better than the best one found by the swarm so far,  `Best_X_swarm` is updated. The particles initial positions are initialized with a scrambled Halton sequence. Particles crossing a `search_interval` boundary in a dimension will have their coordinate in that dimension reinitialized, drawn from a uniform distribution in the `search_domain` span in that dimension, their velocity will remain unchanged.
 Optimizer hyperparameters:
-  - `c1` (cognitive acceleration coefficient, default value = `0.5`): high values of `c1` promote the exploration near the best position found by the particle, in case updated at each iteration. If provided by the users, they must ensure that `c1+c1<4`.
-  - `c2` (social acceleration coefficient, default value = `0.5`): high values of `c2` promote the exploitation of the knowledge of the best position found by the entire swarm, in case updated at each iteration. If provided by the users, they must ensure that `c1+c1<4`.
-  - `w` (inertia weight, default value = `0.5`): high values of this coefficient reduce the variations of the velocity of the particle. If provided by the users, they must ensure that it is `<1` to avoid velocity divergence.
+  - `c1` (cognitive acceleration coefficient, default value = `2.`): high values of `c1` promote the exploration near the best position found by the particle, in case updated at each iteration. If provided by the users, they must ensure that `c1+c1<4`.
+  - `c2` (social acceleration coefficient, default value = `2.`): high values of `c2` promote the exploitation of the knowledge of the best position found by the entire swarm, in case updated at each iteration. If provided by the users, they must ensure that `c1+c1<4`.
+  - `w` (inertia weight, default value = `0.9`): high values of this coefficient reduce the variations of the velocity of the particle. If provided by the users, they must ensure that it is `<1` to avoid velocity divergence.
   - `initial_speed_over_search_space_size` (default value = `0.1`): the initial velocities of particles in each dimension are drawn from a uniform distribution with boundaries proportional to `initial_speed_over_search_space_size` in that dimension and to the `search_interval` size in that dimension.
-  - `max_speed` (maximum speed, default value: an array with elements equal to the respective size of `search_interval` in each dimension).
+  - `max_speed` (maximum speed, default value: an array with elements equal to the respective size of `search_interval` in each dimension multiplied by `0.3`).
 - `"Adaptive Particle Swarm Optimization"` (Adaptive PSO): based on from Z.-H. Zhan et al., IEEE Transactions on Systems, Man, and Cybernetics, Part B (Cybernetics) 39, 6 (2009) https://ieeexplore.ieee.org/document/4812104 .
 Based on the evolutionary state of the swarm, the coefficients `c1`, `c2` and the inertia weight `w` are updated as described in that article. Compared to the description in the original reference, no transition base rule is used.
 Optimizer hyperparameters:
@@ -113,8 +113,10 @@ Optimizer hyperparameters:
   - `amplitude_mutated_range_1` (default value = `0.4`).
   - `amplitude_mutated_range_2` (default value = `0.01`).
   - `Number_of_iterations_bad_particles` (default value = `2`).
-  - `initial_speed_over_search_space_size` (as for the `"Particle Swarm Optimization"`, but default value = `0.5`).
+  - `initial_speed_over_search_space_size` (as for the `"Particle Swarm Optimization"`).
   - `max_speed`: as in the `"Particle Swarm Optimization"`.
+  - `c1` (as for the `"Particle Swarm Optimization"`).
+  - `c2` (as for the `"Particle Swarm Optimization"`).
   
 #### Postprocessing:
 In the folder `postprocessing_scripts` several scripts are available to have an insight on the optimization run(s) made with ``:Discoveri``:
