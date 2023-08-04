@@ -305,10 +305,9 @@ class ParticleSwarmOptimization(Optimizer):
             self.history_evolutionary_state = []
             
             # if True, when the swarm evolutionary state is convergence
-            # the global best particle position will be "mutated" along one random dimension 
-            # to avoid falling on local minima
-            # if the new position is better than the swarm optimum position, then the swarm will be able to exit a local minimum
-            # if not, this new position will be assigned to the worst particle of the swarm at the next iteration
+            # the global best particle position will be "mutated" along one random dimension
+            # and the resulting mutated position will be assigned to the worst particle of the swarm. 
+            # This is to avoid falling on local minima; if the new position is better than the swarm optimum position, then the swarm will be able to exit a local minimum
             default_value_perturbation_global_best_particle = True
             self.perturbation_global_best_particle = kwargs.get('perturbation_global_best_particle', default_value_perturbation_global_best_particle)
             
@@ -618,7 +617,41 @@ class ParticleSwarmOptimization(Optimizer):
         
         print("\n",self.name,", f = ",self.f,"--> evolutionary state: ",dictionary_evolutionary_state_swarm[self.evolutionary_state],"; c1 = ",self.c1,"; c2 = ",self.c2,"; w = ",self.w,"\n")
 
+
+        if ( (self.perturbation_global_best_particle==True) and ( self.evolutionary_state == 3) ): # if the swarm is at convergence and perturbation is activated
         
+            # find the particle with worst function value
+            index_worst_particle      = np.argmin(self.history_samples_positions_and_function_values[self.iteration_number,:,self.number_of_dimensions])
+            
+            # find the particle with the best function value
+            index_best_particle       = np.argmax(self.history_samples_positions_and_function_values[self.iteration_number,:,self.number_of_dimensions])
+            position_best_particle    = self.samples[index_best_particle].position[:]
+            
+            # randomly draw the index of the coordinate to mutate 
+            index_dimension_to_mutate = random.randint(0, self.number_of_dimensions-1)
+            
+            # standard deviation of the gaussian for the mutation
+            sigma_max                 = 1.0 
+            sigma_min                 = 0.1
+            rms_width_mutation        = sigma_max-(self.iteration_number+2)*(sigma_max-sigma_min)/self.number_of_iterations
+            rms_width_mutation        = rms_width_mutation*(self.search_interval_size[index_dimension_to_mutate])
+            
+            # start from the best particle position
+            # generate new coordinates until one is found within the search_interval in that dimension,
+            # by adding to this best position a float drawn from a Gaussian distribution
+            candidate_mutated_coordinate = float('-inf')
+            while ( (candidate_mutated_coordinate > self.search_interval[index_dimension_to_mutate][1]) \
+                or (candidate_mutated_coordinate < self.search_interval[index_dimension_to_mutate][0]) ):
+                candidate_mutated_coordinate = position_best_particle[index_dimension_to_mutate]+rms_width_mutation*np.random.normal(0, 1, 1)[0]
+            
+            # and substitute this mutated position to the position of the worst particle of the swarm
+            # do not change its velocity
+            self.samples[index_worst_particle].position[:]                         = position_best_particle[:]
+            self.samples[index_worst_particle].position[index_dimension_to_mutate] = candidate_mutated_coordinate
+            
+            print("Particle ",index_worst_particle," mutated to position ",self.samples[index_worst_particle].position[:])
+            
+            
         
     def operationsAfterUpdateOfOptimumFunctionValueAndPosition(self):
         
