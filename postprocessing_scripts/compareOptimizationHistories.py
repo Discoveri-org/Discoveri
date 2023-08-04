@@ -30,14 +30,14 @@ iterations                                      = np.linspace(0,number_of_iterat
 
 #### Read all data from each run
 history_optimization_runs                       = np.zeros(shape=(number_of_iterations,len(runs_to_read)))
-#history_time_runs                               = np.zeros(shape=(number_of_iterations,len(runs_to_read)))
+history_time_runs                               = np.zeros(shape=(number_of_iterations,len(runs_to_read)))
 
 for run in runs_to_read: 
     index_run = runs_to_read.index(run)           
     # Read data of positions and function values
     history_particles_positions_and_function_values                 = np.load(run+filename)
     # Read data of positions
-    #history_time_to_complete_iterations                             = np.load(run+filename_time)
+    history_time_to_complete_iterations                             = np.load(run+filename_time)
 
     ###### Find optimization history
     optimizer_maximum_of_function_to_optimize                       = np.zeros(number_of_iterations)
@@ -52,12 +52,12 @@ for run in runs_to_read:
         optimizer_maximum_of_function_to_optimize[iteration]                    = max(optimizer_maximum_of_function_to_optimize[iteration-1],optimizer_maximum_of_function_to_optimize[iteration])
         
         history_optimization_runs[iteration,index_run]                          = optimizer_maximum_of_function_to_optimize[iteration]
-        #history_time_runs[iteration,index_run]                                  = history_time_to_complete_iterations[iteration]
+        history_time_runs[iteration,index_run]                                  = history_time_to_complete_iterations[iteration]
         
 ##### Plot averages of optimization history, individual optimization histories and error bars
 
 color               = "b"
-optimization_method = "Bayesian Optimization" #"Bayesian Optimization"#"Random Search with Halton Sequence"#"Bayesian Optimization"
+optimization_method = "APSO" #"Bayesian Optimization"#"Random Search with Halton Sequence"#"Bayesian Optimization"
 plt.ion()
 plt.figure(1)
 
@@ -67,9 +67,9 @@ for irun in range(0,len(runs_to_read)):
         label="individual, "+optimization_method 
     else:
         label=""
-    plt.plot(iterations,np.exp(history_optimization_runs[:,irun]),color=color,label=label,alpha=0.3,linewidth=0.8)
-plt.plot(iterations,np.exp(np.average(history_optimization_runs,axis=1 )),label="average, "+optimization_method ,color=color)
-plt.fill_between(iterations,np.exp(np.average(history_optimization_runs,axis=1 ))-np.std(np.exp(history_optimization_runs),axis=1 ),np.exp(np.average(history_optimization_runs,axis=1 ))+np.std(np.exp(history_optimization_runs),axis=1 ),color=color,alpha=0.1)
+    plt.plot(iterations,history_optimization_runs[:,irun],color=color,label=label,alpha=0.3,linewidth=0.8)
+plt.plot(iterations,np.average(history_optimization_runs,axis=1 ),label="average, "+optimization_method ,color=color)
+plt.fill_between(iterations,np.average(history_optimization_runs,axis=1)-np.std(history_optimization_runs,axis=1 ),np.average(history_optimization_runs,axis=1 )+np.std(history_optimization_runs,axis=1 ),color=color,alpha=0.1)
     
 plt.xlabel("Iteration number")
 plt.ylabel("Maximum objective function value found")
@@ -82,11 +82,11 @@ for irun in range(0,len(runs_to_read)):
         label="individual, "+optimization_method 
     else:
         label=""
-    plt.plot(history_time_runs[:,irun]/3600.,np.exp(history_optimization_runs[:,irun]),color=color,label=label,alpha=0.3,linewidth=0.8)
+    plt.plot(history_time_runs[:,irun]/3600.,history_optimization_runs[:,irun],color=color,label=label,alpha=0.3,linewidth=0.8)
     
 average_time_for_iterations = np.average(history_time_runs,axis=1)
-plt.plot(average_time_for_iterations/3600.,np.exp(np.average(history_optimization_runs,axis=1 )),label="average, "+optimization_method ,color=color)
-plt.fill_between(average_time_for_iterations/3600.,np.exp(np.average(history_optimization_runs,axis=1 ))-np.std(np.exp(history_optimization_runs),axis=1 ),np.exp(np.average(history_optimization_runs,axis=1 ))+np.std(np.exp(history_optimization_runs),axis=1 ),color=color,alpha=0.1)
+plt.plot(average_time_for_iterations/3600.,np.average(history_optimization_runs,axis=1 ),label="average, "+optimization_method ,color=color)
+plt.fill_between(average_time_for_iterations/3600.,np.average(history_optimization_runs,axis=1 )-np.std(history_optimization_runs,axis=1 ),np.average(history_optimization_runs,axis=1 )+np.std(history_optimization_runs,axis=1 ),color=color,alpha=0.1)
     
 plt.xlabel("Time lapsed [h]")
 plt.ylabel("Maximum objective function value found")
