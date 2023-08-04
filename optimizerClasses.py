@@ -457,13 +457,13 @@ class ParticleSwarmOptimization(Optimizer):
                         r1                  = random.random()
                         r2                  = random.random()
                         # compute cognitive velocity, based on the individual particle's exploration
-                        cognitive_velocity  = self.c1 * r1 * (self.samples[iparticle].optimum_position[idim] - particle.position[idim])
+                        cognitive_velocity  = self.c1 * r1 * (self.samples[iparticle].optimum_position[idim] - self.samples[iparticle].position[idim])
                         # compute cognitive velocity, based on the swarm exploration
-                        social_velocity     = self.c2 * r2 * (self.optimum_position[idim]     - particle.position[idim])
+                        social_velocity     = self.c2 * r2 * (self.optimum_position[idim]     - self.samples[iparticle].position[idim])
                         # update velocity
                         self.samples[iparticle].velocity[idim]      = self.w * self.samples[iparticle].velocity[idim] + cognitive_velocity + social_velocity
                         # limit the velocity to the interval [-max_speed,max_speed]
-                        self.samples[iparticle].velocity[idim]      = np.clip(velocity[idim],-self.max_speed[idim],self.max_speed[idim])
+                        self.samples[iparticle].velocity[idim]      = np.clip(self.samples[iparticle].velocity[idim],-self.max_speed[idim],self.max_speed[idim])
                     # Update individual particle position    
                     self.samples[iparticle].position           += self.samples[iparticle].velocity
                     
@@ -473,13 +473,13 @@ class ParticleSwarmOptimization(Optimizer):
                         # extract one random number
                         r2                  = random.random()
                         # compute social velocity, based on the swarm exploration
-                        social_velocity     = self.c2 * r2 * (self.optimum_position[idim] - particle.position[idim])
+                        social_velocity     = self.c2 * r2 * (self.optimum_position[idim] - self.samples[iparticle].position[idim])
                         # Update individual particle position
                         self.samples[iparticle].velocity[idim]      = self.w*self.samples[iparticle].position [idim] + social_velocity
                         # limit the velocity to the interval [-max_speed,max_speed]
-                        self.samples[iparticle].velocity[idim]      = np.clip(velocity[idim],-self.max_speed[idim],self.max_speed[idim])
+                        self.samples[iparticle].velocity[idim]      = np.clip(self.samples[iparticle].velocity[idim],-self.max_speed[idim],self.max_speed[idim])
                     # Update individual particle position
-                    self.samples[iparticle].position           += velocity
+                    self.samples[iparticle].position           += self.samples[iparticle].velocity
                         
                 elif (self.particle_category[iparticle]=="hopeless"): 
                     # extract one random number
