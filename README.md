@@ -116,7 +116,7 @@ Optimizer hyperparameters:
   - `initial_speed_over_search_space_size` (as for the `"Particle Swarm Optimization"`, but default value = `0.5`).
   - `max_speed`: as in the `"Particle Swarm Optimization"`.
   
-#### Postprocessing (to do):
+#### Postprocessing:
 In the folder `postprocessing_scripts` several scripts are available to have an insight on the optimization run(s) made with ``:Discoveri``:
 - `readAndPlotOptimizationHistory`: to be used inside the folder of an optimization run, the script tells the best position `X` found by the run, the corresponding value of the function and the corresponding id of the function evaluation. This is particularly useful if you want to postprocess in detail the outputs in the simulation folder with this id.
 The script plots the evolution of the best function value found over the optimization, by all the optimizer, by each sample, the time needed to perform the iterations, all in different figures. In case the `number_of_dimensions` is equal to 1 or 2, additional visualizations will be plotted.
