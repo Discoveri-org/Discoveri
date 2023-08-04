@@ -116,4 +116,12 @@ Optimizer hyperparameters:
   - `initial_speed_over_search_space_size` (as for the `"Particle Swarm Optimization"`, but default value = `0.5`).
   - `max_speed`: as in the `"Particle Swarm Optimization"`.
   
+#### Postprocessing (to do):
+In the folder `postprocessing_scripts` several scripts are available to have an insight on the optimization run(s) made with ``:Discoveri``:
+- `readAndPlotOptimizationHistory`: to be used inside the folder of an optimization run, the script tells the best position `X` found by the run, the corresponding value of the function and the corresponding id of the function evaluation. This is particularly useful if you want to postprocess in detail the outputs in the simulation folder with this id.
+The script plots the evolution of the best function value found over the optimization, by all the optimizer, by each sample, the time needed to perform the iterations, all in different figures. In case the `number_of_dimensions` is equal to 1 or 2, additional visualizations will be plotted.
+- `extractAllData`: to be used in a folder containing the folders of one or more optimization runs. The script extract all the datas (positions `X` and function values `f(X)`) explored during the optimization, stores them in a unique `pandas` `DataFrame` and plots the `seaborn` `pairplot` of these data. Having all the data in a single `DataFrame` is particularly useful if one wants to use machine learning techniques to create a surrogate model of `f(X)`.
+- `compareOptimizationHistories.py`: to be used in a folder containing the folders of two or more optimization runs. The script will plot the convergence plot of the optimization runs in the folder where it was called. The average best function value and the standard deviation of the best function values found by the runs will be plotted. This is useful to compare different sets of runs, e.g. performed with a different optimizer, because multiple runs are necessary to study the statistical behavior of the different optimizers for a given problem.
+- `readAndPlotAdaptiveParticleSwarmOptimizationHistoryHyperparameters.py`: to be used inside the folder of an optimization run performed with `"Adaptive Particle Swarm Optimization"`. The script plots the evolution of the hyperparameters (inertia weight, evolutionary factor, acceleration coefficient) that are computed and tuned automatically by this optimizer.
+  
   
