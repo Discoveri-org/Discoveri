@@ -228,6 +228,10 @@ class ParticleSwarmOptimization(Optimizer):
         default_value_c2  = 2.
         self.c2           = kwargs.get('c2', default_value_c2)
         
+        if ((self.c1+self.c2)>4.):
+            print("ERROR: c1+c2 must be < 4.")
+            sys.exit()
+        
         # maximum speed for a particle, it must be a vector with number_of_dimensions elements
         default_max_speed = np.zeros(self.number_of_dimensions)
         for idim in range(0,self.number_of_dimensions):
@@ -239,6 +243,11 @@ class ParticleSwarmOptimization(Optimizer):
         # proportional to the search space size in each dimension
         default_value_initial_speed_over_search_space_size = 0.1
         self.initial_speed_over_search_space_size          = kwargs.get('initial_speed_over_search_space_size', default_value_initial_speed_over_search_space_size)
+        
+        
+        if ((self.initial_speed_over_search_space_size)>1.):
+            print("ERROR: initial_speed_over_search_space_size must be < 1.")
+            sys.exit()
         
         print("\n -- hyperparameters used by the optimizer -- ")
         
@@ -257,6 +266,10 @@ class ParticleSwarmOptimization(Optimizer):
             default_value_w  = 0.9
             self.w           = kwargs.get('w', default_value_w)
             
+            if ((self.w)>1.):
+                print("ERROR: w must be < 1.")
+                sys.exit()
+            
             print("c1                                       = ",self.c1)
             print("c2                                       = ",self.c2)
             print("w                                        = ",self.w)
@@ -274,6 +287,10 @@ class ParticleSwarmOptimization(Optimizer):
             default_value_w    = 0.9
             self.w             = kwargs.get('w', default_value_w)
             
+            if ((self.w)>1.):
+                print("ERROR: w must be < 1.")
+                sys.exit()
+            
             self.history_w     = np.zeros(self.number_of_iterations)
             self.history_c1    = np.zeros(self.number_of_iterations)
             self.history_c2    = np.zeros(self.number_of_iterations)
@@ -287,9 +304,18 @@ class ParticleSwarmOptimization(Optimizer):
             
             self.history_evolutionary_state = []
             
-            print("c1 (initial)                          = ",self.c1)
-            print("c2 (initial)                          = ",self.c2)
-            print("w  (initial)                          = ",self.w)
+            # if True, when the swarm evolutionary state is convergence
+            # the global best particle position will be "mutated" along one random dimension 
+            # to avoid falling on local minima
+            # if the new position is better than the swarm optimum position, then the swarm will be able to exit a local minimum
+            # if not, this new position will be assigned to the worst particle of the swarm at the next iteration
+            default_value_perturbation_global_best_particle = True
+            self.perturbation_global_best_particle = kwargs.get('perturbation_global_best_particle', default_value_perturbation_global_best_particle)
+            
+            print("c1 (initial)                          = ",self.c1                               )
+            print("c2 (initial)                          = ",self.c2                               )
+            print("w  (initial)                          = ",self.w                                )
+            print("perturbation_global_best_particle     = ",self.perturbation_global_best_particle)
             print("")
             
         elif (self.name=="PSO-TPME"):
@@ -307,26 +333,60 @@ class ParticleSwarmOptimization(Optimizer):
             default_value_w1  = 0.9
             self.w1           = kwargs.get('w1', default_value_w1)
             
+            if ( self.w1 >1. ):
+                print("ERROR: w1 must be < 1.")
+                sys.exit()
+            
             # w2 (final inertia weight)
             default_value_w2  = 0.4
             self.w2           = kwargs.get('w2', default_value_w2)
+            
+            if ( self.w2 > 1. ):
+                print("ERROR: w must be < 1.")
+                sys.exit()
+                
+            if ( self.w2 > self.w1) :
+                print("ERROR: w2 must be < w1.")
+                sys.exit()
+                
             
             # maximum number of iterations in which "bad" particles are allowed to explore (Ne in the original paper)
             default_Number_of_iterations_bad_particles         = 3
             self.Number_of_iterations_bad_particles            = kwargs.get('Number_of_iterations_bad_particles', default_Number_of_iterations_bad_particles)
             
+            if (self.Number_of_iterations_bad_particles < 1):
+                print("ERROR: Number_of_iterations_bad_particles must be >= 1.")
+                sys.exit()
+            
             # percentage p of the mean to define the classification levels mean*(1-p), mean*(1+p)
             default_portion_of_mean_classification_levels      = 0.02
             self.portion_of_mean_classification_levels         = kwargs.get('portion_of_mean_classification_levels', default_portion_of_mean_classification_levels )
             
+            if ( self.portion_of_mean_classification_levels > 1. ):
+                print("ERROR: portion_of_mean_classification_levels must be < 1.")
+                sys.exit()
+                
+                
             # "bad" particles that remain "bad" for more than Number_of_iterations_bad_particlesiterations
             # are relocated around the best swarm particle, within an interval (1-a) and (1+a) in all dimensions
             # in this version it will decrease from value a1 to value a2 
             default_amplitude_mutated_range_1                  = 0.4
             self.amplitude_mutated_range_1                     = kwargs.get('amplitude_mutated_range_1', default_amplitude_mutated_range_1 )
             
+            if (self.amplitude_mutated_range_1 > 1.):
+                print("ERROR: amplitude_mutated_range_1 must be < 1.")
+                sys.exit()
+            
             default_amplitude_mutated_range_2                  = 0.01
-            self.amplitude_mutated_range_2                     = kwargs.get('amplitude_mutated_range_2', default_amplitude_mutated_range_2 ) 
+            self.amplitude_mutated_range_2                     = kwargs.get('amplitude_mutated_range_2', default_amplitude_mutated_range_2 )
+            
+            if (self.amplitude_mutated_range_2 > 1.):
+                print("ERROR: amplitude_mutated_range_2 must be < 1.")
+                sys.exit() 
+                
+            if (self.amplitude_mutated_range_2 > self.amplitude_mutated_range_1):
+                print("ERROR: amplitude_mutated_range_2 must be < amplitude_mutated_range_1.")
+                sys.exit() 
             
             ### Initialize inertia and amplitude of the mutated range
             # w (inertia weight): It controls the impact of the particle's previous velocity on the current velocity update. A higher value of w emphasizes the influence of the particle's momentum, promoting exploration. On the other hand, a lower value of w emphasizes the influence of the current optimum positions, promoting exploitation.
