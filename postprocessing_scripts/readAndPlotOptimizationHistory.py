@@ -15,7 +15,7 @@ if (os.path.isfile(filename)!=True): # the complete history file does not exist
     # find all files with partial history of optimization 
     files_with_history = []
     for file in os.listdir(starting_directory):
-        if (("history" in file) and ("iteration" in file)):
+        if (("history_particles_positions_and_function" in file) and ("iteration" in file)):
             files_with_history.append(file)
     files_with_history = sorted(files_with_history)
     # pick the most recent one
