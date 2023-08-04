@@ -419,25 +419,21 @@ class ParticleSwarmOptimization(Optimizer):
             
         
         for iparticle in range(0,self.number_of_samples_per_iteration):
-            particle = self.samples[iparticle]
-            velocity = particle.velocity
-        
+
             if ((self.name=="Particle Swarm Optimization") or (self.name=="Adaptive Particle Swarm Optimization")):
                 for idim in range(self.number_of_dimensions):
                     # extract two random numbers
                     r1                  = random.random()
                     r2                  = random.random()
                     # compute cognitive velocity, based on the individual particle's exploration
-                    cognitive_velocity  = self.c1 * r1 * (particle.optimum_position[idim] - particle.position[idim])
+                    cognitive_velocity  = self.c1 * r1 * (self.samples[iparticle].optimum_position[idim] - self.samples[iparticle].position[idim])
                     # compute social velocity, based on the swarm exploration
-                    social_velocity     = self.c2 * r2 * (self.optimum_position[idim] - particle.position[idim])
-                    
-                    velocity[idim] = self.w * particle.velocity[idim] + cognitive_velocity + social_velocity
-
+                    social_velocity     = self.c2 * r2 * (self.optimum_position[idim] - self.samples[iparticle].position[idim])
+                    # update velocity
+                    self.samples[iparticle].velocity[idim] = self.w * self.samples[iparticle].velocity[idim] + cognitive_velocity + social_velocity    
+                    # limit the velocity to the interval [-max_speed,max_speed]
+                    self.samples[iparticle].velocity[idim] = np.clip(self.samples[iparticle].velocity[idim],-self.max_speed[idim],self.max_speed[idim])
                 # Update individual particle position
-                # limit the velocity to the interval [-max_speed,max_speed]
-                for idim in range(0,self.number_of_dimensions):
-                    self.samples[iparticle].velocity[idim]      = np.clip(velocity[idim],-self.max_speed[idim],self.max_speed[idim])
                 self.samples[iparticle].position += self.samples[iparticle].velocity
                 
             
@@ -447,14 +443,12 @@ class ParticleSwarmOptimization(Optimizer):
                         # extract one random numbers
                         r1                  = random.random()
                         # compute cognitive velocity, based on the individual particle's exploration
-                        cognitive_velocity  = self.c1 * r1 * (particle.optimum_position[idim] - particle.position[idim])
-                    
-                        velocity[idim] = self.w * particle.velocity[idim] + cognitive_velocity
-
+                        cognitive_velocity  = self.c1 * r1 * (self.samples[iparticle].optimum_position[idim] - self.samples[iparticle].position[idim])
+                        # update velocity
+                        self.samples[iparticle].velocity[idim] = self.w * self.samples[iparticle].velocity[idim] + cognitive_velocity
+                        # limit the velocity to the interval [-max_speed,max_speed]
+                        self.samples[iparticle].velocity[idim] = np.clip(self.samples[iparticle].velocity[idim],-self.max_speed[idim],self.max_speed[idim])
                     # Update individual particle position
-                    # limit the velocity to the interval [-max_speed,max_speed]
-                    for idim in range(0,self.number_of_dimensions):
-                        self.samples[iparticle].velocity[idim]      = np.clip(velocity[idim],-self.max_speed[idim],self.max_speed[idim])
                     self.samples[iparticle].position           += self.samples[iparticle].velocity
                 
                 elif (self.particle_category[iparticle]=="fair"): # update position as in a classic PSO
@@ -463,16 +457,14 @@ class ParticleSwarmOptimization(Optimizer):
                         r1                  = random.random()
                         r2                  = random.random()
                         # compute cognitive velocity, based on the individual particle's exploration
-                        cognitive_velocity  = self.c1 * r1 * (particle.optimum_position[idim] - particle.position[idim])
+                        cognitive_velocity  = self.c1 * r1 * (self.samples[iparticle].optimum_position[idim] - particle.position[idim])
                         # compute cognitive velocity, based on the swarm exploration
-                        social_velocity     = self.c2 * r2 * (self.optimum_position[idim] - particle.position[idim])
-                    
-                        velocity[idim]      = self.w * particle.velocity[idim] + cognitive_velocity + social_velocity
-
-                    # Update individual particle position
-                    # limit the velocity to the interval [-max_speed,max_speed]
-                    for idim in range(0,self.number_of_dimensions):
+                        social_velocity     = self.c2 * r2 * (self.optimum_position[idim]     - particle.position[idim])
+                        # update velocity
+                        self.samples[iparticle].velocity[idim]      = self.w * self.samples[iparticle].velocity[idim] + cognitive_velocity + social_velocity
+                        # limit the velocity to the interval [-max_speed,max_speed]
                         self.samples[iparticle].velocity[idim]      = np.clip(velocity[idim],-self.max_speed[idim],self.max_speed[idim])
+                    # Update individual particle position    
                     self.samples[iparticle].position           += self.samples[iparticle].velocity
                     
                 elif (self.particle_category[iparticle]=="bad"):
@@ -483,13 +475,11 @@ class ParticleSwarmOptimization(Optimizer):
                         # compute social velocity, based on the swarm exploration
                         social_velocity     = self.c2 * r2 * (self.optimum_position[idim] - particle.position[idim])
                         # Update individual particle position
-                        velocity[idim]      = self.w*self.samples[iparticle].position [idim] + social_velocity
-                    
-                    # Update individual particle position
-                    # limit the velocity to the interval [-max_speed,max_speed]
-                    for idim in range(0,self.number_of_dimensions):
+                        self.samples[iparticle].velocity[idim]      = self.w*self.samples[iparticle].position [idim] + social_velocity
+                        # limit the velocity to the interval [-max_speed,max_speed]
                         self.samples[iparticle].velocity[idim]      = np.clip(velocity[idim],-self.max_speed[idim],self.max_speed[idim])
-                        self.samples[iparticle].position           += velocity
+                    # Update individual particle position
+                    self.samples[iparticle].position           += velocity
                         
                 elif (self.particle_category[iparticle]=="hopeless"): 
                     # extract one random number
