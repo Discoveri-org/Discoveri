@@ -144,22 +144,25 @@ class optimizationRun:
         print("\n\n Iteration:", iteration+1,"/",self.optimizer.number_of_iterations,"\n\n\n")
 
         self.starting_time          = time.time()
-
-
         new_simulation_directory    = None
         configuration_parameters    = None
         
         ######### Perform a iteration = 0 to evaluate the function to optimise at the first random points
 
         for isample in range(0,self.optimizer.number_of_samples_per_iteration):
-            # launch the simulation corresponding to isample
             input_parameters   = self.optimizer.samples[isample].position
-            new_simulation_directory, configuration_parameters = self.job_manager.launchSimulation(self.config_id,input_parameters)    
+            if (self.job_manager.use_test_function==False): # samples are made of simulations
+                # launch the simulation corresponding to isample
+                new_simulation_directory, configuration_parameters = self.job_manager.launchSimulation(self.config_id,input_parameters)
+                # add simulation to list of jobs , store information for later use          
+                self.running_jobs.append(new_simulation_directory); 
+                self.list_configurations.append(new_simulation_directory+", "+configuration_parameters+" \n") 
+            else: # samples are evaluated with a test function
+                configuration_parameters = self.job_manager.generateConfigurationToWriteOnNamelist(input_parameters,self.optimizer.number_of_dimensions)
+                self.list_configurations.append("Configuration_id_"+str(self.config_id).zfill(5)+": "+configuration_parameters+" \n")    
             # increase the configuration number
             self.config_id = self.config_id+1      
-            # add simulation to list of jobs , store information for later use          
-            self.running_jobs.append(new_simulation_directory); 
-            self.list_configurations.append(new_simulation_directory+", "+configuration_parameters+" \n")
+            
   
     
         # append on file the configurations that were launched in this iteration
@@ -170,8 +173,9 @@ class optimizationRun:
 
         # Check if the simulations launched in this iteration have finished
         # and analyse all of them until all are finished 
-        # then, update the global optimum 
-        self.job_manager.checkAndAnalyseSimulations(self.optimizer,self.list_configurations,iteration)
+        # then, update the global optimum
+        self.job_manager.performFunctionEvaluations(self.optimizer,self.list_configurations,iteration)
+        #self.job_manager.checkAndAnalyseSimulations(self.optimizer,self.list_configurations,iteration)
 
         #Diagnostic
         self.optimizer.printOptimumFunctionValueAndOptimumPosition() 
@@ -195,14 +199,16 @@ class optimizationRun:
     
             # Launching the simulations - one simulation corresponding to each particle of the swarm
             for isample in range(0,self.optimizer.number_of_samples_per_iteration):
-        
-                # launch the simulation corresponding to isample
                 input_parameters   = self.optimizer.samples[isample].position
-        
-                new_simulation_directory, configuration_parameters = self.job_manager.launchSimulation(self.config_id,input_parameters)
-                # add simulation to list of jobs, store information for later use            
-                self.running_jobs.append(new_simulation_directory)
-                self.list_configurations.append(new_simulation_directory+", "+configuration_parameters+" \n")        
+                if (self.job_manager.use_test_function==False): # samples are made of simulations
+                    # launch the simulation corresponding to isample
+                    new_simulation_directory, configuration_parameters = self.job_manager.launchSimulation(self.config_id,input_parameters)
+                    # add simulation to list of jobs, store information for later use            
+                    self.running_jobs.append(new_simulation_directory)
+                    self.list_configurations.append(new_simulation_directory+", "+configuration_parameters+" \n") 
+                else: # samples are evaluated with a test function
+                    configuration_parameters = self.job_manager.generateConfigurationToWriteOnNamelist(input_parameters,self.optimizer.number_of_dimensions)
+                    self.list_configurations.append("Configuration_id_"+str(self.config_id).zfill(5)+": "+configuration_parameters+" \n")       
         
                 # increase the configuration number
                 self.config_id = self.config_id+1
@@ -214,8 +220,9 @@ class optimizationRun:
     
             # Check if the simulations launched in this iteration have finished
             # and analyse all of them until all are finished 
-            # then, update swarm optimum    
-            self.job_manager.checkAndAnalyseSimulations(self.optimizer,self.list_configurations,iteration)
+            # then, update swarm optimum
+            self.job_manager.performFunctionEvaluations(self.optimizer,self.list_configurations,iteration)    
+            #self.job_manager.checkAndAnalyseSimulations(self.optimizer,self.list_configurations,iteration)
         
             # Diagnostic
             self.optimizer.printOptimumFunctionValueAndOptimumPosition() 

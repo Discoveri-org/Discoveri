@@ -38,13 +38,14 @@ class jobManager:
                  self.path_submission_script                     = path_submission_script
                  self.path_second_submission_script              = path_second_submission_script
                  self.time_to_wait_for_iteration_results         = time_to_wait_for_iteration_results
-                 self.input_parameters_names                      = input_parameters_names
+                 self.input_parameters_names                     = input_parameters_names
                  self.use_test_function                          = use_test_function
                  self.test_function                              = test_function
                  self.simulation_postprocessing_function         = simulation_postprocessing_function
                  self.iterations_between_outputs                 = iterations_between_outputs
                  
-    def prepareOneSimulationDirectory( self, config_id, input_parameters ):
+                 
+    def prepareOneSimulationDirectory( self, config_id, input_parameters, number_of_dimensions ):
         # create and fill directory with simulation
         directory = self.starting_directory+"/Config_id_" +str(config_id).zfill(7)
         os.makedirs(directory)
@@ -56,7 +57,7 @@ class jobManager:
             os.system("cp "+self.path_input_namelist+" .")
         
             # prepare namelist writing the parameter configuration 
-            line_to_write_in_namelist = self.generateConfigurationToWriteOnNamelist(input_parameters)
+            line_to_write_in_namelist = self.generateConfigurationToWriteOnNamelist(input_parameters,number_of_dimensions)
             self.writeConfigurationDictionaryInNamelist(line_to_write_in_namelist)
         else:
             line_to_write_in_namelist = ""
@@ -67,7 +68,7 @@ class jobManager:
         
         print("\n - Preparing directory for Config_id="+str(config_id).zfill(7))
         # prepare the simulation directory
-        new_simulation_directory, configuration_parameters = self.prepareOneSimulationDirectory( config_id,input_parameters )
+        new_simulation_directory, configuration_parameters = self.prepareOneSimulationDirectory( config_id,input_parameters,np.size(input_parameters) )
         
         if (self.use_test_function==False):
             print("\n - Launching simulation for Config_id="+str(config_id).zfill(7))
@@ -78,10 +79,16 @@ class jobManager:
         
         return new_simulation_directory, configuration_parameters
         
-    def generateConfigurationToWriteOnNamelist(self,input_parameters):
+    def generateConfigurationToWriteOnNamelist(self,input_parameters,number_of_dimensions):
         # generate the line to insert in the input namelist to select the configuration to explore
         write_to_namelist = "external_config = { "
-        for i_parameter in range(0,len(self.input_parameters_names)):
+        
+        input_params_names = self.input_parameters_names
+        if (len(input_params_names)==0):
+            for idim in range(0,number_of_dimensions):
+                input_params_names.append("dimension_"+str(idim))
+        
+        for i_parameter in range(0,len(input_params_names)):
             write_to_namelist = write_to_namelist + "'" + self.input_parameters_names[i_parameter]+  "':"
             write_to_namelist = write_to_namelist + str(input_parameters[i_parameter]) 
             if (i_parameter == len(self.input_parameters_names)-1):
@@ -107,23 +114,30 @@ class jobManager:
                     newline = newline + "\n" + line_to_write_in_namelist + "\n"
                 namelist.write(newline)
 
-    def checkAndAnalyseSimulations(self, optimizer, list_configurations, iteration):
-        number_of_samples_per_iteration = optimizer.number_of_samples_per_iteration
-        # create list of sample to keep track which ones are finished
-        # this because we do not know in which order the samples will finish thei simulation
-        samples_running_a_simulation = [i for i in range(0,optimizer.number_of_samples_per_iteration)] 
-        
-        ## while while running_simulations_ > 0: 
-        while len(list_configurations)>0:
-            # periodically sleep and then check if the simulations finished
-            time.sleep(self.time_to_wait_for_iteration_results);printCheckingSamplesAtDatetime()
-            for configuration in list_configurations:
-                os.chdir(configuration.split(',', 1)[0]) # go inside the considered directory
-                index_configuration = list_configurations.index(configuration)
-                isample             = samples_running_a_simulation[index_configuration]
-                
-                if (self.use_test_function==False): # check the results of the simulation
-                    with open(self.name_log_file_simulations, 'r') as simulation_log_file:
+
+    def performFunctionEvaluations(self,optimizer,list_configurations,iteration):
+        if (self.use_test_function==True): # just evaluate a test function
+            for isample in range(0,optimizer.number_of_samples_per_iteration):
+                # analyse the result, i.e. compute function value at new sample position
+                function_value = self.test_function(optimizer.samples[isample].position)
+                # update history array, and if function_value is better, update sample's best function_value and positon
+                optimizer.updateHistoryAndCheckIfFunctionValueIsBetter(iteration,isample,function_value)
+        else: # function evaluations are made by postprocessing of simulations
+            number_of_samples_per_iteration = optimizer.number_of_samples_per_iteration
+            # create list of sample to keep track which ones are finished
+            # this because we do not know in which order the samples will finish thei simulation
+            samples_running_a_simulation = [i for i in range(0,optimizer.number_of_samples_per_iteration)] 
+            
+            ## while while running_simulations_ > 0: 
+            while len(list_configurations)>0:
+                # periodically sleep and then check if the simulations finished
+                time.sleep(self.time_to_wait_for_iteration_results);printCheckingSamplesAtDatetime()
+                for configuration in list_configurations:
+                    os.chdir(configuration.split(',', 1)[0]) # go inside the considered directory
+                    index_configuration = list_configurations.index(configuration)
+                    isample             = samples_running_a_simulation[index_configuration]
+                    
+                    with open(self.name_log_file_simulations, 'r') as simulation_log_file: # check the results of the simulation
                         for line in simulation_log_file:
                             if self.word_marking_end_of_simulation_in_log_file in line: # if a simulation has ended
                                 # remove the directory and the sample from the list of those still running a simulation
@@ -135,21 +149,12 @@ class jobManager:
                                 optimizer.updateHistoryAndCheckIfFunctionValueIsBetter(iteration,isample,function_value)
                                 # you can stop reading the log file of the simulation
                                 break
-                else: # just use a test function, instead of running a simulation
-                    # remove the directory and the sample from the list of those still running a simulation
-                    list_configurations.remove(list_configurations[index_configuration])
-                    samples_running_a_simulation.remove(isample)
-                    # analyse the result, i.e. compute function value at new sample position
-                    function_value = self.test_function(optimizer.samples[isample].position)
-                    # update history array, and if function_value is better, update sample's best function_value and positon
-                    optimizer.updateHistoryAndCheckIfFunctionValueIsBetter(iteration,isample,function_value)
-                    
-                # return to starting folder
-                os.chdir(self.starting_directory)
+                    # return to starting folder
+                    os.chdir(self.starting_directory)
         
         #### here running_simulations = 0
-                 
         # update the optimizer optimum, which is the optimum among the optima of the individual samples
         optimizer.updateOptimumFunctionValueAndPosition()
+
         
                  
