@@ -64,7 +64,11 @@ class Optimizer:
         # dimension 1 : sample number
         # dimension 2 : the first number_of_dimensions indices give the number_of_dimensions components of the isample position at that iteration,
         #               while the last index gives the value of that function found by isample at that iteration
-        self.history_samples_positions_and_function_values        = np.zeros(shape=(number_of_iterations,number_of_samples_per_iteration,number_of_dimensions+1)) 
+        self.history_samples_positions_and_function_values = np.zeros(shape=(number_of_iterations,number_of_samples_per_iteration,number_of_dimensions+1)) 
+        
+        # this is used mostly for normalizations
+        self.search_interval_size                          = [self.search_interval[idim][1]-self.search_interval[idim][0] for idim in range(0,self.number_of_dimensions)]
+        
         
         self.initialPrint(**kwargs)   
         
@@ -413,7 +417,7 @@ class ParticleSwarmOptimization(Optimizer):
         # use scrambled Halton sampler to extract initial positions
         self.halton_sampler_position                 = qmc.Halton(d=self.number_of_dimensions, scramble=True)
         halton_sampler_random_position               = self.halton_sampler_position.random(n=self.number_of_samples_per_iteration)
-        self.search_interval_size                    = [self.search_interval[idim][1]-self.search_interval[idim][0] for idim in range(0,self.number_of_dimensions)]
+        
         # Initialize each particle the swarm
         for iparticle in range(0,self.number_of_samples_per_iteration):
             position = np.zeros(self.number_of_dimensions)
@@ -715,25 +719,23 @@ class ParticleSwarmOptimization(Optimizer):
             np.save( f, self.history_w[0:self.iteration_number])
         
                      
-            
-        
 
 class BayesianOptimization(Optimizer):
     def __init__(self, name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs):
         super().__init__(name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs)
         self.num_tests     = 100    # number of points to test through the surrogate function when choosing new samples to draw
         # Define the model for the kernel of the Gaussian process
-        # For multidimensional search spaces it is important to use an anisotropic kernel, i.e. with a different scale in each dimension
-        self.length_scales = [self.search_interval[idim][1] - self.search_interval[idim][0] for idim in range(self.number_of_dimensions)] # length scales of the kernel in all dimensions
-        self.kernel        = ConstantKernel(1.0, constant_value_bounds="fixed") * Matern(length_scale=self.length_scales, nu=1.5)
-        self.model         = GaussianProcessRegressor(kernel=self.kernel,optimizer="fmin_l_bfgs_b")
+        # the kernel scales are normalized, so the input data to fit and predict must be normalized
+        self.kernel        = ConstantKernel(1.0, constant_value_bounds="fixed")*Matern(nu=1.5) 
+        self.model         = GaussianProcessRegressor(optimizer="fmin_l_bfgs_b",kernel=self.kernel) #(kernel=self.kernel,optimizer="fmin_l_bfgs_b")
         self.Xsamples      = np.zeros(shape=(self.number_of_samples_per_iteration, self.number_of_dimensions))   # new samples for the new iteration iteration
         # Initial sparse sample
         self.halton_sampler_position   = qmc.Halton(d=self.number_of_dimensions, scramble=True)
         halton_sampler_random_position = self.halton_sampler_position.random(n=self.number_of_samples_per_iteration)
         
-
-        self.X = np.zeros(shape=(self.number_of_samples_per_iteration, self.number_of_dimensions)) # all positions explored by the Bayesian Optimization
+        
+        # NOTE: X is normalized by the search_interval_size in each dimension
+        self.X = np.zeros(shape=(self.number_of_samples_per_iteration, self.number_of_dimensions)) # all normalized positions explored by the Bayesian Optimization
         self.y = np.zeros((self.number_of_samples_per_iteration,1))                                # all the function values found by the Bayesian Optimization
         # Initialize each sample
         for isample in range(self.number_of_samples_per_iteration):
@@ -741,7 +743,7 @@ class BayesianOptimization(Optimizer):
             # use a Halton sequence to sample more uniformly the parameter space
             for idim in range(0,self.number_of_dimensions):
                 position[idim]       = search_interval[idim][0]+halton_sampler_random_position[isample][idim]*(search_interval[idim][1]-search_interval[idim][0]) #np.random.uniform(self.search_interval[dimension][0], self.search_interval[dimension][1])
-                self.X[isample,idim] = position[idim]
+                self.X[isample,idim] = position[idim]/self.search_interval_size[idim] # normalize data
             random_sample            = RandomSearchSample(position) 
             self.samples.append(random_sample)
             print("\n ---> Sample", isample, "Position:", position)  
@@ -773,33 +775,35 @@ class BayesianOptimization(Optimizer):
         best = np.max(yhat)
     
         # Calculate mean and standard deviation via surrogate model
-        mu, std = self.predictFunctionValueWithSurrogateModel(Xtest)
-    
-        # Calculate the expected improvement
-        z = (mu - best) / (std + 1e-9)
-        ei = (mu - best) * norm.cdf(z) + std * norm.pdf(z)
-    
+        mu  = np.zeros(shape=np.shape(Xtest[:,0]))
+        std = np.zeros(shape=np.shape(Xtest[:,0]))
+        ei  = np.zeros(shape=np.shape(Xtest[:,0]))
+        # this should be probably vectorized
+        for i in range(0,np.size(Xtest[:,0])):
+            mu[i], std[i] = self.predictFunctionValueWithSurrogateModel(  Xtest[i,:].reshape(1,np.size(Xtest[0,:]))    );
+            z = (mu[i] - best) / (std[i] + 1e-9)
+            ei[i] = (mu[i] - best) * norm.cdf(z) + std[i] * norm.pdf(z)
         return ei
 
     # Optimize the acquisition function
     def optimizeAcquisitionFunction(self):
-        X_test   = np.zeros(shape=(self.num_tests, self.number_of_dimensions))
-        for itest in range(0,self.num_tests):
+        X_test   = np.zeros(shape=(self.num_tests, self.number_of_dimensions)) # normalized
+        for itest in range(0,self.num_tests): # remember that you need to feed normalized inputs to the model
     	       for idim in range(0,self.number_of_dimensions):
-    		             X_test[itest,idim] = np.random.uniform(self.search_interval[idim][0], self.search_interval[idim][1])#, size=(num_tests, number_of_dimensions))
+    		             X_test[itest,idim] = np.random.uniform(self.search_interval[idim][0]/self.search_interval_size[idim], self.search_interval[idim][1]/self.search_interval_size[idim]) #np.random.uniform(self.search_interval[idim][0], self.search_interval[idim][1])#, size=(num_tests, number_of_dimensions))
         scores = self.getAcquisitionFunctionResult(X_test)  # Calculate acquisition scores on test points
-    
         for isample in range(self.number_of_samples_per_iteration):
             best_index         = np.argmax(scores)   # Find the index with the highest acquisition score
             scores[best_index] = float('-inf')       # Set the acquisition score of the selected index to negative infinity
             self.Xsamples[isample]  = X_test[best_index]  # Select the corresponding sample
-    
         return self.Xsamples   
     
     def chooseNewPositionsToExplore(self):
         Xsamples = self.optimizeAcquisitionFunction()
+        # denormalize because Xsamples is normalized, but the positions are not
         for isample in range(self.number_of_samples_per_iteration):
-            self.samples[isample].position[:] = Xsamples[isample]
+            for idim in range(0,self.number_of_dimensions):
+                self.samples[isample].position[idim] = Xsamples[isample,idim]*self.search_interval_size[idim] 
             
     def updateSamplesForExploration(self):
         # pick new samples
@@ -808,6 +812,7 @@ class BayesianOptimization(Optimizer):
     
     def operationsAfterUpdateOfOptimumFunctionValueAndPosition(self):
         # perform some special operations for the data structure needed by the Bayesian Optimization kernel
+        # X is normalized
         if self.iteration_number == 0:
             for isample in range(0,self.number_of_samples_per_iteration):
                 self.y[isample] = self.history_samples_positions_and_function_values[self.iteration_number,isample,self.number_of_dimensions]
