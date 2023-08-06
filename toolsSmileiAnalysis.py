@@ -103,7 +103,7 @@ def get_sqrtCharge_times_median_Energy_over_MAD_Energy_Percent():
     S                        = happi.Open(".", show=False,verbose=False)
     
     ########## Open the DiagTrackParticles
-    chunk_size = 2000000
+    chunk_size = 20000000
     timestep   = 13000 # timestep where the energy is extracted
     track_part = S.TrackParticles(species = species_name, chunksize=chunk_size, sort=False)
 
@@ -142,8 +142,8 @@ def get_sqrtCharge_times_median_Energy_over_MAD_Energy_Percent():
         Q = abs(np.sum(w)*charge_conversion_factor); #print("Q = ",Q," pC")
         
         Energy_spread_percent = (MAD_Energy)/(median_Energy+1.e-15)*100.
-        result = math.sqrt(Q)/Energy_spread_percent
-        #print (Q,MAD_Energy,result,math.isinf(result),math.isinf(np.log(result)) )
+        result = math.sqrt(Q)/Energy_spread_percent;
+        #print (Q,MAD_Energy,median_Energy,Energy_spread_percent)
         if (math.isinf(result) or math.isnan(result) or (MAD_Energy<1.e-2) or (result<1.e-1) or (Q<10.)) :
             return 0.
         else:
