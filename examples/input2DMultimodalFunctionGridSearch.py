@@ -18,7 +18,7 @@ optimization_method                     = "Grid Search"
 
 #### Parameter space to explore
 number_of_dimensions                    = 2  
-search_interval                         = [[0.,1.],[0.,1.]]
+search_interval                         = [[-15.,15.],[-15.,15.]]
 
 number_of_samples_per_iteration         = 900
 
@@ -40,8 +40,8 @@ use_test_function                       = True
 test_function                           = None
 simulation_postprocessing_function      = None
 
-def my_test_function(position):
-    return np.sum(   np.multiply(  np.square(position), np.power(np.sin(5 * np.pi * position),6.0)  )  )
+def my_test_function(x):
+    return np.sum( np.sinc(x-1.5) )
     
 test_function                           = my_test_function
 

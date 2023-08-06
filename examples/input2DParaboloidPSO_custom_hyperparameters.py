@@ -42,7 +42,7 @@ test_function                           = None
 simulation_postprocessing_function      = None
 
 def my_test_function(position):
-    return -np.sum(np.square(position-0.3))+9.
+    return -np.sum(np.square(position-4.3))+9.
     
 test_function                           = my_test_function
 

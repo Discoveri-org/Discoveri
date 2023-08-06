@@ -23,7 +23,7 @@ optimization_method                     = "Bayesian Optimization"
 
 #### Parameter space to explore
 number_of_dimensions                    = 1 
-search_interval                         = [[0.,1.]]
+search_interval                         = [[-15.,15.]]
 input_parameters_names                  = ["dim0"]
 
 number_of_samples_per_iteration         = 1
@@ -45,7 +45,7 @@ test_function                           = None
 simulation_postprocessing_function      = None
 
 def my_test_function(position):
-    return np.sum(   np.multiply(  np.square(position), np.power(np.sin(5 * np.pi * position),6.0)  )  )
+    return np.sum(  np.sinc(x-3.) )
     
 test_function                           = my_test_function
 
