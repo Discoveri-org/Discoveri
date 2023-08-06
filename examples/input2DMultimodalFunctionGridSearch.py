@@ -1,3 +1,7 @@
+# This example shows the use of a classic Grid Search
+# with a multimodal problem, i.e. a function with multiple peaks
+
+
 import numpy as np
 import os,sys
 
@@ -18,12 +22,12 @@ optimization_method                     = "Grid Search"
 
 #### Parameter space to explore
 number_of_dimensions                    = 2  
-search_interval                         = [[-15.,15.],[-15.,15.]]
+search_interval                         = [[0.,10.],[0.,10.]]
 input_parameters_names                  = ["dim0","dim1"]
 
-number_of_samples_per_iteration         = 900
+number_of_samples_per_iteration         = 1800
 
-samples_per_dimension                   = [30,30]
+samples_per_dimension                   = [30,60]
 
 #### Optimization parameters
 number_of_iterations                    = 1
@@ -41,8 +45,8 @@ use_test_function                       = True
 test_function                           = None
 simulation_postprocessing_function      = None
 
-def my_test_function(x):
-    return np.sum( np.sinc(x-1.5) )
+def my_test_function(x): #maximum near (4.5,4.5)
+    return np.sum( -np.cos(x)-np.sin(x)-5/2.*np.cos(2.*x)+1/2.*np.sin(2.*x)  )
     
 test_function                           = my_test_function
 

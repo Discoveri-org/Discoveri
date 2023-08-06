@@ -1,3 +1,7 @@
+# This example shows the use of a variant of Particle Swarm Optimization, 
+# called PSO-TPME, with a multimodal problem, i.e. a function with multiple peaks
+# this variant of Particle Swarm Optimization tries to avoid falling in local maxima
+
 import numpy as np
 import os,sys
 
@@ -18,16 +22,16 @@ optimization_method                     = "PSO-TPME"
 
 #### Parameter space to explore
 number_of_dimensions                    = 2 
-search_interval                         = [[-15.,15.],[-15.,15.]]
+search_interval                         = [[0.,10.],[0.,10.]]
 input_parameters_names                  = ["dim0","dim1"]
 
 number_of_samples_per_iteration         = 30 
 
 #### Optimization parameters
-number_of_iterations                    = 20 
+number_of_iterations                    = 60 
 
 #### Diagnostic and output dump periodicity
-iterations_between_outputs              = 1
+iterations_between_outputs              = 20
 
 #### Flag used to set if a numpy function or simulation results are optimized: 
 #### if True it optimizes (i.e. maximizes) a numpy function defined in test_function
@@ -39,8 +43,8 @@ use_test_function                       = True
 test_function                           = None
 simulation_postprocessing_function      = None
 
-def my_test_function(position):
-    return np.sum(   np.sinc(x-6.)  )
+def my_test_function(x): #maximum near (4.5,4.5)
+    return np.sum( -np.cos(x)-np.sin(x)-5/2.*np.cos(2.*x)+1/2.*np.sin(2.*x)  )
     
 test_function                           = my_test_function
 

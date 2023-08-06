@@ -1,3 +1,7 @@
+# This example shows the use of Particle Swarm Optimization 
+# in an easy problem with a unique maximum, 
+# using the default hyperparameters of this optimizer
+
 import numpy as np
 import os,sys
 
@@ -6,8 +10,6 @@ sys.path.insert(0, path_discoveri)
 
 # import Discoveri class
 from discoveriMain import createOptimizationRun
-# import library to analyse Smilei simulation
-from toolsSmileiAnalysis import *
 
 
 ###########################################################################
@@ -21,16 +23,16 @@ optimization_method                     = "Particle Swarm Optimization"
 
 #### Parameter space to explore
 number_of_dimensions                    = 2 
-search_interval                         = [[-10.,10.],[-10.,10.]]
+search_interval                         = [[-100.,100.],[-100.,100.]]
 input_parameters_names                  = ["dim0","dim1"]
 
 number_of_samples_per_iteration         = 6 
 
 #### Optimization parameters
-number_of_iterations                    = 15 
+number_of_iterations                    = 50 
 
 #### Diagnostic and output dump periodicity
-iterations_between_outputs              = 1
+iterations_between_outputs              = 10
 
 #### Flag used to set if a numpy function or simulation results are optimized: 
 #### if True it optimizes (i.e. maximizes) a numpy function defined in test_function

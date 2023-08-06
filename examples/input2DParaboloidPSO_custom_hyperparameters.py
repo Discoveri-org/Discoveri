@@ -1,3 +1,8 @@
+# This example shows the use of Particle Swarm Optimization 
+# in an easy problem with a unique maximum, the same of input2DParaboloidPSO.py,
+# but with better hyperparameters. Note how this improves convergence compared 
+# to using default hyperparameters. 
+
 import numpy as np
 import os,sys
 
@@ -21,16 +26,16 @@ optimization_method                     = "Particle Swarm Optimization"
 
 #### Parameter space to explore
 number_of_dimensions                    = 2 
-search_interval                         = [[-10.,10.],[-10.,10.]]
+search_interval                         = [[-100.,100.],[-100.,100.]]
 input_parameters_names                  = ["dim0","dim1"]
 
 number_of_samples_per_iteration         = 6 
 
 #### Optimization parameters
-number_of_iterations                    = 15 
+number_of_iterations                    = 50 
 
 #### Diagnostic and output dump periodicity
-iterations_between_outputs              = 1
+iterations_between_outputs              = 10
 
 #### Flag used to set if a numpy function or simulation results are optimized: 
 #### if True it optimizes (i.e. maximizes) a numpy function defined in test_function
@@ -43,7 +48,7 @@ test_function                           = None
 simulation_postprocessing_function      = None
 
 def my_test_function(position):
-    return -np.sum(np.square(position-4.3))+9.
+    return -np.sum(np.square(position-2.))+9.
     
 test_function                           = my_test_function
 
