@@ -1,7 +1,3 @@
-##### Author      : Francesco Massimo (Laboratoire de Physique des Gaz et des Plasmas, CNRS)
-##### Purpose     : inputs for the optimization run
-
-
 import numpy as np
 import os,sys
 
@@ -27,9 +23,7 @@ search_interval                         = [[0.,1.],[0.,1.]]
 number_of_samples_per_iteration         = 30 
 
 #### Optimization parameters
-
 number_of_iterations                    = 20 
-iterations_between_outputs              = 1
 
 #### Diagnostic and output dump periodicity
 iterations_between_outputs              = 1
