@@ -19,6 +19,7 @@ optimization_method                     = "Grid Search"
 #### Parameter space to explore
 number_of_dimensions                    = 2  
 search_interval                         = [[-15.,15.],[-15.,15.]]
+input_parameters_names                  = ["dim0","dim1"]
 
 number_of_samples_per_iteration         = 900
 
@@ -68,6 +69,7 @@ if __name__ == '__main__':
                                                use_test_function               = use_test_function,                \
                                                test_function                   = test_function,                    \
                                                iterations_between_outputs      = iterations_between_outputs,       \
-                                               samples_per_dimension           = samples_per_dimension)
+                                               samples_per_dimension           = samples_per_dimension,            \
+                                               input_parameters_names          = input_parameters_names )
     # execute optimization run
     optimization_run.execute()

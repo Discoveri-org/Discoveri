@@ -19,6 +19,7 @@ optimization_method                     = "PSO-TPME"
 #### Parameter space to explore
 number_of_dimensions                    = 2 
 search_interval                         = [[-15.,15.],[-15.,15.]]
+input_parameters_names                  = ["dim0","dim1"]
 
 number_of_samples_per_iteration         = 30 
 
@@ -65,6 +66,7 @@ if __name__ == '__main__':
                                                number_of_iterations            = number_of_iterations,             \
                                                use_test_function               = use_test_function,                \
                                                test_function                   = test_function,                    \
-                                               iterations_between_outputs      = iterations_between_outputs,       )
+                                               iterations_between_outputs      = iterations_between_outputs,       \
+                                               input_parameters_names          = input_parameters_names)
     # execute optimization run
     optimization_run.execute()
