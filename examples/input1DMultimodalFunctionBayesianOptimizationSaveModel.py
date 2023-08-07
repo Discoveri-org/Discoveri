@@ -53,12 +53,6 @@ def my_test_function(x): # maximum near (4.5,4.5)
     
 test_function                           = my_test_function
 
-###########################################################################
-##################### Parameters for Random Search ########################
-###########################################################################
-
-#### parameters used only if Random Search is used, otherwise they are ignored
-# if True, a scrambled Halton sequence will generate the random samples
 
 starting_directory = ""
 
