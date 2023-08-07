@@ -1,5 +1,5 @@
 # This example shows the use of a classic Grid Search
-# with a multimodal problem, i.e. a function with multiple peaks
+# with a function which has multiple peaks
 
 
 import numpy as np

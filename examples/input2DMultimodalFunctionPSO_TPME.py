@@ -1,5 +1,5 @@
 # This example shows the use of a variant of Particle Swarm Optimization, 
-# called PSO-TPME, with a multimodal problem, i.e. a function with multiple peaks
+# called PSO-TPME, with a function which has  multiple peaks
 # this variant of Particle Swarm Optimization tries to avoid falling in local maxima
 
 import numpy as np
