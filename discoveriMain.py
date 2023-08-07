@@ -125,7 +125,7 @@ class optimizationRun:
                                                               **kwargs )
             
         else:
-            print("Error, the optimization_method must be either 'Particle Swarm Optimization', 'Random Search', 'Bayesian Optimization', 'IAPSO', 'PSO-TPME' \n")
+            print("Error, the optimization_method must be either 'Grid Search', 'Random Search', 'Bayesian Optimization', 'Particle Swarm Optimization', 'PSO-TPME' or 'Adaptive Particle Swarm Optimization' \n")
             sys.exit()
 
 
