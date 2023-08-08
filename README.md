@@ -41,7 +41,7 @@ See the `example` folder for some examples of optimizations using ``:Discoveri``
 The next two subsections will detail the parameters that can be provided to the initializer of the `optimizationRun`. Many of these parameters, e.g. the hyperparameters of the various optimization methods, have also default values, thus they don't always have to be provided.
 
 
-##### General optimization parameters
+#### General optimization parameters
 
 - `optimization_method`(string): the derivative-free optimization techniques that will try to maximise `f(X)`.
 At the moment the available options are:
@@ -58,14 +58,14 @@ At the moment the available options are:
 - `search_interval`(list of `number_of_dimensions` lists of 2 elements): in this list, the inferior and superior boundaries of the parameter space to explore (where the different `X` will always belong). The boundaries for each dimension of the explored parameter space must be provided. 
 - `iterations_between_outputs`(integer): number of iterations between outputs, i.e. the output files dump and some message prints at screen.
 
-##### Function to optimize
+#### Function to optimize
 
 - `use_test_function`: if `True`, the function `f(X)` to optimize, i.e. maximize, will be `test_function`. Otherwise, it will be `simulation_postprocessing_function`. 
 In both cases, the users must ensure that the function does not return `nan`,`-inf`,`inf`, and that a real result is always obtained.
 - `test_function`: a real-valued `numpy` function of the position `X`.
 - `simulation_postprocessing_function`: a real-valued function that returns the result of a postprocessing (defined by the users) of a simulation, e.g. the average energy of tracked particles of a Smilei simulation. ``:Discoveri`` will prepare the simulation directories, launch the simulations corresponding to the sampled `X` positions and postprocess the results. The users must ensure that the namelist of the used code can be modified to use the parameters in `X` as inputs. For more details, see the next section and the examples folder. 
 
-##### Job preparation and management  in a cluster 
+#### Job preparation and management  in a cluster 
 
 The users must ensure that these parameters are coherent. e.g. the template job submission script must set the correct name for the simulation log files, etc.
 - `input_parameters_names` (list of `number_of_dimensions` strings): important to modify the namelist to launch simulations. Currently, ``:Discoveri`` assumes that a Python namelist is used by the code, where after a line containing `#External_config` a dictionary will be created by ``:Discoveri``, containing the names of the parameters to explore and their values. The namelist of the code must be prepared in order to use this dictionary.
@@ -82,7 +82,7 @@ The users must ensure that these parameters are coherent. e.g. the template job 
 - `time_to_wait_for_iteration_results` (float): after launching `number_of_samples_per_iteration` simulations at each iteration, ``:Discoveri`` will wait this time in seconds to check if at least one simulation has ended. The simulations that have ended are postprocessed, evaluating the corresponding `f(X)`. If some simulations are still running, ``:Discoveri`` will wait again the same amount of time and check again. This process continues until all the `number_of_samples_per_iteration` simulations have ended and the next iteration can start after all of them are postprocessed. 
 
 
-#### Available optimization methods and their hyperparameters (to do)
+### Available optimization methods and their hyperparameters
 Following are the optimization techniques currently supported by ``:Discoveri``, as well as their hyperparameters. 
 
 - `"Grid Search"`: the arrays `X` of the `number_of_samples_per_iteration` samples are evenly distributed in each dimension `idim` between `search_interval[idim][0]` and `search_interval[idim][1]`, with `samples_per_dimension[idim]` samples.
