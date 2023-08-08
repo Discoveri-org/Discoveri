@@ -728,10 +728,15 @@ class BayesianOptimization(Optimizer):
     def __init__(self, name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs):
         super().__init__(name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs)
         self.num_tests     = 100    # number of points to test through the surrogate function when choosing new samples to draw
-        # Define the model for the kernel of the Gaussian process
+        
+        ### Define the model for the kernel of the Gaussian process
+        
         # the kernel scales are normalized, so the input data to fit and predict must be normalized
-        self.kernel        = ConstantKernel(1.0, constant_value_bounds="fixed")*Matern(nu=1.5) 
-        self.model         = GaussianProcessRegressor(optimizer="fmin_l_bfgs_b",kernel=self.kernel) #(kernel=self.kernel,optimizer="fmin_l_bfgs_b")
+        # this length_scale parameter is really important for convergence of the regressor. 
+        # Ensure that all the X are normalized or this value will not work
+        length_scale       = 1e-1   
+        self.kernel        = ConstantKernel(1.0, constant_value_bounds="fixed")*Matern(nu=1.5,length_scale=length_scale) 
+        self.model         = GaussianProcessRegressor(optimizer="fmin_l_bfgs_b",kernel=self.kernel)
         self.Xsamples      = np.zeros(shape=(self.number_of_samples_per_iteration, self.number_of_dimensions))   # new samples for the new iteration iteration
         # Initial sparse sample
         self.halton_sampler_position   = qmc.Halton(d=self.number_of_dimensions, scramble=True)
@@ -752,14 +757,6 @@ class BayesianOptimization(Optimizer):
             self.samples.append(random_sample)
             print("\n ---> Sample", isample, "Position:", position)  
             self.history_samples_positions_and_function_values[0,isample,0:self.number_of_dimensions] = position[:]
-                
-        # for isample in range(self.number_of_samples_per_iteration):
-        #     for idim in range(0,self.number_of_dimensions):
-        #         self.X[isample,idim] = np.random.uniform(self.search_interval[idim][0], self.search_interval[idim][1])   #, size=number_of_dimensions)
-        #     self.y[isample] = objective(X[isample], noise=0.)
-        # 
-        # # Initial Fit the model to the initial sparse data
-        # self.model.fit(self.X, self.y)
         
         print("\n Bayesian Optimization initialized") 
     # Surrogate or approximation for the objective function
@@ -815,16 +812,19 @@ class BayesianOptimization(Optimizer):
         self.iteration_number = self.iteration_number+1
     
     def operationsAfterUpdateOfOptimumFunctionValueAndPosition(self):
-        # perform some special operations for the data structure needed by the Bayesian Optimization kernel
-        # X is normalized
-        if self.iteration_number == 0:
+        # fit the regressor model to the data X,y 
+        # IMPORTANT: X is normalized
+        if self.iteration_number == 0: # if it is the first iteration
+            # fit to the initial observation
             for isample in range(0,self.number_of_samples_per_iteration):
                 self.y[isample] = self.history_samples_positions_and_function_values[self.iteration_number,isample,self.number_of_dimensions]
             self.model.fit(self.X, self.y)
-        else:
+        else: # if it is one of the next iterations
+            # add the new samples to the dataset
             for isample in range(0,self.number_of_samples_per_iteration):
                 self.X = np.vstack((self.X, self.Xsamples[isample]))
                 self.y = np.vstack((self.y, self.history_samples_positions_and_function_values[self.iteration_number,isample,self.number_of_dimensions]))
+            # fit to the whole dataset including the new observations
             self.model.fit(self.X, self.y)
         
 class GeneticAlgorithm(Optimizer):
