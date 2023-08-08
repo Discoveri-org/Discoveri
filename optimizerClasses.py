@@ -221,6 +221,10 @@ class ParticleSwarmOptimization(Optimizer):
     def __init__(self, name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs):
         super().__init__(name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs)
         
+        if (self.number_of_samples_per_iteration < 2):
+            print("ERROR: in any variant of Particle Swarm Optimization there should be at least two particles in the swarm,")
+            print("i.e. number_of_samples_per_iteration must be at least equal to 2.")
+            sys.exit()
         
         # c1 (cognitive parameter): It determines the weight or influence of the particle's personal optimum position on its velocity update
         # A higher value of c1 gives more importance to the particle's historical optimum position and encourages exploration.
@@ -836,8 +840,9 @@ class GeneticAlgorithm(Optimizer):
         # population = children (which are number_of_samples_per_iteration) + the parents (which are number_of_parents)
         # The parents are selected from the population of the previous iteration.
         
-        self.population_positions       = []
-        self.population_function_values = []
+        if (self.number_of_samples_per_iteration < 2):
+            print("ERROR: for the Genetic Algorithm number_of_samples_per_iteration must be at least equal to 2.")
+            sys.exit()
         
         default_number_of_parents       = int(0.3*self.number_of_samples_per_iteration)
         self.number_of_parents          = kwargs.get('number_of_parents', default_number_of_parents)
@@ -853,6 +858,13 @@ class GeneticAlgorithm(Optimizer):
         if ( (self.probability_of_mutation < 0.) or (self.probability_of_mutation > 1.) ):
             print("ERROR: probability_of_mutation must be a float between 0. and 1.")
             sys.exit()
+        
+        
+        # Lists containing the positions and function values of the population from which parents are selected.
+        # At the first iteration, the population from which parents are selected is made only of the initial samples (which are `number_of_samples_per_iteration`). 
+        # At the next iterations, the population from which parents are selected is made of the parents selected at the previous iteration + their children.
+        self.population_positions       = []
+        self.population_function_values = []
         
         # Initialize each sample
         self.halton_sampler_position   = qmc.Halton(d=self.number_of_dimensions, scramble=True)
