@@ -178,7 +178,7 @@ class optimizationRun:
   
     
         # append on file the configurations that were launched in this iteration
-        with open('list_configurations.csv', 'a') as f:
+        with open('list_configurations.csv', 'w') as f:
             for configuration in self.list_configurations:
                 f.write(configuration)
 
@@ -225,10 +225,10 @@ class optimizationRun:
                 # increase the configuration number
                 self.config_id = self.config_id+1
     
-                # append on file the configurations that were launched in this iteration
-                with open('list_configurations.csv', 'a') as f:
-                    for configuration in self.list_configurations:
-                        f.write(configuration)
+            # append on file the configurations that were launched in this iteration
+            with open('list_configurations.csv', 'a') as f:
+                for configuration in self.list_configurations:
+                    f.write(configuration)
     
             # Check if the simulations launched in this iteration have finished
             # and analyse all of them until all are finished 
