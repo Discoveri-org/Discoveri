@@ -2,7 +2,7 @@
 ## Data-driven Investigation through Simulations on Clusters for the Optimization of the physical Variables' Effects in Regimes of Interest
 
 ### About ``:Discoveri``
-``:Discoveri`` is a Python code to optimize/maximize a function with derivative-free methods. This function can be a `numpy` function or the result of a postprocessing function of simulations on a cluster. In both cases the user can define the function to optimize. In the latter case, ``:Discoveri`` prepares and launches automatically the simulations that sample the function to optimize. At the moment, the following optimization methods are implemented: `"Grid Search"`, `"Random Search"`,`"Bayesian Optimization"`, `"Particle Swarm Optimization"` (and two of its variants called `"Adaptive Particle Swarm Optimization"` and `"PSO-TPME"`).
+``:Discoveri`` is a Python code to optimize/maximize a function with derivative-free methods. This function can be a `numpy` function or the result of a postprocessing function of simulations on a cluster. In both cases the user can define the function to optimize. In the latter case, ``:Discoveri`` prepares and launches automatically the simulations that sample the function to optimize. At the moment, the following optimization methods are implemented: `"Grid Search"`, `"Random Search"`,`"Bayesian Optimization"`, `"Genetic Algorithm"`, `"Particle Swarm Optimization"` (and two of its variants called `"Adaptive Particle Swarm Optimization"` and `"PSO-TPME"`).
 
 ### Python libraries used
 - `numpy`
@@ -40,6 +40,7 @@ At the moment the available options are:
   - `"Grid Search"`
   - `"Random Search"`
   - `"Bayesian Optimization"`
+  - `"Genetic Algorithm"`
   - `"Particle Swarm Optimization"`
   - `"Adaptive Particle Swarm Optimization"`
   - `"PSO-TPME"`
@@ -78,10 +79,18 @@ Following are the optimization techniques currently supported by ``:Discoveri``,
 NOTE: this optimizer only supports `number_of_iterations = 1`.
 Optimizer hyperparameters:
   - `samples_per_dimension` a list of `number_of_dimensions` integers, whose product must be equal to `number_of_samples_per_iteration`.
+  
 - `"Random Search"`: in this optimization method, the array `X` for each sample of each iteration is generated pseudo-randomly, with a uniform distribution within the `search_interval`. 
 Optimizer hyperparameter:
   - `use_Halton_sequence` (default value = `True`): if `True`, a scrambled Halton sequence (https://en.wikipedia.org/wiki/Halton_sequence) is used to draw the samples. Otherwise, they are drawn using `numpy.random.uniform` scaled and shifted for each dimension to draw `X` from the `search_interval` of interest.
+  
 - `"Bayesian Optimization"`: based on the implementation of Gaussian process regression (GPR) provided by the `scikit-learn` library, with an anisotropic Matérn kernel with `nu=1.5`. The length scale of the Matérn kernel was optimized by maximizing the log-marginal-likelihood every time new data is fitted to the model. An expected improvement acquisition function is used. Sometimes convergence can be improved by limiting the orders of magnitude spanned by the function to optimize `f(X)`, e.g. using a `log(f(X))`, instead of `f(X)`. The best technique to limit the orders of magnitude will depend on the considered case.
+
+- `"Genetic Algorithm"`: a genetic algorithm where at each iteration `number_of_parents` biological parents are selected from a population (those with highest `f(X)` are picked). For each child to generate (corresponding to `number_of_samples_per_iteration`), two biological parents are randomly paired and the position `X` of their child is the arithmetic average of the components of their positions `X` (arithmetic crossover). At the moment this is the only crossover method implemented in ``:Discoveri``. For each child, for each dimension, there is a probability `probability_of_mutation` that the corresponding position coordinate is mutated, randomly selected within the `search_interval`. At the first iteration, the population from which parents are selected is made only of the initial samples (which are `number_of_samples_per_iteration`). At the next iterations, the population from which parents are selected is made of the parents selected at the previous iteration and their children.
+Optimizer hyperparameters:
+  - `probability_of_mutation` (default value = `0.1`): the probability of mutation for each dimension of each child at each iteration.
+  - `number_of_parents` (default value = `int(0.3*number_of_samples_per_iteration)`): the number of parents selected from the population at each iteration to generate children. The number of children will always be equal to `number_of_samples_per_iteration`. The `number_of_parents` must be at least 2 (although at least 3 is recommended to improve the genetic diversity of children).
+  
 - `"Particle Swarm Optimization"`: the most common version of Particle Swarm Optimization (PSO), where an inertia term is added to the velocity update, as described in Y. Shi, R.C. Eberhart, 1998 https://ieeexplore.ieee.org/document/699146 . The `num_sample` samples represent the particles of the swarm, with position `X` and a velocity. At each iteration `t` the velocity of the particles are updated adding a cognitive velocity component (proportional to a constant coefficient `c1`), a social velocity component (proportional to a constant coefficient `c2`, `c1+c1<4`) and the velocity at the last iteration multiplied by the constant inertia weight `w` (which must be `<1` to avoid velocity divergence). At each iteration, for each dimension `k`, the velocity component `V_k` and the position component `X_k` of each particle `i` at iteration `t+1` will be updated at each iteration using 
 `V_k(t+1)=w*V_k(t)+c1*rand1*[Best_X_i_k-X_k(t)]+c2*rand2*[Best_X_swarm_k-X_k(t)]` 
 and 
@@ -89,20 +98,22 @@ and
 where `rand1` and `rand2` are two random numbers from between `0` and `1`, and `Best_X_i_k` and `Best_X_swarm` are the best positions `X` found so far respectively by the particle `i` and by the entire swarm.
 The optimum positions `Best_X_i` are updated if better positions are found the particles `i`. Coherently, if one of these positions is better than the best one found by the swarm so far,  `Best_X_swarm` is updated. The particles initial positions are initialized with a scrambled Halton sequence. Particles crossing a `search_interval` boundary in a dimension will have their coordinate in that dimension reinitialized, drawn from a uniform distribution in the `search_domain` span in that dimension, their velocity will remain unchanged.
 Optimizer hyperparameters:
-  - `c1` (cognitive acceleration coefficient, default value = `2.`): high values of `c1` promote the exploration near the best position found by the particle, in case updated at each iteration. If provided by the users, they must ensure that `c1+c1<4`.
-  - `c2` (social acceleration coefficient, default value = `2.`): high values of `c2` promote the exploitation of the knowledge of the best position found by the entire swarm, in case updated at each iteration. If provided by the users, they must ensure that `c1+c1<4`.
+  - `c1` (cognitive acceleration coefficient, default value = `2.`): high values of `c1` promote the exploitation of positions near the best position found by the individual particle, updated at each iteration if a better position is found. If provided by the users, they must ensure that `c1+c1<4`.
+  - `c2` (social acceleration coefficient, default value = `2.`): high values of `c2` promote the exploitation of positions near the best position found by the entire swarm, updated at each iteration if a better position is found. If provided by the users, they must ensure that `c1+c1<4`.
   - `w` (inertia weight, default value = `0.9`): high values of this coefficient reduce the variations of the velocity of the particle. If provided by the users, they must ensure that it is `<1` to avoid velocity divergence.
   - `initial_speed_over_search_space_size` (default value = `0.1`): the initial velocities of particles in each dimension are drawn from a uniform distribution with boundaries proportional to `initial_speed_over_search_space_size` in that dimension and to the `search_interval` size in that dimension.
   - `max_speed` (maximum speed, default value: an array with elements equal to the respective size of `search_interval` in each dimension multiplied by `0.3`).
+  
 - `"Adaptive Particle Swarm Optimization"` (Adaptive PSO): based on from Z.-H. Zhan et al., IEEE Transactions on Systems, Man, and Cybernetics, Part B (Cybernetics) 39, 6 (2009) https://ieeexplore.ieee.org/document/4812104 .
 Based on the evolutionary state of the swarm, the coefficients `c1`, `c2` and the inertia weight `w` are updated as described in that article. Compared to the description in the original reference, no transition base rule is used.
 Optimizer hyperparameters:
-  - `c1` (cognitive acceleration coefficient, default value = `2.0`): as in the `"Particle Swarm Optimization"`, but the value provided by the user is just the initial value of the coefficient.
-  - `c2` (cognitive acceleration coefficient, default value = `2.0`): as in the `"Particle Swarm Optimization"`, but the value provided by the user is just the initial value of the coefficient.
-  - `w` (inertia weight, default value = `0.9`): as in the `"Particle Swarm Optimization"`, but the value provided by the user is just the initial value of the inertia weight.
+  - `c1` (cognitive acceleration coefficient, default value = `2.0`): same as in the `"Particle Swarm Optimization"`, but the value provided by the user is just the initial value of the coefficient.
+  - `c2` (social acceleration coefficient, default value = `2.0`): same as in the `"Particle Swarm Optimization"`, but the value provided by the user is just the initial value of the coefficient.
+  - `w` (inertia weight, default value = `0.9`): same as in the `"Particle Swarm Optimization"`, but the value provided by the user is just the initial value of the inertia weight.
   - `perturbation_global_best_particle` (default value = `True`): when `True` and the evolutionary state of the swarm is `Convergence`, the position of the best particle (the one with highest `f(X)`) is mutated adding a random perturbation drawn from a Gaussian distribution on one random coordinate (see original reference) and this new position is assigned to the worst particle of the swarm (the one with lowest `f(X)`). This feature allows the swarm to jump out of a local maximum more easily.
-  - `initial_speed_over_search_space_size` (as for the `"Particle Swarm Optimization"`, but default value = `0.1`).
-  - `max_speed`: as in the `"Particle Swarm Optimization"`.
+  - `initial_speed_over_search_space_size`: same as in the `"Particle Swarm Optimization"`.
+  - `max_speed`: same as in the `"Particle Swarm Optimization"`.
+  
 - `"PSO-TPME"` (PSO with Targeted, Position-Mutated Elitism), `optimizer_hyperparameters = [c1,c2,w1,w2,initial_speed_over_search_space_size,Number_of_iterations_bad_particles,portion_of_mean_classification_levels,amplitude_mutated_range_1,amplitude_mutated_range_2]`: version of the PSO based on T. Shaquarin, B. R. Noack, International Journal of Computational Intelligence Systems (2023) 16:6, https://doi.org/10.1007/s44196-023-00183-z In this version of PSO, the inertia linearly decreases from `w1` (<1) to `w2` (<`w1`) and the coefficients `c1` and `c2` (`c1+c2<4`) are fixed. At each iteration, the mean `mean` of the function values found by the particles is computed. Afterwards, two levels for the function value are defined: `mean*(1+portion_of_mean_classification_levels)` and `mean*(1-portion_of_mean_classification_levels)`, where `portion_of_mean_classification_levels<1`. Depending on the function value they have found compared to these two levels, at each iterations particles are classified as `good` (above the highest level), `bad` (below the lowest level) and `fair` (in between). `good` particles will behave only exploring around their personal optimum position i.e. as if `c2=0`), `bad` particles will behave only converging towards the swarm optimum position (i.e. as if `c1=0`). `fair` particles will behave as the particles of a "classic" PSO. Particles remaining `bad` for `Number_of_iterations_bad_particles` will be marked as `hopeless`, i.e. at the next iteration they will be relocated near the swarm optimum position.
 Compared to that reference, the level from which the levels for `bad`, `fair`, `good` particles are computed cannot decrease over the iterations: i.e. the maximum between the mean of the function values found and the mean found at the previous iteration is used as `mean`;
 furthermore, to reinitialize the particles closer to the optimum one, the mutated_amplitude scale is linearly decreasing from `amplitude_mutated_range_1` to `amplitude_mutated_range_2` (`<amplitude_mutated_range_1`) and the distribution of the coordinates in a dimension near the optimum particle is a gaussian proportional to the `search_space` size in that dimension and the mutated amplitude.
@@ -114,10 +125,10 @@ Optimizer hyperparameters:
   - `amplitude_mutated_range_1` (default value = `0.4`).
   - `amplitude_mutated_range_2` (default value = `0.01`).
   - `Number_of_iterations_bad_particles` (default value = `2`).
-  - `initial_speed_over_search_space_size` (as for the `"Particle Swarm Optimization"`).
-  - `max_speed`: as in the `"Particle Swarm Optimization"`.
-  - `c1` (as for the `"Particle Swarm Optimization"`).
-  - `c2` (as for the `"Particle Swarm Optimization"`).
+  - `initial_speed_over_search_space_size`: same as for the `"Particle Swarm Optimization"`.
+  - `max_speed`: same as in the `"Particle Swarm Optimization"`.
+  - `c1`: same as for the `"Particle Swarm Optimization"`.
+  - `c2`: same as for the `"Particle Swarm Optimization"`.
   
 #### Postprocessing:
 In the folder `postprocessing_scripts` several scripts are available to have an insight on the optimization run(s) made with ``:Discoveri``:
