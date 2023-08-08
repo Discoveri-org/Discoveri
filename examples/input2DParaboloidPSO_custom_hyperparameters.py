@@ -22,35 +22,32 @@ from toolsSmileiAnalysis import *
 
 #### Optimization method options: 
 
-optimization_method                     = "Particle Swarm Optimization" 
+optimization_method                = "Particle Swarm Optimization" 
 
 #### Parameter space to explore
-number_of_dimensions                    = 2 
-search_interval                         = [[-100.,100.],[-100.,100.]]
-input_parameters_names                  = ["dim0","dim1"]
+number_of_dimensions               = 2 
+search_interval                    = [[-100.,100.],[-100.,100.]]
+input_parameters_names             = ["dim0","dim1"]
 
-number_of_samples_per_iteration         = 6 
+number_of_samples_per_iteration    = 6 
 
 #### Optimization parameters
-number_of_iterations                    = 50 
+number_of_iterations               = 50 
 
 #### Diagnostic and output dump periodicity
-iterations_between_outputs              = 10
+iterations_between_outputs         = 10
 
 #### Flag used to set if a numpy function or simulation results are optimized: 
 #### if True it optimizes (i.e. maximizes) a numpy function defined in test_function
-#### Otherwise, it will postprocess simulation results using the function defined in simulation_postprocessing_function
-#### In both cases it is absolutely necessary that the function to optimize gives a number, different from inf,-inf and from nan
-#### It is also suggested, especially for Bayesian Optimization, to reduce the orders of magnitude spanned by the function, e.g. with a logarithm
-use_test_function                       = True
+use_test_function                  = True
 
-test_function                           = None
-simulation_postprocessing_function      = None
+test_function                      = None
+simulation_postprocessing_function = None
 
-def my_test_function(x): # optimum in (2.,2.)
+def my_test_function(x): # global maximum in (2.,2.)
     return -np.sum(np.square(x-2.))+9.
     
-test_function                           = my_test_function
+test_function                      = my_test_function
 
 
 starting_directory = ""

@@ -18,37 +18,34 @@ from toolsSmileiAnalysis import *
 ############# Parameters for a generic optimization method ################
 ###########################################################################
 
-optimization_method                     = "Random Search" 
+optimization_method                = "Random Search" 
 
 #### Parameter space to explore
-number_of_dimensions                    = 2  
-search_interval                         = [[0.,10.],[0.,10.]]
-input_parameters_names                  = ["dim0","dim1"]
+number_of_dimensions               = 2  
+search_interval                    = [[0.,10.],[0.,10.]]
+input_parameters_names             = ["dim0","dim1"]
 
-number_of_samples_per_iteration         = 18
+number_of_samples_per_iteration    = 18
 
-use_Halton_sequence                     = True
+use_Halton_sequence                = True
 
 #### Optimization parameters
-number_of_iterations                    = 100
+number_of_iterations               = 100
 
 #### Diagnostic and output dump periodicity
-iterations_between_outputs              = 1
+iterations_between_outputs         = 1
 
 #### Flag used to set if a numpy function or simulation results are optimized: 
 #### if True it optimizes (i.e. maximizes) a numpy function defined in test_function
-#### Otherwise, it will postprocess simulation results using the function defined in simulation_postprocessing_function
-#### In both cases it is absolutely necessary that the function to optimize gives a number, different from inf,-inf and from nan
-#### It is also suggested, especially for Bayesian Optimization, to reduce the orders of magnitude spanned by the function, e.g. with a logarithm
-use_test_function                       = True
+use_test_function                  = True
 
-test_function                           = None
-simulation_postprocessing_function      = None
+test_function                      = None
+simulation_postprocessing_function = None
 
 def my_test_function(x): # global maximum near (4.5,4.5)
     return np.sum( -np.cos(x)-np.sin(x)-5/2.*np.cos(2.*x)+1/2.*np.sin(2.*x)  )
     
-test_function                           = my_test_function
+test_function                      = my_test_function
 
 
 starting_directory = ""
