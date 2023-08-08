@@ -45,7 +45,7 @@ use_test_function                       = True
 test_function                           = None
 simulation_postprocessing_function      = None
 
-def my_test_function(x): #maximum near (4.5,4.5)
+def my_test_function(x): # global maximum near (4.5,4.5)
     return np.sum( -np.cos(x)-np.sin(x)-5/2.*np.cos(2.*x)+1/2.*np.sin(2.*x)  )
     
 test_function                           = my_test_function
