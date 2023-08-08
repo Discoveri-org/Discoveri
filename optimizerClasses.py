@@ -49,16 +49,16 @@ class SwarmParticle(Sample):
 class Optimizer:
     def __init__(self, name = "", number_of_samples_per_iteration = 1, number_of_dimensions = 1, search_interval = [], number_of_iterations = 1, **kwargs ):
         
-        self.name                            = name                   # name of the optimizer
-        self.number_of_iterations            = number_of_iterations         # maximum number of iterations
-        self.number_of_samples_per_iteration = number_of_samples_per_iteration            # number of samples drawn at each iteration
-        self.number_of_dimensions            = number_of_dimensions         # number of dimensions of the parameter space to explore
+        self.name                            = name                             # name of the optimizer
+        self.number_of_iterations            = number_of_iterations             # maximum number of iterations
+        self.number_of_samples_per_iteration = number_of_samples_per_iteration  # number of samples drawn at each iteration
+        self.number_of_dimensions            = number_of_dimensions             # number of dimensions of the parameter space to explore
         self.optimizer_hyperparameters       = kwargs
-        self.search_interval                 = search_interval        # list of lists, with the boundaries 
-        self.optimum_position                = None                   # optimum position found by the optimizer, yielding the swarm_optimum_function_value
-        self.optimum_function_value          = float('-inf')          # maximum value found of the function to optimize, in all the the swarm
-        self.samples                         = []                     # array containing the explored samples at the present iterations
-        self.iteration_number                = 0                      # present iteration number 
+        self.search_interval                 = search_interval                  # list of lists, with the boundaries of the space to explore
+        self.optimum_position                = None                             # optimum position found by the optimizer, yielding the swarm_optimum_function_value
+        self.optimum_function_value          = float('-inf')                    # maximum value found of the function to optimize, in all the the swarm
+        self.samples                         = []                               # array containing the explored samples at the present iterations
+        self.iteration_number                = 0                                # present iteration number 
         # history of the positions traveled by the particles
         # dimension 0 : iteration
         # dimension 1 : sample number
@@ -76,10 +76,11 @@ class Optimizer:
         print("\nOptimizer:                          ", self.name)
         print("Number of iterations:                 ",self.number_of_iterations)
         print("Number of dimensions:                 ",self.number_of_dimensions)
+        print("Number of samples per iteration       ",self.number_of_samples_per_iteration)
         print("Search interval:                      ",self.search_interval)
         print("Hyperparameters provided by the user: ",kwargs,"\n")
     
-    def updateSamplesForExploration():
+    def updateSamplesForExploration(self):
         print("In an optimizer, you must define a way to pick new positions to explore for each sample")
     
     def operationsAfterUpdateOfOptimumFunctionValueAndPosition(self):
@@ -195,7 +196,6 @@ class GridSearch(Optimizer):
         
         print("\n -- hyperparameters used by the optimizer -- ")
         print("samples_per_dimension : ",self.samples_per_dimension)
-        
         
         # create population of samples 
         for isample in range(self.number_of_samples_per_iteration):
@@ -823,5 +823,147 @@ class BayesianOptimization(Optimizer):
                 self.y = np.vstack((self.y, self.history_samples_positions_and_function_values[self.iteration_number,isample,self.number_of_dimensions]))
             self.model.fit(self.X, self.y)
         
+class GeneticAlgorithm(Optimizer):
+    def __init__(self, name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs):
+        super().__init__(name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs)
+        
+        # Implementation of a basic genetic algorithm
+        # to avoid function re-evaluation, the samples stored by this optimizer 
+        # represent only the children generated at the present iteration.
+        # The set of children + parents is called population.
+        # At the first iteration, the population is made of the initial samples, 
+        # while in the other iterations the population is made of 
+        # population = children (which are number_of_samples_per_iteration) + the parents (which are number_of_parents)
+        # The parents are selected from the population of the previous iteration.
+        
+        self.population_positions       = []
+        self.population_function_values = []
+        
+        default_number_of_parents       = int(0.3*self.number_of_samples_per_iteration)
+        self.number_of_parents          = kwargs.get('number_of_parents', default_number_of_parents)
+        if (self.number_of_parents > self.number_of_samples_per_iteration):
+            print("ERROR: the number_of_parents must be smaller than the number_of_samples_per_iteration")
+            sys.exit()
+        if (self.number_of_parents < 2):
+            print("ERROR: the total number_of_parents must be at least 2")
+            sys.exit()
+        
+        default_probability_of_mutation = 0.1
+        self.probability_of_mutation    = kwargs.get('probability_of_mutation', default_probability_of_mutation)
+        if ( (self.probability_of_mutation < 0.) or (self.probability_of_mutation > 1.) ):
+            print("ERROR: probability_of_mutation must be a float between 0. and 1.")
+            sys.exit()
+        
+        # Initialize each sample
+        self.halton_sampler_position   = qmc.Halton(d=self.number_of_dimensions, scramble=True)
+        halton_sampler_random_position = self.halton_sampler_position.random(n=self.number_of_samples_per_iteration)
+        for isample in range(self.number_of_samples_per_iteration):
+            position = np.zeros(self.number_of_dimensions)
+            # use a Halton sequence to sample more uniformly the parameter space
+            for idim in range(0,self.number_of_dimensions):
+                position[idim]       = search_interval[idim][0]+halton_sampler_random_position[isample][idim]*(search_interval[idim][1]-search_interval[idim][0]) 
+                
+            random_sample            = RandomSearchSample(position) 
+            self.samples.append(random_sample)
             
+            # at the first iteration, the population is made just by the initial samples
+            self.population_positions.append(position)
+            
+            print("\n ---> Sample", isample, "Position:", position)  
+            self.history_samples_positions_and_function_values[0,isample,0:self.number_of_dimensions] = position[:]
+    
+    def updateSamplesForExploration(self):
+        
+        # Select parents, i.e. the number_of_parents positions among the present population 
+        # which obtained the highest values of the function to optimize
+        # remove the other positions from the population
+        self.addChildrenFunctionValuesToPopulationFunctionValues()
+        self.selectParents()
+        
+        # Generate new children
+        children_positions = self.crossover()
+        children_positions = self.mutateChildren(children_positions)
+        
+        # Build population fot the next iteration
+        # population = parents + new children
+        self.addChildrenToPopulation(children_positions)
+        
+        # The new samples of the optimizer will be the children that were just generated
+        self.addChildrenToSamples(children_positions)
+        
+        # update iteration number
+        self.iteration_number = self.iteration_number+1
+        
+    def addChildrenFunctionValuesToPopulationFunctionValues(self):
+        for isample in range(0,self.number_of_samples_per_iteration):
+            self.population_function_values.append(self.history_samples_positions_and_function_values[self.iteration_number,isample,self.number_of_dimensions])
+            
+    def selectParents(self):
+        # Create a temporary list of tuples (element, index)
+        temp_population_function_values = [(element, index) for index, element in enumerate(self.population_function_values)]
+        # Sort the temporary list based on the elements (descending order)
+        temp_population_function_values.sort(reverse=True)
+        # Get the first n indices from the sorted list
+        indices_parents = [index for _, index in temp_population_function_values[:self.number_of_parents]]
+        # Remove the samples which are not selected as parents from the population list
+        self.population_positions       = [elem for i, elem in enumerate(self.population_positions)       if i in indices_parents]
+        self.population_function_values = [elem for i, elem in enumerate(self.population_function_values) if i in indices_parents]
+        
+        
+    def crossover(self):
+        children_positions = []
+        position = np.zeros(self.number_of_dimensions)
+
+        # for each child
+        for ichild in range(0,self.number_of_samples_per_iteration):
+            # draw a random couple of parents from the selected parents
+            
+            # index of parent 1
+            random_index_1     = random.randint(0, len(self.population_positions)-1)
+            random_index_2     = random_index_1 
+            
+            while ( random_index_2 == random_index_1 ):
+                # index of parent 2
+                random_index_2 = random.randint(0, len(self.population_positions)-1)
+                
+
+            parent_1_position  = self.population_positions[random_index_1]
+            parent_2_position  = self.population_positions[random_index_2]
+            
+            # Arithmetic Crossover applied to all genes of the children and parents:
+            # for each dimension the value for the child is the average of the values of the two parents
+            # this part can change in different variants of genetic algorithms
+            position = 0.5 * (parent_1_position + parent_2_position)
+            
+            
+            children_positions.append(position)
+
+        return children_positions
+    
+    def mutateChildren(self,children_positions):
+        for child_position in children_positions:
+            for idim in range(0,self.number_of_dimensions):
+                if (np.random.rand() < self.probability_of_mutation):
+                    child_position[idim] = np.random.uniform(self.search_interval[idim][0], self.search_interval[idim][1])
+        return children_positions
+        
+    def addChildrenToPopulation(self,children_positions):
+        print("Parents:")
+        for parent_position in self.population_positions:
+            print(" ",parent_position)
+        print("Children:")
+        for child_position in children_positions:
+            print(" ",child_position)
+            self.population_positions.append(child_position)
+    
+    def addChildrenToSamples(self,children_positions):
+        for isample in range(0,len(children_positions)):
+            self.samples[isample].position[:] = children_positions[isample][:]
+            
+     
+        
+        
+        
+        
+                  
      

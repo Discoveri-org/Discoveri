@@ -86,23 +86,26 @@ class optimizationRun:
         print("\n Initializing the optimizer\n\n")
 
         if (self.optimization_method   == "Random Search"):
+            # initialize a Random Search
             self.optimizer             = RandomSearch         (name=optimization_method,                                      \
                                                               number_of_samples_per_iteration=number_of_samples_per_iteration, number_of_dimensions=number_of_dimensions,         \
                                                               search_interval=search_interval, number_of_iterations=number_of_iterations, \
                                                               **kwargs )
         elif (self.optimization_method == "Grid Search"):
+            # initialize a Grid Search
             self.optimizer             = GridSearch           (name=optimization_method,                                      \
                                                               number_of_samples_per_iteration=number_of_samples_per_iteration, number_of_dimensions=number_of_dimensions,         \
                                                               search_interval=search_interval, number_of_iterations=number_of_iterations, \
                                                               **kwargs )
                                                               
         elif (self.optimization_method == "Bayesian Optimization"):
+            # initialize a Bayesian Optimizer
             self.optimizer             = BayesianOptimization (name=optimization_method,                                      \
                                                               number_of_samples_per_iteration=number_of_samples_per_iteration, number_of_dimensions=number_of_dimensions,         \
                                                               search_interval=search_interval, number_of_iterations=number_of_iterations, \
                                                               **kwargs )
         elif (self.optimization_method == "Particle Swarm Optimization"):
-            # initialize a swarm of particles
+            # initialize a swarm of particles, "classic" version of the Particle Swarm Optimization
             self.optimizer             = ParticleSwarmOptimization(name=optimization_method,                                  \
                                                               number_of_samples_per_iteration=number_of_samples_per_iteration, number_of_dimensions=number_of_dimensions,         \
                                                               search_interval=search_interval, number_of_iterations=number_of_iterations, \
@@ -110,7 +113,8 @@ class optimizationRun:
                                                               
                                                               
         elif (self.optimization_method == "Adaptive Particle Swarm Optimization"):
-            # initialize a swarm of particles
+            # initialize a swarm of particles, version of the Particle Swarm Optimization
+            # where the hyperparameters are automatically tuned during the optimization
             self.optimizer             = ParticleSwarmOptimization(name=optimization_method,                                  \
                                                               number_of_samples_per_iteration=number_of_samples_per_iteration, number_of_dimensions=number_of_dimensions,         \
                                                               search_interval=search_interval, number_of_iterations=number_of_iterations, \
@@ -118,8 +122,16 @@ class optimizationRun:
                                                               
                                                               
         elif (self.optimization_method == "PSO-TPME"):
-            # initialize a swarm of particles
+            # initialize a swarm of particles, version of the Particle Swarm Optimization
+            # called PSO with Targeted, Position-Mutated Elitism
             self.optimizer             = ParticleSwarmOptimization(name=optimization_method, \
+                                                              number_of_samples_per_iteration=number_of_samples_per_iteration, number_of_dimensions=number_of_dimensions, \
+                                                              search_interval=search_interval, number_of_iterations=number_of_iterations, \
+                                                              **kwargs )
+                                                              
+        elif (self.optimization_method == "Genetic Algorithm"):
+            # initialize an optimizer which uses a Genetic Algorithm
+            self.optimizer             = GeneticAlgorithm     (name=optimization_method, \
                                                               number_of_samples_per_iteration=number_of_samples_per_iteration, number_of_dimensions=number_of_dimensions, \
                                                               search_interval=search_interval, number_of_iterations=number_of_iterations, \
                                                               **kwargs )
