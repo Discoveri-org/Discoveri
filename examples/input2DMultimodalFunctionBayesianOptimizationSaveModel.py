@@ -26,14 +26,14 @@ from toolsSmileiAnalysis import *
 optimization_method                = "Bayesian Optimization" 
 
 #### Parameter space to explore
-number_of_dimensions               = 1 
-search_interval                    = [[0.,10.]]
-input_parameters_names             = ["dim0"]
+number_of_dimensions               = 2 
+search_interval                    = [[0.,10.],[0.,10.]]
+input_parameters_names             = ["dim0","dim1"]
 
 number_of_samples_per_iteration    = 1
 
 #### Optimization parameters
-number_of_iterations               = 25
+number_of_iterations               = 50
 
 #### Diagnostic and output dump periodicity
 iterations_between_outputs         = 1
@@ -45,8 +45,8 @@ use_test_function                  = True
 test_function                      = None
 simulation_postprocessing_function = None
 
-def my_test_function(x): # global maximum near (4.5,4.5)
-    return np.sum( -np.cos(x)-np.sin(x)-5/2.*np.cos(2.*x)+1/2.*np.sin(2.*x)  )
+def my_test_function(x): # maximum near (4.5,4.5)
+    return np.sum(np.sinc(x-5.2))
     
 test_function                      = my_test_function
 
@@ -81,34 +81,46 @@ if __name__ == '__main__':
     with open('optimization_run.pkl', 'rb') as file:
         loaded_optimization_run = pickle.load(file)
         
-    # and use the surrogate model of bayesian optimization to have a reconstruction of the function to optimize
-    n_grid_points = 300
+    n_grid_points = 200
     x_mesh = np.linspace(loaded_optimization_run.optimizer.search_interval[0][0],loaded_optimization_run.optimizer.search_interval[0][1],num=n_grid_points)
+    y_mesh = np.linspace(loaded_optimization_run.optimizer.search_interval[1][0],loaded_optimization_run.optimizer.search_interval[1][1],num=n_grid_points)
 
     # array for the predicted function values
-    function_value_mesh = np.zeros(n_grid_points)
-    # array for the uncertainity of the prediction as standard deviation
-    std = np.zeros(n_grid_points)
+    function_value_mesh      = np.zeros(shape=(n_grid_points,n_grid_points))
+    # array for the real function values
+    true_function_value_mesh = np.zeros(shape=(n_grid_points,n_grid_points))
     for i in range(0,n_grid_points):
-        # remember that the surrogate model inside the optimizer takes for each dimension idim the coordinates
-        # of the sample normalized by search_interval_size[idim], i.e. the size of the search interval in that dimension
-        sample = (np.array([x_mesh[i]/loaded_optimization_run.optimizer.search_interval_size[0]])).reshape(1,1)
-        # predict the value of the function with a surrogate model
-        function_value_mesh[i],std[i] = loaded_optimization_run.optimizer.model.predict(sample,return_std=True)
+        for j in range(0,n_grid_points):
+            # remember that the surrogate model inside the optimizer takes for each dimension idim the coordinates
+            # of the sample normalized by search_interval_size[idim], i.e. the size of the search interval in that dimension
+            x_sample            = x_mesh[i]/loaded_optimization_run.optimizer.search_interval_size[0]
+            y_sample            = y_mesh[j]/loaded_optimization_run.optimizer.search_interval_size[1]
+            sample_normalized   = (np.array([x_sample,y_sample])).reshape(1,2)
+            # predict the value of the function with a surrogate model
+            function_value_mesh[i,j]      = loaded_optimization_run.optimizer.model.predict(sample_normalized)
+            sample              = np.array([x_mesh[i],y_mesh[j]])
+            true_function_value_mesh[i,j] = my_test_function(sample)
            
             
-    # Plot    
-    plt.figure();plt.ion();plt.show()
-    # plot the predicted values
-    plt.plot(x_mesh,function_value_mesh,"g",label="surrogate model")
-    # plot also the uncertainity of the prediction at each point
-    plt.fill_between(x_mesh,function_value_mesh-3*std,function_value_mesh+3*std,color="g",alpha=0.1)
-    # print the real value of the function to optimize (which is unknown to the optimizer)
-    plt.plot(x_mesh,[my_test_function(x) for x in x_mesh],"-b",label="function to optimize")
-    # print the points sampled by the optimizer, remembering to the normalize the X points
-    plt.plot(loaded_optimization_run.optimizer.X*loaded_optimization_run.optimizer.search_interval_size[0],loaded_optimization_run.optimizer.y,"b.",label="sampled points")
-    plt.xlabel("x");plt.ylabel("y")
-    plt.legend()
+    # plot the predicted function values
+    # especially in more than one dimension, you will need a lot of points to see something in this plot
+    plt.ion()
+    plt.figure(1)
+    plt.imshow(function_value_mesh,extent=[0,10,0,10],aspect="auto",vmin=0,vmax=2)
+    plt.xlabel("dim0");plt.ylabel("dim1")
+    plt.title("Predicted function values")
+    #plt.scatter(loaded_optimization_run.optimizer.X[:,0]*loaded_optimization_run.optimizer.search_interval_size[0],loaded_optimization_run.optimizer.X[:,1]*loaded_optimization_run.optimizer.search_interval_size[1],c=loaded_optimization_run.optimizer.y)
+    plt.colorbar()
+    
+    # plot the real function values
+    plt.figure(2)
+    plt.imshow(true_function_value_mesh,extent=[0,10,0,10],aspect="auto",vmin=0,vmax=2)
+    plt.xlabel("dim0");plt.ylabel("dim1")
+    plt.title("True function values")
+    #plt.scatter(loaded_optimization_run.optimizer.X[:,0]*loaded_optimization_run.optimizer.search_interval_size[0],loaded_optimization_run.optimizer.X[:,1]*loaded_optimization_run.optimizer.search_interval_size[1],c=loaded_optimization_run.optimizer.y)
+    plt.colorbar()
+    
+    plt.show()
 
     
        
