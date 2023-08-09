@@ -35,6 +35,11 @@ number_of_samples_per_iteration    = 1
 #### Optimization parameters
 number_of_iterations               = 25
 
+#### Bayesian Optimization parameters
+# this parameter is particularly important especially in more than one dimension
+# see its description in the doc and in the links it provides
+length_scale                       = 1.0 
+
 #### Diagnostic and output dump periodicity
 iterations_between_outputs         = 1
 
@@ -67,7 +72,8 @@ if __name__ == '__main__':
                                                use_test_function               = use_test_function,                \
                                                test_function                   = test_function,                    \
                                                iterations_between_outputs      = iterations_between_outputs,       \
-                                               input_parameters_names          = input_parameters_names )
+                                               input_parameters_names          = input_parameters_names,           \
+                                               length_scale                    = length_scale )
     # execute optimization run
     optimization_run.execute()
     

@@ -757,23 +757,23 @@ class BayesianOptimization(Optimizer):
         # if the function to optimize does not vary much in one dimension, the associated length scale of that dimension can be larger.
         
         default_length_scale      = 1.0  
-        self.length_scale         = kwargs.get('length_scale_bound', default_length_scale_bound)
+        self.length_scale         = kwargs.get('length_scale', default_length_scale)
         
         
         # the length_scale will be optimizer with optimizer="fmin_l_bfgs_b" (see below)
         # the following parameter fixes the bounds for this optimization
-        default_length_scale_bound = (1e-5, 1e5)
-        self.length_scale_bound    = kwargs.get('length_scale_bound', default_length_scale_bound)
+        default_length_scale_bounds= (1e-5, 1e5)
+        self.length_scale_bounds   = kwargs.get('length_scale_bounds', default_length_scale_bounds)
         
         ### Define the model for the kernel of the Gaussian process
         print("number_of_tests                          = ",self.number_of_tests)
         print("nu                                       = ",self.nu)
         print("length_scale                             = ",self.length_scale)
-        print("length_scale_bound                       = ",self.length_scale_bound)
+        print("length_scale_bounds                      = ",self.length_scale_bounds)
         print("")
         
         
-        self.kernel               = ConstantKernel(1.0, constant_value_bounds="fixed")*Matern(nu=self.nu,self.length_scale,length_scale_bound=self.length_scale_bound) 
+        self.kernel               = ConstantKernel(1.0, constant_value_bounds="fixed")*Matern(nu=self.nu,length_scale=self.length_scale,length_scale_bounds=self.length_scale_bounds) 
         self.model                = GaussianProcessRegressor(optimizer="fmin_l_bfgs_b",kernel=self.kernel)
         self.Xsamples             = np.zeros(shape=(self.number_of_samples_per_iteration, self.number_of_dimensions))   # new samples for the new iteration iteration
         # Initial sparse sample
