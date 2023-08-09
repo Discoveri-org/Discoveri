@@ -727,17 +727,55 @@ class ParticleSwarmOptimization(Optimizer):
 class BayesianOptimization(Optimizer):
     def __init__(self, name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs):
         super().__init__(name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs)
-        self.num_tests     = 100    # number of points to test through the surrogate function when choosing new samples to draw
+        
+        # Implementation of Bayesian Optimization based on a Matern Kernel (see https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.kernels.Matern.html)
+        
+        # number of points to test through the surrogate function when choosing new samples to draw
+        default_number_of_tests    = self.number_of_dimensions*100
+        self.number_of_tests       = kwargs.get('num_tests', default_number_of_tests)
+        
+        # nu parameter of the Matern Kernel if different from [0.5, 1.5, 2.5, np.inf] 
+        # the optimizer may incur a considerably higher computational cost (appr. 10 times higher)
+        default_value_nu           = 1.5
+        self.nu                    = kwargs.get('nu', default_value_nu)
+        
+        # The kernel scales are normalized, so the input data to fit and predict must be normalized
+        # This length_scale parameter is really important for the regressor.
+        
+        # See Example 1.7.2.1 of https://scikit-learn.org/stable/modules/gaussian_process.html#gp-kernels
+        
+        # If it is a float, it is applied to all dimensions.
+        # If it is a list of length number_of_dimensions, it will contain the length scale for each dimension
+        
+        # smaller length_scales mean smaller scales of variations  --> risk of overfitted model
+        # larger length_scales mean larger scales of variation     --> risk of biased model
+        
+        # Thus a good equilibrium should be found ideally
+        
+        # If the variations of the function to optimize with respect to a certain dimension within the search interval are large,
+        # the length_scale associated to that dimension will be smaller.
+        # if the function to optimize does not vary much in one dimension, the associated length scale of that dimension can be larger.
+        
+        default_length_scale      = 1.0  
+        self.length_scale         = kwargs.get('length_scale_bound', default_length_scale_bound)
+        
+        
+        # the length_scale will be optimizer with optimizer="fmin_l_bfgs_b" (see below)
+        # the following parameter fixes the bounds for this optimization
+        default_length_scale_bound = (1e-5, 1e5)
+        self.length_scale_bound    = kwargs.get('length_scale_bound', default_length_scale_bound)
         
         ### Define the model for the kernel of the Gaussian process
+        print("number_of_tests                          = ",self.number_of_tests)
+        print("nu                                       = ",self.nu)
+        print("length_scale                             = ",self.length_scale)
+        print("length_scale_bound                       = ",self.length_scale_bound)
+        print("")
         
-        # the kernel scales are normalized, so the input data to fit and predict must be normalized
-        # this length_scale parameter is really important for convergence of the regressor. 
-        # Ensure that all the X are normalized or this value will not work
-        length_scale       = 1e-1   
-        self.kernel        = ConstantKernel(1.0, constant_value_bounds="fixed")*Matern(nu=1.5,length_scale=length_scale) 
-        self.model         = GaussianProcessRegressor(optimizer="fmin_l_bfgs_b",kernel=self.kernel)
-        self.Xsamples      = np.zeros(shape=(self.number_of_samples_per_iteration, self.number_of_dimensions))   # new samples for the new iteration iteration
+        
+        self.kernel               = ConstantKernel(1.0, constant_value_bounds="fixed")*Matern(nu=self.nu,self.length_scale,length_scale_bound=self.length_scale_bound) 
+        self.model                = GaussianProcessRegressor(optimizer="fmin_l_bfgs_b",kernel=self.kernel)
+        self.Xsamples             = np.zeros(shape=(self.number_of_samples_per_iteration, self.number_of_dimensions))   # new samples for the new iteration iteration
         # Initial sparse sample
         self.halton_sampler_position   = qmc.Halton(d=self.number_of_dimensions, scramble=True)
         halton_sampler_random_position = self.halton_sampler_position.random(n=self.number_of_samples_per_iteration)
@@ -788,8 +826,8 @@ class BayesianOptimization(Optimizer):
 
     # Optimize the acquisition function
     def optimizeAcquisitionFunction(self):
-        X_test   = np.zeros(shape=(self.num_tests, self.number_of_dimensions)) # normalized
-        for itest in range(0,self.num_tests): # remember that you need to feed normalized inputs to the model
+        X_test   = np.zeros(shape=(self.number_of_tests, self.number_of_dimensions)) # normalized
+        for itest in range(0,self.number_of_tests): # remember that you need to feed normalized inputs to the model
     	       for idim in range(0,self.number_of_dimensions):
     		             X_test[itest,idim] = np.random.uniform(self.search_interval[idim][0]/self.search_interval_size[idim], self.search_interval[idim][1]/self.search_interval_size[idim]) #np.random.uniform(self.search_interval[idim][0], self.search_interval[idim][1])#, size=(num_tests, number_of_dimensions))
         scores = self.getAcquisitionFunctionResult(X_test)  # Calculate acquisition scores on test points
@@ -858,6 +896,10 @@ class GeneticAlgorithm(Optimizer):
         if ( (self.probability_of_mutation < 0.) or (self.probability_of_mutation > 1.) ):
             print("ERROR: probability_of_mutation must be a float between 0. and 1.")
             sys.exit()
+            
+        print("number_of_parents                        = ",self.number_of_parents)
+        print("probability_of_mutation                  = ",self.probability_of_mutation)
+        print("")
         
         
         # Lists containing the positions and function values of the population from which parents are selected.
@@ -884,6 +926,8 @@ class GeneticAlgorithm(Optimizer):
             print("\n ---> Sample", isample, "Position:", position)  
             self.history_samples_positions_and_function_values[0,isample,0:self.number_of_dimensions] = position[:]
     
+        print("\n Genetic Algorithm initialized") 
+        
     def updateSamplesForExploration(self):
         
         # Select parents, i.e. the number_of_parents positions among the present population 
