@@ -974,32 +974,28 @@ class GeneticAlgorithm(Optimizer):
         
     def crossover(self):
         children_positions = []
-        selected_pairs = set()
-
+        
         # for each child
         for ichild in range(0,self.number_of_samples_per_iteration):
             # draw a random couple of parents from the selected parents
             
-            # select a unique pair of parents
-            pair = None
-            while pair is None or pair in selected_pairs:
-                random_indices = random.sample(range(len(self.population_positions)), 2)
-                pair = tuple(sorted(random_indices))
-                
-            # Store the selected pair so that (N, M) and (M, N) are treated as the same
-            selected_pairs.add(pair)
+            # index of parent 1
+            random_index_1     = random.randint(0, len(self.population_positions)-1)
+            random_index_2     = random_index_1
             
-            # Arithmetic Crossover applied to all genes of the children and parents:
-            # for each dimension the value for the child is the average of the values of the two parents
-            # this part can change in different variants of genetic algorithms
+            while ( random_index_2 == random_index_1 ):
+                # index of parent 2
+                random_index_2 = random.randint(0, len(self.population_positions)-1)
             
-            parent_1_position = self.population_positions[pair[0]]
-            parent_2_position = self.population_positions[pair[1]]
+            parent_1_position  = self.population_positions[random_index_1]
+            parent_2_position  = self.population_positions[random_index_2]
             
-            position = 0.5 * (parent_1_position + parent_2_position)
-            
-            
+            position = np.zeros(self.number_of_dimensions)
+            for idim in range(0,self.number_of_dimensions):
+                position[idim] = random.uniform( min(parent_1_position[idim],parent_2_position[idim]), max(parent_1_position[idim],parent_2_position[idim]) )
+
             children_positions.append(position)
+
 
         return children_positions
     

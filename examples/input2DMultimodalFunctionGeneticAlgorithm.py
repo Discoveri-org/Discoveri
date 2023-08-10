@@ -27,11 +27,11 @@ input_parameters_names             = ["dim0","dim1"]
 
 number_of_samples_per_iteration    = 10
 
-number_of_parents                  = int(0.3*number_of_samples_per_iteration )
-probability_of_mutation            = 0.1
+number_of_parents                  = int(0.4*number_of_samples_per_iteration )
+probability_of_mutation            = 0.4
 
 #### Optimization parameters
-number_of_iterations               = 60
+number_of_iterations               = 30
 
 #### Diagnostic and output dump periodicity
 iterations_between_outputs         = 1
