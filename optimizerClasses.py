@@ -891,6 +891,12 @@ class GeneticAlgorithm(Optimizer):
             print("ERROR: the total number_of_parents must be at least 2")
             sys.exit()
         
+        # Compute the binomial coefficient C(number_of_parents, 2)
+        number_possible_children = math.comb(self.number_of_parents, 2)
+        if (self.number_of_samples_per_iteration<=number_possible_children):
+            print("ERROR: with number_of_parents parents, the number of children number_of_samples_per_iteration must be larger than ",number_possible_children,".")
+            sys.exit()
+        
         default_probability_of_mutation = 0.1
         self.probability_of_mutation    = kwargs.get('probability_of_mutation', default_probability_of_mutation)
         if ( (self.probability_of_mutation < 0.) or (self.probability_of_mutation > 1.) ):
@@ -968,27 +974,28 @@ class GeneticAlgorithm(Optimizer):
         
     def crossover(self):
         children_positions = []
-        position = np.zeros(self.number_of_dimensions)
+        selected_pairs = set()
 
         # for each child
         for ichild in range(0,self.number_of_samples_per_iteration):
             # draw a random couple of parents from the selected parents
             
-            # index of parent 1
-            random_index_1     = random.randint(0, len(self.population_positions)-1)
-            random_index_2     = random_index_1 
-            
-            while ( random_index_2 == random_index_1 ):
-                # index of parent 2
-                random_index_2 = random.randint(0, len(self.population_positions)-1)
+            # select a unique pair of parents
+            pair = None
+            while pair is None or pair in selected_pairs:
+                random_indices = random.sample(range(len(self.population_positions)), 2)
+                pair = tuple(sorted(random_indices))
                 
-
-            parent_1_position  = self.population_positions[random_index_1]
-            parent_2_position  = self.population_positions[random_index_2]
+            # Store the selected pair so that (N, M) and (M, N) are treated as the same
+            selected_pairs.add(pair)
             
             # Arithmetic Crossover applied to all genes of the children and parents:
             # for each dimension the value for the child is the average of the values of the two parents
             # this part can change in different variants of genetic algorithms
+            
+            parent_1_position = self.population_positions[pair[0]]
+            parent_2_position = self.population_positions[pair[1]]
+            
             position = 0.5 * (parent_1_position + parent_2_position)
             
             
