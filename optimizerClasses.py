@@ -765,6 +765,14 @@ class BayesianOptimization(Optimizer):
         default_length_scale_bounds= (1e-5, 1e5)
         self.length_scale_bounds   = kwargs.get('length_scale_bounds', default_length_scale_bounds)
         
+        # parameter used in the acquisition function (expected improvement)
+        # to tune the balance between exploitation of good points already found and exploration of the parameter space
+        # When equal to 0, exploitation is privileged. 
+        # High values privilege exploration.
+        default_xi                 = 0. # default privileges exploitation
+        self.xi                    = kwargs.get('xi', default_xi )
+        
+        
         ### Define the model for the kernel of the Gaussian process
         print("number_of_tests                          = ",self.number_of_tests)
         print("nu                                       = ",self.nu)
@@ -806,7 +814,7 @@ class BayesianOptimization(Optimizer):
             return self.model.predict(input_position_array, return_std=True)
         
     # Expected improvement acquisition function
-    def getAcquisitionFunctionResult(self, Xtest):
+    def getAcquisitionFunctionResult(self, Xtest, xi):
         # Xtest are test positions that are evaluated to pick new sample positions
         
         # Calculate the best surrogate score found so far
@@ -820,8 +828,8 @@ class BayesianOptimization(Optimizer):
         # this should be probably vectorized
         for i in range(0,np.size(Xtest[:,0])):
             mu[i], std[i] = self.predictFunctionValueWithSurrogateModel(  Xtest[i,:].reshape(1,np.size(Xtest[0,:]))    );
-            z = (mu[i] - best) / (std[i] + 1e-9)
-            ei[i] = (mu[i] - best) * norm.cdf(z) + std[i] * norm.pdf(z)
+            z = (mu[i] - best - xi) / (std[i] + 1e-9)  # Modify the calculation of z with the xi parameter
+            ei[i] = (mu[i] - best - xi) * norm.cdf(z) + std[i] * norm.pdf(z)
         return ei
 
     # Optimize the acquisition function
@@ -830,7 +838,7 @@ class BayesianOptimization(Optimizer):
         for itest in range(0,self.number_of_tests): # remember that you need to feed normalized inputs to the model
     	       for idim in range(0,self.number_of_dimensions):
     		             X_test[itest,idim] = np.random.uniform(self.search_interval[idim][0]/self.search_interval_size[idim], self.search_interval[idim][1]/self.search_interval_size[idim]) #np.random.uniform(self.search_interval[idim][0], self.search_interval[idim][1])#, size=(num_tests, number_of_dimensions))
-        scores = self.getAcquisitionFunctionResult(X_test)  # Calculate acquisition scores on test points
+        scores = self.getAcquisitionFunctionResult(X_test,self.xi)  # Calculate acquisition scores on test points
         for isample in range(self.number_of_samples_per_iteration):
             best_index         = np.argmax(scores)   # Find the index with the highest acquisition score
             scores[best_index] = float('-inf')       # Set the acquisition score of the selected index to negative infinity
