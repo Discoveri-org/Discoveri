@@ -560,17 +560,33 @@ class ParticleSwarmOptimization(Optimizer):
         
         # compute for each particle its mean distance from the other particles
         #print(self.history_samples_positions_and_function_values)
-        average_distance_from_other_particles = np.zeros(self.number_of_samples_per_iteration)
-        for iparticle1 in range(0,self.number_of_samples_per_iteration):
-            for iparticle2 in range(0,self.number_of_samples_per_iteration):
-                if (iparticle2==iparticle1):
-                    normalized_distance_1_from_2 = 0.
-                else:
-                    normalized_distance_1_from_2 = normalized_euclidean_distance(self.samples[iparticle1].position,self.samples[iparticle2].position,self.search_interval_size)
-                #print("normalized distance from particle ",iparticle1," to particle ",iparticle2,"is ",normalized_distance_1_from_2)
-                average_distance_from_other_particles[iparticle1] = average_distance_from_other_particles[iparticle1] + normalized_distance_1_from_2
-            average_distance_from_other_particles[iparticle1] = average_distance_from_other_particles[iparticle1]/(self.number_of_samples_per_iteration-1.)
-            #print("average normalized distances from other particles: ",average_distance_from_other_particles[iparticle1])
+        
+        # Non vectorized version
+        # average_distance_from_other_particles = np.zeros(self.number_of_samples_per_iteration)
+        # for iparticle1 in range(0,self.number_of_samples_per_iteration):
+        #     for iparticle2 in range(0,self.number_of_samples_per_iteration):
+        #         if (iparticle2==iparticle1):
+        #             normalized_distance_1_from_2 = 0.
+        #         else:
+        #             normalized_distance_1_from_2 = normalized_euclidean_distance(self.samples[iparticle1].position,self.samples[iparticle2].position,self.search_interval_size)
+        #         #print("normalized distance from particle ",iparticle1," to particle ",iparticle2,"is ",normalized_distance_1_from_2)
+        #         average_distance_from_other_particles[iparticle1] = average_distance_from_other_particles[iparticle1] + normalized_distance_1_from_2
+        #     average_distance_from_other_particles[iparticle1] = average_distance_from_other_particles[iparticle1]/(self.number_of_samples_per_iteration-1.)
+        #     #print("average normalized distances from other particles: ",average_distance_from_other_particles[iparticle1])
+        # 
+        
+        # Vectorized version 
+        normalized_distances = np.zeros((self.number_of_samples_per_iteration, self.number_of_samples_per_iteration))
+        for i in range(self.number_of_samples_per_iteration):
+            for j in range(self.number_of_samples_per_iteration):
+                if j != i:
+                    normalized_distances[i, j] = normalized_euclidean_distance(
+                        self.samples[i].position,
+                        self.samples[j].position,
+                        np.asarray(self.search_interval_size)
+                    )
+        sum_distances = np.sum(normalized_distances, axis=1)
+        average_distance_from_other_particles = sum_distances / (self.number_of_samples_per_iteration - 1)
         
         # compute average distance from the other particles of the globally best particle
         index_globally_best_particle = np.argmax(self.history_samples_positions_and_function_values[self.iteration_number,:,self.number_of_dimensions])
@@ -815,10 +831,8 @@ class BayesianOptimization(Optimizer):
         
     # Expected improvement acquisition function
     def getAcquisitionFunctionResult(self, Xtest, xi):
-        # Xtest are test positions that are evaluated to pick new sample positions
         
         # Vectorized version
-        
         # Calculate the best surrogate score found so far
         yhat, _ = self.predictFunctionValueWithSurrogateModel(self.X)
         best = np.max(yhat)
@@ -834,10 +848,13 @@ class BayesianOptimization(Optimizer):
         pdf_z = norm.pdf(z)
 
         ei = (mu - best - xi) * cdf_z + std * pdf_z
-
+        
         return ei
         
         # Non vectorized version
+        
+        # Xtest are test positions that are evaluated to pick new sample positions
+
         # # Calculate the best surrogate score found so far
         # yhat, _ = self.predictFunctionValueWithSurrogateModel(self.X)
         # best = np.max(yhat)
@@ -856,34 +873,18 @@ class BayesianOptimization(Optimizer):
     # Optimize the acquisition function
     def optimizeAcquisitionFunction(self):
         
-        # Vectorized version
-        # Generate normalized test points
-        X_test = np.random.uniform(
-            self.search_interval[:, 0] / self.search_interval_size,
-            self.search_interval[:, 1] / self.search_interval_size,
-            size=(self.number_of_tests, self.number_of_dimensions)
-        )
-
-        # Calculate acquisition scores on test points
-        scores = self.getAcquisitionFunctionResult(X_test, self.xi)
-
-        # Select samples based on acquisition scores
-        best_indices = np.argsort(scores)[::-1][:self.number_of_samples_per_iteration]
-        self.Xsamples = X_test[best_indices]
-
-        return self.Xsamples
-        
-        # Non vectorized version
-        # X_test   = np.zeros(shape=(self.number_of_tests, self.number_of_dimensions)) # normalized
-        # for itest in range(0,self.number_of_tests): # remember that you need to feed normalized inputs to the model
-    	#        for idim in range(0,self.number_of_dimensions):
-    	# 	             X_test[itest,idim] = np.random.uniform(self.search_interval[idim][0]/self.search_interval_size[idim], self.search_interval[idim][1]/self.search_interval_size[idim]) #np.random.uniform(self.search_interval[idim][0], self.search_interval[idim][1])#, size=(num_tests, number_of_dimensions))
-        # scores = self.getAcquisitionFunctionResult(X_test,self.xi)  # Calculate acquisition scores on test points
-        # for isample in range(self.number_of_samples_per_iteration):
-        #     best_index         = np.argmax(scores)   # Find the index with the highest acquisition score
-        #     scores[best_index] = float('-inf')       # Set the acquisition score of the selected index to negative infinity
-        #     self.Xsamples[isample]  = X_test[best_index]  # Select the corresponding sample
-        # return self.Xsamples   
+        # This function should probably be vectorized 
+        X_test   = np.zeros(shape=(self.number_of_tests, self.number_of_dimensions)) # normalized
+        for itest in range(0,self.number_of_tests):                 # remember that you need to feed normalized inputs to the model
+    	       for idim in range(0,self.number_of_dimensions):
+    		             X_test[itest,idim] = np.random.uniform(self.search_interval[idim][0]/self.search_interval_size[idim], self.search_interval[idim][1]/self.search_interval_size[idim]) #np.random.uniform(self.search_interval[idim][0], self.search_interval[idim][1])#, size=(num_tests, number_of_dimensions))
+        scores = self.getAcquisitionFunctionResult(X_test,self.xi)  # Calculate acquisition scores on test points
+        for isample in range(self.number_of_samples_per_iteration):
+            best_index         = np.argmax(scores)                  # Find the index with the highest acquisition score
+            scores[best_index] = float('-inf')                      # Set the acquisition score of the selected index to negative infinity
+            self.Xsamples[isample]  = X_test[best_index]            # Select the corresponding sample
+            
+        return self.Xsamples   
     
     def chooseNewPositionsToExplore(self):
         Xsamples = self.optimizeAcquisitionFunction()
