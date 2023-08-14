@@ -855,16 +855,35 @@ class BayesianOptimization(Optimizer):
 
     # Optimize the acquisition function
     def optimizeAcquisitionFunction(self):
-        X_test   = np.zeros(shape=(self.number_of_tests, self.number_of_dimensions)) # normalized
-        for itest in range(0,self.number_of_tests): # remember that you need to feed normalized inputs to the model
-    	       for idim in range(0,self.number_of_dimensions):
-    		             X_test[itest,idim] = np.random.uniform(self.search_interval[idim][0]/self.search_interval_size[idim], self.search_interval[idim][1]/self.search_interval_size[idim]) #np.random.uniform(self.search_interval[idim][0], self.search_interval[idim][1])#, size=(num_tests, number_of_dimensions))
-        scores = self.getAcquisitionFunctionResult(X_test,self.xi)  # Calculate acquisition scores on test points
-        for isample in range(self.number_of_samples_per_iteration):
-            best_index         = np.argmax(scores)   # Find the index with the highest acquisition score
-            scores[best_index] = float('-inf')       # Set the acquisition score of the selected index to negative infinity
-            self.Xsamples[isample]  = X_test[best_index]  # Select the corresponding sample
-        return self.Xsamples   
+        
+        # Vectorized version
+        # Generate normalized test points
+        X_test = np.random.uniform(
+            self.search_interval[:, 0] / self.search_interval_size,
+            self.search_interval[:, 1] / self.search_interval_size,
+            size=(self.number_of_tests, self.number_of_dimensions)
+        )
+
+        # Calculate acquisition scores on test points
+        scores = self.getAcquisitionFunctionResult(X_test, self.xi)
+
+        # Select samples based on acquisition scores
+        best_indices = np.argsort(scores)[::-1][:self.number_of_samples_per_iteration]
+        self.Xsamples = X_test[best_indices]
+
+        return self.Xsamples
+        
+        # Non vectorized version
+        # X_test   = np.zeros(shape=(self.number_of_tests, self.number_of_dimensions)) # normalized
+        # for itest in range(0,self.number_of_tests): # remember that you need to feed normalized inputs to the model
+    	#        for idim in range(0,self.number_of_dimensions):
+    	# 	             X_test[itest,idim] = np.random.uniform(self.search_interval[idim][0]/self.search_interval_size[idim], self.search_interval[idim][1]/self.search_interval_size[idim]) #np.random.uniform(self.search_interval[idim][0], self.search_interval[idim][1])#, size=(num_tests, number_of_dimensions))
+        # scores = self.getAcquisitionFunctionResult(X_test,self.xi)  # Calculate acquisition scores on test points
+        # for isample in range(self.number_of_samples_per_iteration):
+        #     best_index         = np.argmax(scores)   # Find the index with the highest acquisition score
+        #     scores[best_index] = float('-inf')       # Set the acquisition score of the selected index to negative infinity
+        #     self.Xsamples[isample]  = X_test[best_index]  # Select the corresponding sample
+        # return self.Xsamples   
     
     def chooseNewPositionsToExplore(self):
         Xsamples = self.optimizeAcquisitionFunction()
