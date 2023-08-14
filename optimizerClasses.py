@@ -817,20 +817,41 @@ class BayesianOptimization(Optimizer):
     def getAcquisitionFunctionResult(self, Xtest, xi):
         # Xtest are test positions that are evaluated to pick new sample positions
         
+        # Vectorized version
+        
         # Calculate the best surrogate score found so far
         yhat, _ = self.predictFunctionValueWithSurrogateModel(self.X)
         best = np.max(yhat)
-    
+
         # Calculate mean and standard deviation via surrogate model
-        mu  = np.zeros(shape=np.shape(Xtest[:,0]))
-        std = np.zeros(shape=np.shape(Xtest[:,0]))
-        ei  = np.zeros(shape=np.shape(Xtest[:,0]))
-        # this should be probably vectorized
-        for i in range(0,np.size(Xtest[:,0])):
-            mu[i], std[i] = self.predictFunctionValueWithSurrogateModel(  Xtest[i,:].reshape(1,np.size(Xtest[0,:]))    );
-            z = (mu[i] - best - xi) / (std[i] + 1e-9)  # Modify the calculation of z with the xi parameter
-            ei[i] = (mu[i] - best - xi) * norm.cdf(z) + std[i] * norm.pdf(z)
+        mu, std = self.predictFunctionValueWithSurrogateModel(Xtest)
+
+        # Avoid division by zero in the computation of z
+        epsilon = 1e-9
+
+        z = (mu - best - xi) / (std + epsilon)
+        cdf_z = norm.cdf(z)
+        pdf_z = norm.pdf(z)
+
+        ei = (mu - best - xi) * cdf_z + std * pdf_z
+
         return ei
+        
+        # Non vectorized version
+        # # Calculate the best surrogate score found so far
+        # yhat, _ = self.predictFunctionValueWithSurrogateModel(self.X)
+        # best = np.max(yhat)
+        # 
+        # # Calculate mean and standard deviation via surrogate model
+        # mu  = np.zeros(shape=np.shape(Xtest[:,0]))
+        # std = np.zeros(shape=np.shape(Xtest[:,0]))
+        # ei  = np.zeros(shape=np.shape(Xtest[:,0]))
+        # # this should be probably vectorized
+        # for i in range(0,np.size(Xtest[:,0])):
+        #     mu[i], std[i] = self.predictFunctionValueWithSurrogateModel(  Xtest[i,:].reshape(1,np.size(Xtest[0,:]))    );
+        #     z = (mu[i] - best - xi) / (std[i] + 1e-9)  # Modify the calculation of z with the xi parameter
+        #     ei[i] = (mu[i] - best - xi) * norm.cdf(z) + std[i] * norm.pdf(z)
+        # return ei
 
     # Optimize the acquisition function
     def optimizeAcquisitionFunction(self):
@@ -873,159 +894,159 @@ class BayesianOptimization(Optimizer):
             # fit to the whole dataset including the new observations
             self.model.fit(self.X, self.y)
         
-class GeneticAlgorithm(Optimizer):
-    def __init__(self, name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs):
-        super().__init__(name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs)
-        
-        # Implementation of a basic genetic algorithm
-        # to avoid function re-evaluation, the samples stored by this optimizer 
-        # represent only the children generated at the present iteration.
-        # The set of children + parents is called population.
-        # At the first iteration, the population is made of the initial samples, 
-        # while in the other iterations the population is made of 
-        # population = children (which are number_of_samples_per_iteration) + the parents (which are number_of_parents)
-        # The parents are selected from the population of the previous iteration.
-        
-        if (self.number_of_samples_per_iteration < 2):
-            print("ERROR: for the Genetic Algorithm number_of_samples_per_iteration must be at least equal to 2.")
-            sys.exit()
-        
-        default_number_of_parents       = int(0.3*self.number_of_samples_per_iteration)
-        self.number_of_parents          = kwargs.get('number_of_parents', default_number_of_parents)
-        if (self.number_of_parents > self.number_of_samples_per_iteration):
-            print("ERROR: the number_of_parents must be smaller than the number_of_samples_per_iteration")
-            sys.exit()
-        if (self.number_of_parents < 2):
-            print("ERROR: the total number_of_parents must be at least 2")
-            sys.exit()
-        
-        # Compute the binomial coefficient C(number_of_parents, 2)
-        number_possible_children = math.comb(self.number_of_parents, 2)
-        if (self.number_of_samples_per_iteration<=number_possible_children):
-            print("ERROR: with number_of_parents parents, the number of children number_of_samples_per_iteration must be larger than ",number_possible_children,".")
-            sys.exit()
-        
-        default_probability_of_mutation = 0.1
-        self.probability_of_mutation    = kwargs.get('probability_of_mutation', default_probability_of_mutation)
-        if ( (self.probability_of_mutation < 0.) or (self.probability_of_mutation > 1.) ):
-            print("ERROR: probability_of_mutation must be a float between 0. and 1.")
-            sys.exit()
-            
-        print("number_of_parents                        = ",self.number_of_parents)
-        print("probability_of_mutation                  = ",self.probability_of_mutation)
-        print("")
-        
-        
-        # Lists containing the positions and function values of the population from which parents are selected.
-        # At the first iteration, the population from which parents are selected is made only of the initial samples (which are `number_of_samples_per_iteration`). 
-        # At the next iterations, the population from which parents are selected is made of the parents selected at the previous iteration + their children.
-        self.population_positions       = []
-        self.population_function_values = []
-        
-        # Initialize each sample
-        self.halton_sampler_position   = qmc.Halton(d=self.number_of_dimensions, scramble=True)
-        halton_sampler_random_position = self.halton_sampler_position.random(n=self.number_of_samples_per_iteration)
-        for isample in range(self.number_of_samples_per_iteration):
-            position = np.zeros(self.number_of_dimensions)
-            # use a Halton sequence to sample more uniformly the parameter space
-            for idim in range(0,self.number_of_dimensions):
-                position[idim]       = search_interval[idim][0]+halton_sampler_random_position[isample][idim]*(search_interval[idim][1]-search_interval[idim][0]) 
-                
-            random_sample            = RandomSearchSample(position) 
-            self.samples.append(random_sample)
-            
-            # at the first iteration, the population is made just by the initial samples
-            self.population_positions.append(position)
-            
-            print("\n ---> Sample", isample, "Position:", position)  
-            self.history_samples_positions_and_function_values[0,isample,0:self.number_of_dimensions] = position[:]
-    
-        print("\n Genetic Algorithm initialized") 
-        
-    def updateSamplesForExploration(self):
-        
-        # Select parents, i.e. the number_of_parents positions among the present population 
-        # which obtained the highest values of the function to optimize
-        # remove the other positions from the population
-        self.addChildrenFunctionValuesToPopulationFunctionValues()
-        self.selectParents()
-        
-        # Generate new children
-        children_positions = self.crossover()
-        children_positions = self.mutateChildren(children_positions)
-        
-        # Build population fot the next iteration
-        # population = parents + new children
-        self.addChildrenToPopulation(children_positions)
-        
-        # The new samples of the optimizer will be the children that were just generated
-        self.addChildrenToSamples(children_positions)
-        
-        # update iteration number
-        self.iteration_number = self.iteration_number+1
-        
-    def addChildrenFunctionValuesToPopulationFunctionValues(self):
-        for isample in range(0,self.number_of_samples_per_iteration):
-            self.population_function_values.append(self.history_samples_positions_and_function_values[self.iteration_number,isample,self.number_of_dimensions])
-            
-    def selectParents(self):
-        # Create a temporary list of tuples (element, index)
-        temp_population_function_values = [(element, index) for index, element in enumerate(self.population_function_values)]
-        # Sort the temporary list based on the elements (descending order)
-        temp_population_function_values.sort(reverse=True)
-        # Get the first n indices from the sorted list
-        indices_parents = [index for _, index in temp_population_function_values[:self.number_of_parents]]
-        # Remove the samples which are not selected as parents from the population list
-        self.population_positions       = [elem for i, elem in enumerate(self.population_positions)       if i in indices_parents]
-        self.population_function_values = [elem for i, elem in enumerate(self.population_function_values) if i in indices_parents]
-        
-        
-    def crossover(self):
-        children_positions = []
-        
-        # for each child
-        for ichild in range(0,self.number_of_samples_per_iteration):
-            # draw a random couple of parents from the selected parents
-            
-            # index of parent 1
-            random_index_1     = random.randint(0, len(self.population_positions)-1)
-            random_index_2     = random_index_1
-            
-            while ( random_index_2 == random_index_1 ):
-                # index of parent 2
-                random_index_2 = random.randint(0, len(self.population_positions)-1)
-            
-            parent_1_position  = self.population_positions[random_index_1]
-            parent_2_position  = self.population_positions[random_index_2]
-            
-            position = np.zeros(self.number_of_dimensions)
-            for idim in range(0,self.number_of_dimensions):
-                position[idim] = random.uniform( min(parent_1_position[idim],parent_2_position[idim]), max(parent_1_position[idim],parent_2_position[idim]) )
-
-            children_positions.append(position)
-
-
-        return children_positions
-    
-    def mutateChildren(self,children_positions):
-        for child_position in children_positions:
-            for idim in range(0,self.number_of_dimensions):
-                if (np.random.rand() < self.probability_of_mutation):
-                    child_position[idim] = np.random.uniform(self.search_interval[idim][0], self.search_interval[idim][1])
-        return children_positions
-        
-    def addChildrenToPopulation(self,children_positions):
-        print("Parents:")
-        for parent_position in self.population_positions:
-            print(" ",parent_position)
-        print("Children:")
-        for child_position in children_positions:
-            print(" ",child_position)
-            self.population_positions.append(child_position)
-    
-    def addChildrenToSamples(self,children_positions):
-        for isample in range(0,len(children_positions)):
-            self.samples[isample].position[:] = children_positions[isample][:]
+# class GeneticAlgorithm(Optimizer):
+#     def __init__(self, name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs):
+#         super().__init__(name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs)
+# 
+#         # Implementation of a basic genetic algorithm
+#         # to avoid function re-evaluation, the samples stored by this optimizer 
+#         # represent only the children generated at the present iteration.
+#         # The set of children + parents is called population.
+#         # At the first iteration, the population is made of the initial samples, 
+#         # while in the other iterations the population is made of 
+#         # population = children (which are number_of_samples_per_iteration) + the parents (which are number_of_parents)
+#         # The parents are selected from the population of the previous iteration.
+# 
+#         if (self.number_of_samples_per_iteration < 2):
+#             print("ERROR: for the Genetic Algorithm number_of_samples_per_iteration must be at least equal to 2.")
+#             sys.exit()
+# 
+#         default_number_of_parents       = int(0.3*self.number_of_samples_per_iteration)
+#         self.number_of_parents          = kwargs.get('number_of_parents', default_number_of_parents)
+#         if (self.number_of_parents > self.number_of_samples_per_iteration):
+#             print("ERROR: the number_of_parents must be smaller than the number_of_samples_per_iteration")
+#             sys.exit()
+#         if (self.number_of_parents < 2):
+#             print("ERROR: the total number_of_parents must be at least 2")
+#             sys.exit()
+# 
+#         # Compute the binomial coefficient C(number_of_parents, 2)
+#         number_possible_children = math.comb(self.number_of_parents, 2)
+#         if (self.number_of_samples_per_iteration<=number_possible_children):
+#             print("ERROR: with number_of_parents parents, the number of children number_of_samples_per_iteration must be larger than ",number_possible_children,".")
+#             sys.exit()
+# 
+#         default_probability_of_mutation = 0.1
+#         self.probability_of_mutation    = kwargs.get('probability_of_mutation', default_probability_of_mutation)
+#         if ( (self.probability_of_mutation < 0.) or (self.probability_of_mutation > 1.) ):
+#             print("ERROR: probability_of_mutation must be a float between 0. and 1.")
+#             sys.exit()
+# 
+#         print("number_of_parents                        = ",self.number_of_parents)
+#         print("probability_of_mutation                  = ",self.probability_of_mutation)
+#         print("")
+# 
+# 
+#         # Lists containing the positions and function values of the population from which parents are selected.
+#         # At the first iteration, the population from which parents are selected is made only of the initial samples (which are `number_of_samples_per_iteration`). 
+#         # At the next iterations, the population from which parents are selected is made of the parents selected at the previous iteration + their children.
+#         self.population_positions       = []
+#         self.population_function_values = []
+# 
+#         # Initialize each sample
+#         self.halton_sampler_position   = qmc.Halton(d=self.number_of_dimensions, scramble=True)
+#         halton_sampler_random_position = self.halton_sampler_position.random(n=self.number_of_samples_per_iteration)
+#         for isample in range(self.number_of_samples_per_iteration):
+#             position = np.zeros(self.number_of_dimensions)
+#             # use a Halton sequence to sample more uniformly the parameter space
+#             for idim in range(0,self.number_of_dimensions):
+#                 position[idim]       = search_interval[idim][0]+halton_sampler_random_position[isample][idim]*(search_interval[idim][1]-search_interval[idim][0]) 
+# 
+#             random_sample            = RandomSearchSample(position) 
+#             self.samples.append(random_sample)
+# 
+#             # at the first iteration, the population is made just by the initial samples
+#             self.population_positions.append(position)
+# 
+#             print("\n ---> Sample", isample, "Position:", position)  
+#             self.history_samples_positions_and_function_values[0,isample,0:self.number_of_dimensions] = position[:]
+# 
+#         print("\n Genetic Algorithm initialized") 
+# 
+#     def updateSamplesForExploration(self):
+# 
+#         # Select parents, i.e. the number_of_parents positions among the present population 
+#         # which obtained the highest values of the function to optimize
+#         # remove the other positions from the population
+#         self.addChildrenFunctionValuesToPopulationFunctionValues()
+#         self.selectParents()
+# 
+#         # Generate new children
+#         children_positions = self.crossover()
+#         children_positions = self.mutateChildren(children_positions)
+# 
+#         # Build population fot the next iteration
+#         # population = parents + new children
+#         self.addChildrenToPopulation(children_positions)
+# 
+#         # The new samples of the optimizer will be the children that were just generated
+#         self.addChildrenToSamples(children_positions)
+# 
+#         # update iteration number
+#         self.iteration_number = self.iteration_number+1
+# 
+#     def addChildrenFunctionValuesToPopulationFunctionValues(self):
+#         for isample in range(0,self.number_of_samples_per_iteration):
+#             self.population_function_values.append(self.history_samples_positions_and_function_values[self.iteration_number,isample,self.number_of_dimensions])
+# 
+#     def selectParents(self):
+#         # Create a temporary list of tuples (element, index)
+#         temp_population_function_values = [(element, index) for index, element in enumerate(self.population_function_values)]
+#         # Sort the temporary list based on the elements (descending order)
+#         temp_population_function_values.sort(reverse=True)
+#         # Get the first n indices from the sorted list
+#         indices_parents = [index for _, index in temp_population_function_values[:self.number_of_parents]]
+#         # Remove the samples which are not selected as parents from the population list
+#         self.population_positions       = [elem for i, elem in enumerate(self.population_positions)       if i in indices_parents]
+#         self.population_function_values = [elem for i, elem in enumerate(self.population_function_values) if i in indices_parents]
+# 
+# 
+#     def crossover(self):
+#         children_positions = []
+# 
+#         # for each child
+#         for ichild in range(0,self.number_of_samples_per_iteration):
+#             # draw a random couple of parents from the selected parents
+# 
+#             # index of parent 1
+#             random_index_1     = random.randint(0, len(self.population_positions)-1)
+#             random_index_2     = random_index_1
+# 
+#             while ( random_index_2 == random_index_1 ):
+#                 # index of parent 2
+#                 random_index_2 = random.randint(0, len(self.population_positions)-1)
+# 
+#             parent_1_position  = self.population_positions[random_index_1]
+#             parent_2_position  = self.population_positions[random_index_2]
+# 
+#             position = np.zeros(self.number_of_dimensions)
+#             for idim in range(0,self.number_of_dimensions):
+#                 position[idim] = random.uniform( min(parent_1_position[idim],parent_2_position[idim]), max(parent_1_position[idim],parent_2_position[idim]) )
+# 
+#             children_positions.append(position)
+# 
+# 
+#         return children_positions
+# 
+#     def mutateChildren(self,children_positions):
+#         for child_position in children_positions:
+#             for idim in range(0,self.number_of_dimensions):
+#                 if (np.random.rand() < self.probability_of_mutation):
+#                     child_position[idim] = np.random.uniform(self.search_interval[idim][0], self.search_interval[idim][1])
+#         return children_positions
+# 
+#     def addChildrenToPopulation(self,children_positions):
+#         print("Parents:")
+#         for parent_position in self.population_positions:
+#             print(" ",parent_position)
+#         print("Children:")
+#         for child_position in children_positions:
+#             print(" ",child_position)
+#             self.population_positions.append(child_position)
+# 
+#     def addChildrenToSamples(self,children_positions):
+#         for isample in range(0,len(children_positions)):
+#             self.samples[isample].position[:] = children_positions[isample][:]
             
      
         

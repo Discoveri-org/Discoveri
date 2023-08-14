@@ -129,12 +129,12 @@ class optimizationRun:
                                                               search_interval=search_interval, number_of_iterations=number_of_iterations, \
                                                               **kwargs )
                                                               
-        elif (self.optimization_method == "Genetic Algorithm"):
-            # initialize an optimizer which uses a Genetic Algorithm
-            self.optimizer             = GeneticAlgorithm     (name=optimization_method, \
-                                                              number_of_samples_per_iteration=number_of_samples_per_iteration, number_of_dimensions=number_of_dimensions, \
-                                                              search_interval=search_interval, number_of_iterations=number_of_iterations, \
-                                                              **kwargs )
+        # elif (self.optimization_method == "Genetic Algorithm"):
+        #     # initialize an optimizer which uses a Genetic Algorithm
+        #     self.optimizer             = GeneticAlgorithm     (name=optimization_method, \
+        #                                                       number_of_samples_per_iteration=number_of_samples_per_iteration, number_of_dimensions=number_of_dimensions, \
+        #                                                       search_interval=search_interval, number_of_iterations=number_of_iterations, \
+        #                                                       **kwargs )
             
         else:
             print("Error, the optimization_method must be either 'Grid Search', 'Random Search', 'Bayesian Optimization', 'Particle Swarm Optimization', 'PSO-TPME' or 'Adaptive Particle Swarm Optimization' \n")
