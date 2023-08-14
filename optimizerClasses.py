@@ -747,7 +747,7 @@ class BayesianOptimization(Optimizer):
         # Implementation of Bayesian Optimization based on a Matern Kernel (see https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.kernels.Matern.html)
         
         # number of points to test through the surrogate function when choosing new samples to draw
-        default_number_of_tests    = self.number_of_dimensions*100
+        default_number_of_tests    = self.number_of_dimensions*2000
         self.number_of_tests       = kwargs.get('num_tests', default_number_of_tests)
         
         # nu parameter of the Matern Kernel if different from [0.5, 1.5, 2.5, np.inf] 
@@ -831,7 +831,7 @@ class BayesianOptimization(Optimizer):
         
     # Expected improvement acquisition function
     def getAcquisitionFunctionResult(self, Xtest, xi):
-        
+
         # Vectorized version
         # Calculate the best surrogate score found so far
         yhat, _ = self.predictFunctionValueWithSurrogateModel(self.X)
@@ -843,11 +843,11 @@ class BayesianOptimization(Optimizer):
         # Avoid division by zero in the computation of z
         epsilon = 1e-9
 
-        z = (mu - best - xi) / (std + epsilon)
+        z = (mu - best + xi) / (std + epsilon)
         cdf_z = norm.cdf(z)
         pdf_z = norm.pdf(z)
 
-        ei = (mu - best - xi) * cdf_z + std * pdf_z
+        ei = (mu - best + xi) * cdf_z + std * pdf_z
         
         return ei
         
@@ -866,25 +866,43 @@ class BayesianOptimization(Optimizer):
         # # this should be probably vectorized
         # for i in range(0,np.size(Xtest[:,0])):
         #     mu[i], std[i] = self.predictFunctionValueWithSurrogateModel(  Xtest[i,:].reshape(1,np.size(Xtest[0,:]))    );
-        #     z = (mu[i] - best - xi) / (std[i] + 1e-9)  # Modify the calculation of z with the xi parameter
-        #     ei[i] = (mu[i] - best - xi) * norm.cdf(z) + std[i] * norm.pdf(z)
+        #     z = (mu[i] - best + xi) / (std[i] + 1e-9)  # Modify the calculation of z with the xi parameter
+        #     ei[i] = (mu[i] - best + xi) * norm.cdf(z) + std[i] * norm.pdf(z)
         # return ei
 
     # Optimize the acquisition function
     def optimizeAcquisitionFunction(self):
         
-        # This function should probably be vectorized 
-        X_test   = np.zeros(shape=(self.number_of_tests, self.number_of_dimensions)) # normalized
-        for itest in range(0,self.number_of_tests):                 # remember that you need to feed normalized inputs to the model
-    	       for idim in range(0,self.number_of_dimensions):
-    		             X_test[itest,idim] = np.random.uniform(self.search_interval[idim][0]/self.search_interval_size[idim], self.search_interval[idim][1]/self.search_interval_size[idim]) #np.random.uniform(self.search_interval[idim][0], self.search_interval[idim][1])#, size=(num_tests, number_of_dimensions))
-        scores = self.getAcquisitionFunctionResult(X_test,self.xi)  # Calculate acquisition scores on test points
-        for isample in range(self.number_of_samples_per_iteration):
-            best_index         = np.argmax(scores)                  # Find the index with the highest acquisition score
-            scores[best_index] = float('-inf')                      # Set the acquisition score of the selected index to negative infinity
-            self.Xsamples[isample]  = X_test[best_index]            # Select the corresponding sample
-            
-        return self.Xsamples   
+        # Vectorized version
+        # Generate normalized test points
+        X_test = np.random.uniform(
+            [interval[0] / size for interval, size in zip(self.search_interval, self.search_interval_size)],
+            [interval[1] / size for interval, size in zip(self.search_interval, self.search_interval_size)],
+            size=(self.number_of_tests, self.number_of_dimensions)
+        )
+
+        # Calculate acquisition scores on test points
+        scores = self.getAcquisitionFunctionResult(X_test, self.xi)
+
+        # Select top samples based on acquisition scores
+        best_indices = np.argsort(scores)[::-1][:self.number_of_samples_per_iteration]
+        self.Xsamples = X_test[best_indices]
+
+        return self.Xsamples
+        
+        # Non vectorized version
+        # # This function should probably be vectorized 
+        # X_test   = np.zeros(shape=(self.number_of_tests, self.number_of_dimensions)) # normalized
+        # for itest in range(0,self.number_of_tests):                 # remember that you need to feed normalized inputs to the model
+    	#        for idim in range(0,self.number_of_dimensions):
+    	# 	             X_test[itest,idim] = np.random.uniform(self.search_interval[idim][0]/self.search_interval_size[idim], self.search_interval[idim][1]/self.search_interval_size[idim]) #np.random.uniform(self.search_interval[idim][0], self.search_interval[idim][1])#, size=(num_tests, number_of_dimensions))
+        # scores = self.getAcquisitionFunctionResult(X_test,self.xi)  # Calculate acquisition scores on test points
+        # for isample in range(self.number_of_samples_per_iteration):
+        #     best_index              = np.argmax(scores)             # Find the index with the highest acquisition score
+        #     scores[best_index]      = float('-inf')                 # Set the acquisition score of the selected index to negative infinity
+        #     self.Xsamples[isample]  = X_test[best_index]            # Select the corresponding sample
+        # 
+        # return self.Xsamples   
     
     def chooseNewPositionsToExplore(self):
         Xsamples = self.optimizeAcquisitionFunction()
