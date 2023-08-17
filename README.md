@@ -118,8 +118,7 @@ Optimizer hyperparameters:
   - `c1` (cognitive acceleration coefficient, default value = `2.`): high values of `c1` promote the exploitation of positions near the best position found by the individual particle, updated at each iteration if a better position is found. If provided by the users, they must ensure that `c1+c1<4`.
   - `c2` (social acceleration coefficient, default value = `2.`): high values of `c2` promote the exploitation of positions near the best position found by the entire swarm, updated at each iteration if a better position is found. If provided by the users, they must ensure that `c1+c1<4`.
   - `w` (inertia weight, default value = `0.9`): high values of this coefficient reduce the variations of the velocity of the particle. If provided by the users, they must ensure that it is `<1` to avoid velocity divergence.
-  - `initial_speed_over_search_space_size` (default value = `0.1`): the initial velocities of particles in each dimension are drawn from a uniform distribution with boundaries proportional to `initial_speed_over_search_space_size` in that dimension and to the `search_interval` size in that dimension.
-  - `max_speed` (maximum speed, default value: an array with elements equal to the respective size of `search_interval` in each dimension multiplied by `0.3`).
+  - `max_speed` (maximum speed, default value: an array with elements equal to the respective size of `search_interval` in each dimension multiplied by `0.3`). This array is also the maximum absolute value for the initial velocities of the particles in each dimension (which are drawn randomly).
   
 - `"Adaptive Particle Swarm Optimization"` (Adaptive PSO): based on from Z.-H. Zhan et al., IEEE Transactions on Systems, Man, and Cybernetics, Part B (Cybernetics) 39, 6 (2009) https://ieeexplore.ieee.org/document/4812104 .
 Based on the evolutionary state of the swarm, the coefficients `c1`, `c2` and the inertia weight `w` are updated as described in that article. Compared to the description in the original reference, no transition base rule is used.
@@ -128,7 +127,6 @@ Optimizer hyperparameters:
   - `c2` (social acceleration coefficient, default value = `2.0`): same as in the `"Particle Swarm Optimization"`, but the value provided by the user is just the initial value of the coefficient.
   - `w` (inertia weight, default value = `0.9`): same as in the `"Particle Swarm Optimization"`, but the value provided by the user is just the initial value of the inertia weight.
   - `perturbation_global_best_particle` (default value = `True`): when `True` and the evolutionary state of the swarm is `Convergence`, the position of the best particle (the one with highest `f(X)`) is mutated adding a random perturbation drawn from a Gaussian distribution on one random coordinate (see original reference) and this new position is assigned to the worst particle of the swarm (the one with lowest `f(X)`). This feature allows the swarm to jump out of a local maximum more easily.
-  - `initial_speed_over_search_space_size`: same as in the `"Particle Swarm Optimization"`.
   - `max_speed`: same as in the `"Particle Swarm Optimization"`.
   
 - `"PSO-TPME"` (PSO with Targeted, Position-Mutated Elitism): version of the PSO based on T. Shaquarin, B. R. Noack, International Journal of Computational Intelligence Systems (2023) 16:6, https://doi.org/10.1007/s44196-023-00183-z In this version of PSO, the inertia linearly decreases from `w1` (<1) to `w2` (<`w1`) and the coefficients `c1` and `c2` (`c1+c2<4`) are fixed. At each iteration, the mean `mean` of the function values found by the particles is computed. Afterwards, two levels for the function value are defined: `mean*(1+portion_of_mean_classification_levels)` and `mean*(1-portion_of_mean_classification_levels)`, where `portion_of_mean_classification_levels<1`. Depending on the function value they have found compared to these two levels, at each iterations particles are classified as `good` (above the highest level), `bad` (below the lowest level) and `fair` (in between). `good` particles will behave only exploring around their personal optimum position i.e. as if `c2=0`), `bad` particles will behave only converging towards the swarm optimum position (i.e. as if `c1=0`). `fair` particles will behave as the particles of a "classic" PSO. Particles remaining `bad` for `Number_of_iterations_bad_particles` will be marked as `hopeless`, i.e. at the next iteration they will be relocated near the swarm optimum position.
@@ -142,7 +140,6 @@ Optimizer hyperparameters:
   - `amplitude_mutated_range_1` (default value = `0.4`).
   - `amplitude_mutated_range_2` (default value = `0.01`).
   - `Number_of_iterations_bad_particles` (default value = `2`).
-  - `initial_speed_over_search_space_size`: same as for the `"Particle Swarm Optimization"`.
   - `max_speed`: same as in the `"Particle Swarm Optimization"`.
   - `c1`: same as for the `"Particle Swarm Optimization"`.
   - `c2`: same as for the `"Particle Swarm Optimization"`.
