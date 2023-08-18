@@ -121,7 +121,7 @@ Optimizer hyperparameters:
   - `max_speed` (maximum speed, default value: an array with elements equal to the respective size of `search_interval` in each dimension multiplied by `0.3`). This array is also the maximum absolute value for the initial velocities of the particles in each dimension (which are drawn randomly).
   
 - `"Adaptive Particle Swarm Optimization"` (Adaptive PSO): based on from Z.-H. Zhan et al., IEEE Transactions on Systems, Man, and Cybernetics, Part B (Cybernetics) 39, 6 (2009) https://ieeexplore.ieee.org/document/4812104 .
-Based on the evolutionary state of the swarm, the coefficients `c1`, `c2` and the inertia weight `w` are updated as described in that article. Compared to the description in the original reference, no transition base rule is used.
+Based on the evolutionary state of the swarm, the coefficients `c1`, `c2` and the inertia weight `w` are updated as described in that article. Compared to the description in the original reference, no fuzzy classification is used. 
 Optimizer hyperparameters:
   - `c1` (cognitive acceleration coefficient, default value = `2.0`): same as in the `"Particle Swarm Optimization"`, but the value provided by the user is just the initial value of the coefficient.
   - `c2` (social acceleration coefficient, default value = `2.0`): same as in the `"Particle Swarm Optimization"`, but the value provided by the user is just the initial value of the coefficient.

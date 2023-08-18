@@ -575,8 +575,6 @@ class ParticleSwarmOptimization(Optimizer):
         self.iteration_number = self.iteration_number+1
         
     def evaluateEvolutionStateAndAdaptHyperparameters(self):
-        # based on the implementation in the pymoo project https://pymoo.org 
-        # (which is probably more efficient than the one you will find in the next lines of code)
         
         # compute for each particle its mean distance from the other particles
         #print(self.history_samples_positions_and_function_values)
