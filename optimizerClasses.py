@@ -243,12 +243,11 @@ class ParticleSwarmOptimization(Optimizer):
         # maximum speed for a particle, it must be a vector with number_of_dimensions elements
         default_max_speed = np.zeros(self.number_of_dimensions)
         for idim in range(0,self.number_of_dimensions):
-            default_max_speed[idim]   = 0.3*(self.search_interval[idim][1]-self.search_interval[idim][0])
+            default_max_speed[idim]   = 0.4*(self.search_interval[idim][1]-self.search_interval[idim][0])
                 
         self.max_speed                                     = kwargs.get('max_speed', default_max_speed)
         
         print("\n -- hyperparameters used by the optimizer -- ")
-        print("max_speed                                = ",self.max_speed )
         
         if (self.name=="Particle Swarm Optimization"):
 
@@ -266,6 +265,7 @@ class ParticleSwarmOptimization(Optimizer):
                 print("ERROR: w must be < 1.")
                 sys.exit()
             
+            print("max_speed                                = ",self.max_speed )
             print("c1                                       = ",self.c1)
             print("c2                                       = ",self.c2)
             print("w                                        = ",self.w)
@@ -299,6 +299,7 @@ class ParticleSwarmOptimization(Optimizer):
             self.history_c2[0] = self.c2
             self.f             = 0.      # evolutionary factor of the swarm
             
+            self.history_mu    = np.zeros(self.number_of_iterations)
             
             self.history_evolutionary_state = []
             
@@ -309,10 +310,38 @@ class ParticleSwarmOptimization(Optimizer):
             default_value_perturbation_global_best_particle = True
             self.perturbation_global_best_particle = kwargs.get('perturbation_global_best_particle', default_value_perturbation_global_best_particle)
             
+            # use PSO variant with state-based adaptive velocity limit strategy (PSO-SAVL)
+            # described in X. Li et al., Neurocomputing 447 (2021) 64–79, https://doi.org/10.1016/j.neucom.2021.03.077
+            # the maximum velocity in each dimension idim, i.e. mu*(search_space_size[idim]) will be adaptively changed
+            # depending on the evolutionary state, with mu chosen within the interval [mu_min,mu_max]
+            default_mu_min     = 0.4
+            self.mu_min        = kwargs.get('mu_min', default_mu_min)
+            
+            default_mu_max     = 0.7
+            self.mu_max        = kwargs.get('mu_max', default_mu_max)
+            
+            if ( self.mu_max < self.mu_min ):
+                print("ERROR: mu_max must be larger than mu_min")
+                sys.exit()
+                
+            self.alpha         = (1./self.mu_min) - 1.
+            self.beta          = -math.log( (1./self.mu_max-1.)/self.alpha )
+            
+            self.mu            = self.mu_max
+            self.history_mu[0] = self.mu
+            
+            # start with the maximum speed initially to promote exploration
+            self.max_speed = np.zeros(self.number_of_dimensions)
+            for idim in range(0,self.number_of_dimensions):
+                self.max_speed[idim] = self.mu*(self.search_interval[idim][1]-self.search_interval[idim][0])
+            
+            print("max_speed                             = ",self.max_speed )
             print("c1 (initial)                          = ",self.c1                               )
             print("c2 (initial)                          = ",self.c2                               )
             print("w  (initial)                          = ",self.w                                )
             print("perturbation_global_best_particle     = ",self.perturbation_global_best_particle)
+            print("mu_min                                = ",self.mu_min                           )
+            print("mu_max                                = ",self.mu_max                           )
             print("")
             
         elif (self.name=="PSO-TPME"):
@@ -393,6 +422,7 @@ class ParticleSwarmOptimization(Optimizer):
             # value of the last average_function_value_of_swarm
             self.best_average_function_value                   = float('-inf')
             
+            print("max_speed                                = ",self.max_speed )
             print("c1                                       = ",self.c1)
             print("c2                                       = ",self.c2)
             print("w1                                       = ",self.w1)
@@ -619,13 +649,20 @@ class ParticleSwarmOptimization(Optimizer):
             self.c1 = 4.0 * (self.c1 / (self.c1 + self.c2))
             self.c2 = 4.0 * (self.c2 / (self.c1 + self.c2))
             
+        # change the maximum speed following X. Li et al., Neurocomputing 447 (2021) 64–79, https://doi.org/10.1016/j.neucom.2021.03.077
+        self.mu = (  1. / ( 1.+self.alpha*np.exp(-self.beta*self.f) ) )
+        
+        for idim in range(0,self.number_of_dimensions):
+            self.max_speed[idim] = self.mu*(self.search_interval[idim][1]-self.search_interval[idim][0])
+            
         # store some history of the varying terms    
         self.history_c1[self.iteration_number] = self.c1
         self.history_c2[self.iteration_number] = self.c2
         self.history_w [self.iteration_number] = self.w
+        self.history_mu[self.iteration_number] = self.mu
         self.history_evolutionary_state.append(self.evolutionary_state)
         
-        print("\n",self.name,", f = ",self.f,"--> evolutionary state: ",dictionary_evolutionary_state_swarm[self.evolutionary_state],"; c1 = ",self.c1,"; c2 = ",self.c2,"; w = ",self.w,"\n")
+        print("\n",self.name,", f = ",self.f,"--> evolutionary state: ",dictionary_evolutionary_state_swarm[self.evolutionary_state],"; c1 = ",self.c1,"; c2 = ",self.c2,"; w = ",self.w,"; mu = ",self.mu,"\n")
 
 
         if ( (self.perturbation_global_best_particle==True) and ( self.evolutionary_state == 3) ): # if the swarm is at convergence and perturbation is activated
@@ -713,6 +750,8 @@ class ParticleSwarmOptimization(Optimizer):
             np.save( f, self.history_c2)
         with open('history_w.npy', 'wb') as f:
             np.save( f, self.history_w)
+        with open('history_mu.npy', 'wb') as f:
+            np.save( f, self.history_mu)
             
     def APSOSavePartialHyperparametersHistory(self):
         with open('history_evolutionary_factor_f_up_to_iteration_'+str(self.iteration_number).zfill(5)+'.npy', 'wb') as f:
@@ -723,6 +762,8 @@ class ParticleSwarmOptimization(Optimizer):
             np.save( f, self.history_c2[0:self.iteration_number])
         with open('history_w_up_to_iteration_'+str(self.iteration_number).zfill(5)+'.npy', 'wb') as f:
             np.save( f, self.history_w[0:self.iteration_number])
+        with open('history_mu_up_to_iteration_'+str(self.iteration_number).zfill(5)+'.npy', 'wb') as f:
+            np.save( f, self.history_mu[0:self.iteration_number])
         
                      
 
