@@ -94,19 +94,19 @@ if __name__ == '__main__':
     y_mesh = np.linspace(loaded_optimization_run.optimizer.search_interval[1][0],loaded_optimization_run.optimizer.search_interval[1][1],num=n_grid_points)
 
     # array for the predicted function values
-    function_value_mesh      = np.zeros(shape=(n_grid_points,n_grid_points))
+    predicted_function_value_mesh = np.zeros(shape=(n_grid_points,n_grid_points))
     # array for the real function values
-    true_function_value_mesh = np.zeros(shape=(n_grid_points,n_grid_points))
+    true_function_value_mesh      = np.zeros(shape=(n_grid_points,n_grid_points))
     for i in range(0,n_grid_points):
         for j in range(0,n_grid_points):
             # remember that the surrogate model inside the optimizer takes for each dimension idim the coordinates
             # of the sample normalized by search_interval_size[idim], i.e. the size of the search interval in that dimension
-            x_sample            = x_mesh[i]/loaded_optimization_run.optimizer.search_interval_size[0]
-            y_sample            = y_mesh[j]/loaded_optimization_run.optimizer.search_interval_size[1]
-            sample_normalized   = (np.array([x_sample,y_sample])).reshape(1,2)
+            x_sample              = x_mesh[i]/loaded_optimization_run.optimizer.search_interval_size[0]
+            y_sample              = y_mesh[j]/loaded_optimization_run.optimizer.search_interval_size[1]
+            sample_normalized     = (np.array([x_sample,y_sample])).reshape(1,2)
             # predict the value of the function with a surrogate model
-            function_value_mesh[i,j]      = loaded_optimization_run.optimizer.model.predict(sample_normalized)
-            sample              = np.array([x_mesh[i],y_mesh[j]])
+            predicted_function_value_mesh[i,j]      = loaded_optimization_run.optimizer.model.predict(sample_normalized)
+            sample                = np.array([x_mesh[i],y_mesh[j]])
             true_function_value_mesh[i,j] = my_test_function(sample)
            
             
@@ -114,7 +114,7 @@ if __name__ == '__main__':
     # especially in more than one dimension, you will need a lot of points to see something in this plot
     plt.ion()
     plt.figure(1)
-    plt.imshow(function_value_mesh,extent=[0,10,0,10],aspect="auto",vmin=0,vmax=2)
+    plt.imshow(np.flipud(predicted_function_value_mesh),extent=[search_interval[0][0],search_interval[0][1],search_interval[1][0],search_interval[1][1]],aspect="auto",vmin=0,vmax=2)
     plt.xlabel("dim0");plt.ylabel("dim1")
     plt.title("Predicted function values")
     #plt.scatter(loaded_optimization_run.optimizer.X[:,0]*loaded_optimization_run.optimizer.search_interval_size[0],loaded_optimization_run.optimizer.X[:,1]*loaded_optimization_run.optimizer.search_interval_size[1],c=loaded_optimization_run.optimizer.y)
@@ -122,7 +122,7 @@ if __name__ == '__main__':
     
     # plot the real function values
     plt.figure(2)
-    plt.imshow(true_function_value_mesh,extent=[0,10,0,10],aspect="auto",vmin=0,vmax=2)
+    plt.imshow(np.flipud(true_function_value_mesh),extent=[search_interval[0][0],search_interval[0][1],search_interval[1][0],search_interval[1][1]],aspect="auto",vmin=0,vmax=2)
     plt.xlabel("dim0");plt.ylabel("dim1")
     plt.title("True function values")
     #plt.scatter(loaded_optimization_run.optimizer.X[:,0]*loaded_optimization_run.optimizer.search_interval_size[0],loaded_optimization_run.optimizer.X[:,1]*loaded_optimization_run.optimizer.search_interval_size[1],c=loaded_optimization_run.optimizer.y)
