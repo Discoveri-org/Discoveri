@@ -277,7 +277,9 @@ class ParticleSwarmOptimization(Optimizer):
             # https://ieeexplore.ieee.org/document/4812104
             # in this version of PSO: 
             #     the c1,c2,w coefficient are adapted based on the evolutionary state of the swarm
-            #     compared to the version in that reference, no fuzzy transition rule state, i.e. only the values of mu_Sx will be used
+            #     compared to the version in that reference, no fuzzy classification is used for the evolutionary state.
+            #     the intervals for this classification based on the parameter f are just 
+            #     Convergence: [0,0.25), Exploitation: [0.25,0.5), Exploration: [0.5,0.75), Jumping-Out: [0.75,1.)]
             
             # w1 (initial inertia weight)
             default_value_w    = 0.9
@@ -586,12 +588,8 @@ class ParticleSwarmOptimization(Optimizer):
         self.f = (d_g-d_min)/(d_max-d_min+1e-15) # add a small constant to avoid division by 0.
         self.history_f[self.iteration_number] = self.f
 
-        # compute value of the membership functions mu_Sx for x=1,2,3,4
-        mu_values = np.array([mu_S1(self.f), mu_S2(self.f), mu_S3(self.f), mu_S4(self.f)])
-        
-        # find the highest value for mu_Sx and extract evolutionary state of the Swarm
         # simple evaluation of the evolutionary state, without the transition rule of the original paper
-        self.evolutionary_state = mu_values.argmax() + 1
+        self.evolutionary_state = evolutionary_state(self.f)
         
         dictionary_evolutionary_state_swarm = {1:"Exploration",2:"Exploitation",3:"Convergence",4:"Jumping Out"}
         
