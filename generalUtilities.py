@@ -42,11 +42,11 @@ def getOptimumPositionAndFunctionValueAfterOptimization(optimizer):
 #### function to compute the evolutionary state in Adaptive Particle Swarm Optimization
 def evolutionary_state(f):
     if 0. <= f < 0.25:
-        return 1
+        return 3
     elif 0.25 <= f < 0.5:
         return 2
     elif 0.5 <= f < 0.75:
-        return 3
+        return 1
     elif 0.75 <= f <= 1.0:
         return 4
     else:
