@@ -67,18 +67,19 @@ if __name__ == '__main__':
     starting_directory = os.getcwd()
     # initialize an optimization run 
     # the optimizer hyperparameters will be the default ones
-    optimization_run   = createOptimizationRun(starting_directory              = starting_directory,               \
-                                               optimization_method             = optimization_method,              \
-                                               number_of_samples_per_iteration = number_of_samples_per_iteration,  \
-                                               number_of_dimensions            = number_of_dimensions,             \
-                                               search_interval                 = search_interval,                  \
-                                               number_of_iterations            = number_of_iterations,             \
-                                               use_test_function               = use_test_function,                \
-                                               test_function                   = test_function,                    \
-                                               iterations_between_outputs      = iterations_between_outputs,       \
-                                               input_parameters_names          = input_parameters_names,           \
-                                               relocateParticlesWithRegression = True,number_of_particles_from_regression=1,\
-                                               length_scale                    = length_scale  )
+    optimization_run   = createOptimizationRun(starting_directory                = starting_directory,               \
+                                               optimization_method               = optimization_method,              \
+                                               number_of_samples_per_iteration   = number_of_samples_per_iteration,  \
+                                               number_of_dimensions              = number_of_dimensions,             \
+                                               search_interval                   = search_interval,                  \
+                                               number_of_iterations              = number_of_iterations,             \
+                                               use_test_function                 = use_test_function,                \
+                                               test_function                     = test_function,                    \
+                                               iterations_between_outputs        = iterations_between_outputs,       \
+                                               input_parameters_names            = input_parameters_names,           \
+                                               relocateParticlesWithRegression   = True,number_of_particles_from_regression=1,\
+                                               length_scale                      = length_scale,\
+                                               perturbation_global_best_particle = False  )
     # execute optimization run
     optimization_run.execute()
     
