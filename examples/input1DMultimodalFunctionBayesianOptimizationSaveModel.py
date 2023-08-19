@@ -79,28 +79,33 @@ if __name__ == '__main__':
     
     
     # Save the optimization_run object to a file
-    with open('optimization_run.pkl', 'wb') as file:
-        pickle.dump(optimization_run, file)
+    with open('model.pkl', 'wb') as file:
+        pickle.dump(optimization_run.optimizer.model, file)
         
         
-    # You can load the file later
-    with open('optimization_run.pkl', 'rb') as file:
-        loaded_optimization_run = pickle.load(file)
+    # You can load the predictive model after the optimization
+    with open('model.pkl', 'rb') as file:
+        loaded_prediction_model = pickle.load(file)
+    
+    # load the optimization history
+    filename             = "history_particles_positions_and_function_values.npy" # complete history
+    history_particles_positions_and_function_values = np.load(filename)
         
     # and use the surrogate model of bayesian optimization to have a reconstruction of the function to optimize
-    n_grid_points = 300
-    x_mesh = np.linspace(loaded_optimization_run.optimizer.search_interval[0][0],loaded_optimization_run.optimizer.search_interval[0][1],num=n_grid_points)
+    n_grid_points        = 300
+    x_mesh               = np.linspace(search_interval[0][0],search_interval[0][1],num=n_grid_points)
+    search_interval_size = [search_interval[idim][1]-search_interval[idim][0] for idim in range(0,number_of_dimensions)]
 
     # array for the predicted function values
-    function_value_mesh = np.zeros(n_grid_points)
+    function_value_mesh  = np.zeros(n_grid_points)
     # array for the uncertainity of the prediction as standard deviation
     std = np.zeros(n_grid_points)
     for i in range(0,n_grid_points):
         # remember that the surrogate model inside the optimizer takes for each dimension idim the coordinates
         # of the sample normalized by search_interval_size[idim], i.e. the size of the search interval in that dimension
-        sample = (np.array([x_mesh[i]/loaded_optimization_run.optimizer.search_interval_size[0]])).reshape(1,1)
+        sample = (np.array([x_mesh[i]/search_interval_size[0]])).reshape(1,1)
         # predict the value of the function with a surrogate model
-        function_value_mesh[i],std[i] = loaded_optimization_run.optimizer.model.predict(sample,return_std=True)
+        function_value_mesh[i],std[i] = loaded_prediction_model.predict(sample,return_std=True)
            
             
     # Plot    
@@ -112,7 +117,9 @@ if __name__ == '__main__':
     # print the real value of the function to optimize (which is unknown to the optimizer)
     plt.plot(x_mesh,[my_test_function(x) for x in x_mesh],"-b",label="function to optimize")
     # print the points sampled by the optimizer, remembering to the normalize the X points
-    plt.plot(loaded_optimization_run.optimizer.X*loaded_optimization_run.optimizer.search_interval_size[0],loaded_optimization_run.optimizer.y,"b.",label="sampled points")
+    X_sampled = np.reshape(history_particles_positions_and_function_values[:,:,0:number_of_dimensions],(number_of_iterations,number_of_dimensions))
+    y_sampled = history_particles_positions_and_function_values[:,:,number_of_dimensions]
+    plt.plot(X_sampled,y_sampled,"b.",label="sampled points")
     plt.xlabel("x");plt.ylabel("y")
     plt.legend()
 
