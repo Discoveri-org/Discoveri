@@ -79,12 +79,13 @@ class Optimizer:
         self.initialPrint(**kwargs)   
         
     def initialPrint(self,**kwargs):
-        print("\nOptimizer:                          ", self.name)
-        print("Number of iterations:                 ",self.number_of_iterations)
-        print("Number of dimensions:                 ",self.number_of_dimensions)
-        print("Number of samples per iteration       ",self.number_of_samples_per_iteration)
-        print("Search interval:                      ",self.search_interval)
-        print("Hyperparameters provided by the user: ",kwargs,"\n")
+        print("")
+        print("Optimizer                                = ", self.name)
+        print("Number of iterations                     = ",self.number_of_iterations)
+        print("Number of dimensions                     = ",self.number_of_dimensions)
+        print("Number of samples per iteration          = ",self.number_of_samples_per_iteration)
+        print("Search interval                          = ",self.search_interval)
+        print("Hyperparameters provided by the user     = ",kwargs,"\n")
     
     def updateSamplesForExploration(self):
         print("In an optimizer, you must define a way to pick new positions to explore for each sample")
@@ -224,7 +225,7 @@ class GridSearch(Optimizer):
             sys.exit()
         
         print("\n -- hyperparameters used by the optimizer -- ")
-        print("samples_per_dimension : ",self.samples_per_dimension)
+        print("samples_per_dimension                    = ",self.samples_per_dimension)
         
         # create population of samples 
         for isample in range(self.number_of_samples_per_iteration):
@@ -364,13 +365,13 @@ class ParticleSwarmOptimization(Optimizer):
             for idim in range(0,self.number_of_dimensions):
                 self.max_speed[idim] = self.mu*(self.search_interval[idim][1]-self.search_interval[idim][0])
             
-            print("max_speed                             = ",self.max_speed )
-            print("c1 (initial)                          = ",self.c1                               )
-            print("c2 (initial)                          = ",self.c2                               )
-            print("w  (initial)                          = ",self.w                                )
-            print("perturbation_global_best_particle     = ",self.perturbation_global_best_particle)
-            print("mu_min                                = ",self.mu_min                           )
-            print("mu_max                                = ",self.mu_max                           )
+            print("max_speed                                = ",self.max_speed )
+            print("c1 (initial)                             = ",self.c1                               )
+            print("c2 (initial)                             = ",self.c2                               )
+            print("w  (initial)                             = ",self.w                                )
+            print("perturbation_global_best_particle        = ",self.perturbation_global_best_particle)
+            print("mu_min                                   = ",self.mu_min                           )
+            print("mu_max                                   = ",self.mu_max                           )
             print("")
             
         # use scrambled Halton sampler to extract initial positions
@@ -590,11 +591,12 @@ class BayesianOptimization(Optimizer):
         super().__init__(name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs)
 
         # Implementation of Bayesian Optimization based on a Matern Kernel (see https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.kernels.Matern.html)
+        ### Define the model for the kernel of the Gaussian process
         self.number_of_tests,self.nu,self.length_scale,self.length_scale_bounds,self.xi,\
         self.kernel,self.model,self.XsamplesChosenWithSurrogateModel \
         = initializePredictiveModelForOptimization(number_of_samples_to_choose_per_iteration=self.number_of_samples_per_iteration,number_of_dimensions=self.number_of_dimensions,**kwargs)
         
-        ### Define the model for the kernel of the Gaussian process
+        print("\n -- hyperparameters used by the optimizer -- ")
         print("number_of_tests                          = ",self.number_of_tests)
         print("nu                                       = ",self.nu)
         print("length_scale                             = ",self.length_scale)
