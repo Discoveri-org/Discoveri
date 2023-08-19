@@ -99,7 +99,7 @@ def getExpectedImprovementAcquisitionFunctionResult(model, Xtest, X, xi):
         
     return ei
     
-def initializePredictiveModelForOptimization(number_of_samples_to_choose_per_iteration=1,number_of_dimensions=1,**kwargs):
+def initializePredictiveModelForOptimization(number_of_samples_to_choose=1,number_of_dimensions=1,**kwargs):
     
     ### Set some parameters for the kernel
     
@@ -148,7 +148,7 @@ def initializePredictiveModelForOptimization(number_of_samples_to_choose_per_ite
     # now the kernel and the model 
     kernel                           = ConstantKernel(1.0, constant_value_bounds="fixed")*Matern(nu=nu,length_scale=length_scale,length_scale_bounds=length_scale_bounds) 
     model                            = GaussianProcessRegressor(optimizer="fmin_l_bfgs_b",kernel=kernel)
-    XsamplesChosenWithSurrogateModel = np.zeros(shape=(number_of_samples_to_choose_per_iteration, number_of_dimensions))
+    XsamplesChosenWithSurrogateModel = np.zeros(shape=(number_of_samples_to_choose, number_of_dimensions))
     
     
     return number_of_tests,nu,length_scale,length_scale_bounds,xi,kernel,model,XsamplesChosenWithSurrogateModel

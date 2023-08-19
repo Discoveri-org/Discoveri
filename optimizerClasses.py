@@ -74,6 +74,7 @@ class Optimizer:
         self.model                           = None
         self.xi                              = 0.
         self.X                               = np.zeros(1)
+        self.y                               = np.zeros(1)
         
         
         self.initialPrint(**kwargs)   
@@ -373,6 +374,41 @@ class ParticleSwarmOptimization(Optimizer):
             print("mu_min                                   = ",self.mu_min                           )
             print("mu_max                                   = ",self.mu_max                           )
             print("")
+        
+        # flag to substitute number_of_particles_from_regression particles (those with worst fitness value in the previous iteration) 
+        # every number_of_iterations_between_regressions iterations 
+        # with positions picked like in a Bayesian Optimization
+        default_value_relocateParticlesWithRegression                = False
+        self.relocateParticlesWithRegression                         = kwargs.get('relocateParticlesWithRegression', default_value_relocateParticlesWithRegression)
+        
+        default_value_number_of_particles_from_regression            = 1
+        self.number_of_particles_from_regression                     = kwargs.get('number_of_particles_from_regression', default_value_number_of_particles_from_regression)
+        
+        default_value_number_of_iterations_between_regressions       = 1
+        self.number_of_iterations_between_regressions                = kwargs.get('number_of_iterations_between_regressions', default_value_number_of_iterations_between_regressions)
+        
+        
+        if (self.relocateParticlesWithRegression==True):
+            ### Define the regression model with a Gaussian process
+            self.number_of_tests,self.nu,self.length_scale,self.length_scale_bounds,self.xi,\
+            self.kernel,self.model,self.XsamplesChosenWithSurrogateModel \
+            = initializePredictiveModelForOptimization(number_of_samples_to_choose=self.number_of_particles_from_regression,number_of_dimensions=self.number_of_dimensions,**kwargs)
+            
+            print("\n -- hyperparameters used for the regression -- ")
+            
+            print("relocateParticlesWithRegression          = ",self.relocateParticlesWithRegression)
+            print("number_of_particles_from_regression      = ",self.number_of_particles_from_regression)
+            print("number_of_iterations_between_regressions = ",self.number_of_iterations_between_regressions)
+            print("number_of_tests                          = ",self.number_of_tests)
+            print("nu                                       = ",self.nu)
+            print("length_scale                             = ",self.length_scale)
+            print("length_scale_bounds                      = ",self.length_scale_bounds)
+            print("")
+            
+            # NOTE: X is normalized by the search_interval_size in each dimension
+            self.X = np.zeros(shape=(self.number_of_samples_per_iteration, self.number_of_dimensions)) # all normalized positions explored by the Bayesian Optimization
+            self.y = np.zeros((self.number_of_samples_per_iteration,1))                                # all the function values found by the Bayesian Optimization
+            
             
         # use scrambled Halton sampler to extract initial positions
         self.halton_sampler_position                 = qmc.Halton(d=self.number_of_dimensions, scramble=True)
@@ -388,15 +424,19 @@ class ParticleSwarmOptimization(Optimizer):
                 position[idim] = self.search_interval[idim][0]+halton_sampler_random_position[iparticle][idim]*self.search_interval_size[idim] #np.random.uniform(search_interval[dimension][0], search_interval[dimension][1])
                 # use initial velocity proportional to the search_space size in this dimension
                 velocity[idim] = self.max_speed[idim]*np.random.uniform(-1, 1)
-                particle       = SwarmParticle(position,velocity) 
-
+                particle       = SwarmParticle(position,velocity)
+            
             self.samples.append(particle)
+            
+            if(self.relocateParticlesWithRegression==True):    
+                self.X[iparticle,idim] = position[idim]/self.search_interval_size[idim] # normalize data
                 
             print("Particle", iparticle, "Position:", position)  
             self.history_samples_positions_and_function_values[0,iparticle,0:self.number_of_dimensions] = position[:]
-            self.samples[iparticle].optimum_position[:]                                           = position[:]
+            self.samples[iparticle].optimum_position[:]                                                 = position[:]
             del position, velocity
             
+        
             
         print("\n"+self.name+" initialized")
         
@@ -438,23 +478,6 @@ class ParticleSwarmOptimization(Optimizer):
         self.iteration_number = self.iteration_number+1
         
     def evaluateEvolutionStateAndAdaptHyperparameters(self):
-        
-        # compute for each particle its mean distance from the other particles
-        #print(self.history_samples_positions_and_function_values)
-        
-        # Non vectorized version
-        # average_distance_from_other_particles = np.zeros(self.number_of_samples_per_iteration)
-        # for iparticle1 in range(0,self.number_of_samples_per_iteration):
-        #     for iparticle2 in range(0,self.number_of_samples_per_iteration):
-        #         if (iparticle2==iparticle1):
-        #             normalized_distance_1_from_2 = 0.
-        #         else:
-        #             normalized_distance_1_from_2 = normalized_euclidean_distance(self.samples[iparticle1].position,self.samples[iparticle2].position,self.search_interval_size)
-        #         #print("normalized distance from particle ",iparticle1," to particle ",iparticle2,"is ",normalized_distance_1_from_2)
-        #         average_distance_from_other_particles[iparticle1] = average_distance_from_other_particles[iparticle1] + normalized_distance_1_from_2
-        #     average_distance_from_other_particles[iparticle1] = average_distance_from_other_particles[iparticle1]/(self.number_of_samples_per_iteration-1.)
-        #     #print("average normalized distances from other particles: ",average_distance_from_other_particles[iparticle1])
-        # 
         
         # Vectorized version 
         normalized_distances = np.zeros((self.number_of_samples_per_iteration, self.number_of_samples_per_iteration))
@@ -558,6 +581,9 @@ class ParticleSwarmOptimization(Optimizer):
             self.samples[index_worst_particle].position[index_dimension_to_mutate] = candidate_mutated_coordinate
             
             print("Particle ",index_worst_particle," mutated to position ",self.samples[index_worst_particle].position[:])
+        
+        if ( (self.relocateParticlesWithRegression==True) and ( (self.iteration_number % self.number_of_iterations_between_regressions) == 0)):
+            self.relocateParticlesUsingRegression()
 
     def APSOLastEvaluationAndDumpHyperparameters(self): # used only for Adaptive Particle Swarm Optimization
         self.evaluateEvolutionStateAndAdaptHyperparameters()
@@ -583,6 +609,44 @@ class ParticleSwarmOptimization(Optimizer):
             np.save( f, self.history_w[0:self.iteration_number])
         with open('history_mu_up_to_iteration_'+str(self.iteration_number).zfill(5)+'.npy', 'wb') as f:
             np.save( f, self.history_mu[0:self.iteration_number])
+            
+    def operationsAfterUpdateOfOptimumFunctionValueAndPosition(self):
+        if (self.relocateParticlesWithRegression==True):
+            # fit the regressor model to the data X,y 
+            # IMPORTANT: X is normalized
+            if self.iteration_number == 0: # if it is the first iteration
+                # fit to the initial observation
+                for isample in range(0,self.number_of_samples_per_iteration):
+                    self.y[isample] = self.history_samples_positions_and_function_values[self.iteration_number,isample,self.number_of_dimensions]
+                self.model.fit(self.X, self.y)
+            else: # if it is one of the next iterations
+                # add the new samples to the dataset
+                for isample in range(0,self.number_of_samples_per_iteration):
+                    sampled_positions = self.history_samples_positions_and_function_values[self.iteration_number,isample,0:self.number_of_dimensions]
+                    normalized_sampled_positions = np.divide(sampled_positions,np.asarray(self.search_interval_size))
+                    self.X = np.vstack((self.X, normalized_sampled_positions))
+                    self.y = np.vstack((self.y, self.history_samples_positions_and_function_values[self.iteration_number,isample,self.number_of_dimensions]))
+                # fit to the whole dataset including the new observations
+                self.model.fit(self.X, self.y)
+        else:
+            pass
+    
+    def relocateParticlesUsingRegression(self):
+        self.XsamplesChosenWithSurrogateModel = self.optimizeAcquisitionFunction(self.number_of_particles_from_regression)
+        
+        # Get the indices that would sort the array
+        sorted_indices = np.argsort(self.history_samples_positions_and_function_values[self.iteration_number,:,self.number_of_dimensions])
+
+        # Get the indices of the self.number_of_particles_from_regression lowest function values
+        indices_worst_particles = sorted_indices[:self.number_of_particles_from_regression]
+        
+        # denormalize because XsamplesChosenWithSurrogateModel is normalized, but the positions are not
+        index_particle_from_regression = 0
+        for index_from_worst_particles in indices_worst_particles:
+            for idim in range(0,self.number_of_dimensions):
+                self.samples[index_from_worst_particles].position[idim] = self.XsamplesChosenWithSurrogateModel[index_particle_from_regression,idim]*self.search_interval_size[idim]
+            index_particle_from_regression = index_particle_from_regression + 1
+            print("Particle ",index_from_worst_particles," relocated with regression to position ",self.samples[index_from_worst_particles].position[:])
         
                      
 
@@ -591,10 +655,10 @@ class BayesianOptimization(Optimizer):
         super().__init__(name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs)
 
         # Implementation of Bayesian Optimization based on a Matern Kernel (see https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.kernels.Matern.html)
-        ### Define the model for the kernel of the Gaussian process
+        ### Define the regression model with a Gaussian process
         self.number_of_tests,self.nu,self.length_scale,self.length_scale_bounds,self.xi,\
         self.kernel,self.model,self.XsamplesChosenWithSurrogateModel \
-        = initializePredictiveModelForOptimization(number_of_samples_to_choose_per_iteration=self.number_of_samples_per_iteration,number_of_dimensions=self.number_of_dimensions,**kwargs)
+        = initializePredictiveModelForOptimization(number_of_samples_to_choose=self.number_of_samples_per_iteration,number_of_dimensions=self.number_of_dimensions,**kwargs)
         
         print("\n -- hyperparameters used by the optimizer -- ")
         print("number_of_tests                          = ",self.number_of_tests)
