@@ -78,7 +78,7 @@ if __name__ == '__main__':
     optimization_run.execute()
     
     
-    # Save the optimization_run object to a file
+    # Save the optimizer predictive model to a file
     with open('model.pkl', 'wb') as file:
         pickle.dump(optimization_run.optimizer.model, file)
         
@@ -116,9 +116,14 @@ if __name__ == '__main__':
     plt.fill_between(x_mesh,function_value_mesh-3*std,function_value_mesh+3*std,color="g",alpha=0.1)
     # print the real value of the function to optimize (which is unknown to the optimizer)
     plt.plot(x_mesh,[my_test_function(x) for x in x_mesh],"-b",label="function to optimize")
+    
     # print the points sampled by the optimizer, remembering to the normalize the X points
+    
+    # positions sampled during the optimization run
     X_sampled = np.reshape(history_particles_positions_and_function_values[:,:,0:number_of_dimensions],(number_of_iterations,number_of_dimensions))
+    # function values sampled during the optimization run
     y_sampled = history_particles_positions_and_function_values[:,:,number_of_dimensions]
+    
     plt.plot(X_sampled,y_sampled,"b.",label="sampled points")
     plt.xlabel("x");plt.ylabel("y")
     plt.legend()
