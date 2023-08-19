@@ -93,9 +93,9 @@ if __name__ == '__main__':
     history_particles_positions_and_function_values = np.load(filename)
     
     # positions sampled during the optimization run
-    X_sampled = np.reshape(history_particles_positions_and_function_values[:,:,0:number_of_dimensions],(number_of_iterations,number_of_dimensions))
+    X_sampled = np.reshape(history_particles_positions_and_function_values[:,:,0:number_of_dimensions],(number_of_iterations*number_of_samples_per_iteration,number_of_dimensions))
     # function values sampled during the optimization run
-    y_sampled = history_particles_positions_and_function_values[:,:,number_of_dimensions]
+    y_sampled = np.reshape(history_particles_positions_and_function_values[:,:,number_of_dimensions],(number_of_iterations*number_of_samples_per_iteration,1))
         
     n_grid_points = 200
     x_mesh = np.linspace(search_interval[0][0],search_interval[0][1],num=n_grid_points)

@@ -120,7 +120,7 @@ if __name__ == '__main__':
     # print the points sampled by the optimizer, remembering to the normalize the X points
     
     # positions sampled during the optimization run
-    X_sampled = np.reshape(history_particles_positions_and_function_values[:,:,0:number_of_dimensions],(number_of_iterations,number_of_dimensions))
+    X_sampled = np.reshape(history_particles_positions_and_function_values[:,:,0:number_of_dimensions],(number_of_iterations*number_of_samples_per_iteration,number_of_dimensions))
     # function values sampled during the optimization run
     y_sampled = history_particles_positions_and_function_values[:,:,number_of_dimensions]
     
