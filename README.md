@@ -3,7 +3,7 @@
 
 ### About ``:Discoveri``
 
-``:Discoveri`` is a Python code to optimize/maximize a function with derivative-free methods. This function can be a `numpy` function or the result of a postprocessing function of simulations on a cluster. In both cases the user can define the function to optimize. In the latter case, ``:Discoveri`` prepares and launches automatically the simulations that sample the function to optimize. At the moment, the following optimization methods are implemented: `"Grid Search"`, `"Random Search"`,`"Bayesian Optimization"`, `"Particle Swarm Optimization"` (and two of its variants called `"Adaptive Particle Swarm Optimization"` and `"PSO-TPME"`).
+``:Discoveri`` is a Python code to optimize/maximize a function with derivative-free methods. This function can be a `numpy` function or the result of a postprocessing function of simulations on a cluster. In both cases the user can define the function to optimize. In the latter case, ``:Discoveri`` prepares and launches automatically the simulations that sample the function to optimize. At the moment, the following optimization methods are implemented: `"Grid Search"`, `"Random Search"`,`"Bayesian Optimization"`, `"Particle Swarm Optimization"` (and its variant called `"Adaptive Particle Swarm Optimization"`).
 
 ### Python libraries used
 - `numpy`
@@ -50,7 +50,6 @@ At the moment the available options are:
   - `"Bayesian Optimization"`
   - `"Particle Swarm Optimization"`
   - `"Adaptive Particle Swarm Optimization"`
-  - `"PSO-TPME"`
 - `number_of_iterations`(integer): the number of iterations of the optimization process.
 - `number_of_samples_per_iteration`(integer): the number of samples chosen/drawn at each iteration, each evaluating `f(X)` at a different sample `X`.
 - `number_of_dimensions` (integer): number of dimensions of the parameter space where the maximum of `f(X)` is searched.
@@ -130,21 +129,6 @@ Optimizer hyperparameters:
   - `max_speed`: this hyperparameter is ignored in this version of PSO, since the maximum speed for the particles is adaptively changed following X. Li et al., Neurocomputing 447 (2021) 64–79, https://doi.org/10.1016/j.neucom.2021.03.077 . The ratio between the maximum speed in a given dimension and the `search_interval` size in that dimension is the value `mu`, which will be chosen within the interval [`mu_min`,`mu_max`]. The initial `mu` for the initial speed of the particles is `mu_max`.
   - `mu_min` (default value = `0.4`).
   - `mu_max` (default value = `0.7`), must be larger than `mu_min`.
-  
-- `"PSO-TPME"` (PSO with Targeted, Position-Mutated Elitism): version of the PSO based on T. Shaquarin, B. R. Noack, International Journal of Computational Intelligence Systems (2023) 16:6, https://doi.org/10.1007/s44196-023-00183-z In this version of PSO, the inertia linearly decreases from `w1` (<1) to `w2` (<`w1`) and the coefficients `c1` and `c2` (`c1+c2<4`) are fixed. At each iteration, the mean `mean` of the function values found by the particles is computed. Afterwards, two levels for the function value are defined: `mean*(1+portion_of_mean_classification_levels)` and `mean*(1-portion_of_mean_classification_levels)`, where `portion_of_mean_classification_levels<1`. Depending on the function value they have found compared to these two levels, at each iterations particles are classified as `good` (above the highest level), `bad` (below the lowest level) and `fair` (in between). `good` particles will behave only exploring around their personal optimum position i.e. as if `c2=0`), `bad` particles will behave only converging towards the swarm optimum position (i.e. as if `c1=0`). `fair` particles will behave as the particles of a "classic" PSO. Particles remaining `bad` for `Number_of_iterations_bad_particles` will be marked as `hopeless`, i.e. at the next iteration they will be relocated near the swarm optimum position.
-Compared to that reference, the level from which the levels for `bad`, `fair`, `good` particles are computed cannot decrease over the iterations: i.e. the maximum between the mean of the function values found and the mean found at the previous iteration is used as `mean`;
-furthermore, to reinitialize the particles closer to the optimum one, the mutated_amplitude scale is linearly decreasing from `amplitude_mutated_range_1` to `amplitude_mutated_range_2` (`<amplitude_mutated_range_1`) and the distribution of the coordinates in a dimension near the optimum particle is a gaussian proportional to the `search_space` size in that dimension and the mutated amplitude.
-The initial position, velocity of the particles and the boundary conditions are the same of the PSO.
-Optimizer hyperparameters:
-  - `w1` (initial inertia weight, default value = `0.9`).
-  - `w2` (initial inertia weight, default value = `0.4`).
-  - `portion_of_mean_classification_levels` (default value = `0.02`).
-  - `amplitude_mutated_range_1` (default value = `0.4`).
-  - `amplitude_mutated_range_2` (default value = `0.01`).
-  - `Number_of_iterations_bad_particles` (default value = `2`).
-  - `max_speed`: same as in the `"Particle Swarm Optimization"`.
-  - `c1`: same as for the `"Particle Swarm Optimization"`.
-  - `c2`: same as for the `"Particle Swarm Optimization"`.
   
 #### Postprocessing:
 In the folder `postprocessing_scripts` several scripts are available to have an insight on the optimization run(s) made with ``:Discoveri``:

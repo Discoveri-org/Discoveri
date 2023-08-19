@@ -67,7 +67,13 @@ class Optimizer:
         self.history_samples_positions_and_function_values = np.zeros(shape=(number_of_iterations,number_of_samples_per_iteration,number_of_dimensions+1)) 
         
         # this is used mostly for normalizations
-        self.search_interval_size                          = [self.search_interval[idim][1]-self.search_interval[idim][0] for idim in range(0,self.number_of_dimensions)]
+        self.search_interval_size            = [self.search_interval[idim][1]-self.search_interval[idim][0] for idim in range(0,self.number_of_dimensions)]
+        
+        # used for optimizers with a predictive model e.g. Bayesian Optimization
+        self.number_of_tests                 = 1
+        self.model                           = None
+        self.xi                              = 0.
+        self.X                               = np.zeros(1)
         
         
         self.initialPrint(**kwargs)   
@@ -123,7 +129,30 @@ class Optimizer:
         sample = self.samples[isample]
         print("\n ---> Sample", isample, "Position:", sample.position," --> function value at this iteration = ",function_value)
         if function_value>sample.optimum_function_value:
-            self.updateSampleOptimumFunctionValueAndOptimumPosition(isample,function_value,sample.position[:])          
+            self.updateSampleOptimumFunctionValueAndOptimumPosition(isample,function_value,sample.position[:])
+            
+    # Optimize the acquisition function
+    def optimizeAcquisitionFunction(self,number_of_new_samples_to_choose):
+        
+        # this function will pick the (maybe) best number_new_samples positions
+        # to try, found by the a acquisition function 
+        
+        # Vectorized version
+        # Generate normalized test points
+        X_test_with_surrogate_model = np.random.uniform(
+            [interval[0] / size for interval, size in zip(self.search_interval, self.search_interval_size)],
+            [interval[1] / size for interval, size in zip(self.search_interval, self.search_interval_size)],
+            size=(self.number_of_tests, self.number_of_dimensions)
+        )
+
+        # Calculate acquisition scores on test points
+        scores = getExpectedImprovementAcquisitionFunctionResult(self.model,X_test_with_surrogate_model,self.X, self.xi)
+
+        # Select top samples based on acquisition scores
+        best_indices  = np.argsort(scores)[::-1][:number_of_new_samples_to_choose]
+        XsamplesChosenWithSurrogateModel = X_test_with_surrogate_model[best_indices]
+
+        return XsamplesChosenWithSurrogateModel         
             
 class RandomSearch(Optimizer):
     def __init__(self, name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs):
@@ -344,100 +373,6 @@ class ParticleSwarmOptimization(Optimizer):
             print("mu_max                                = ",self.mu_max                           )
             print("")
             
-        elif (self.name=="PSO-TPME"):
-            # parameters of the  Particle Swarm Optimization variant described in
-            # T. Shaquarin, B. R. Noack, International Journal of Computational Intelligence Systems (2023) 16:6, https://doi.org/10.1007/s44196-023-00183-z
-            # changes compared to that article:
-            # - the level from which the levels for bad, fair, good are computed will not decrease \
-            #   over the iterations: i.e. the maximum between the average of the function to optimize and the previous level is used ;
-            #   probably this prevents particles from going all towards "fair" as described in that article
-            # - to reinitialize the particles closer to the optimum one, the mutated_amplitude is linearly decreasing,
-            #   and the distribution of the coordinates near the optimum particle is a gaussian proportional to the search space size
-            #   in that dimension and the mutated amplitude
-            
-            # w1 (initial inertia weight)
-            default_value_w1  = 0.9
-            self.w1           = kwargs.get('w1', default_value_w1)
-            
-            if ( self.w1 >1. ):
-                print("ERROR: w1 must be < 1.")
-                sys.exit()
-            
-            # w2 (final inertia weight)
-            default_value_w2  = 0.4
-            self.w2           = kwargs.get('w2', default_value_w2)
-            
-            if ( self.w2 > 1. ):
-                print("ERROR: w must be < 1.")
-                sys.exit()
-                
-            if ( self.w2 > self.w1) :
-                print("ERROR: w2 must be < w1.")
-                sys.exit()
-                
-            
-            # maximum number of iterations in which "bad" particles are allowed to explore (Ne in the original paper)
-            default_Number_of_iterations_bad_particles         = 3
-            self.Number_of_iterations_bad_particles            = kwargs.get('Number_of_iterations_bad_particles', default_Number_of_iterations_bad_particles)
-            
-            if (self.Number_of_iterations_bad_particles < 1):
-                print("ERROR: Number_of_iterations_bad_particles must be >= 1.")
-                sys.exit()
-            
-            # percentage p of the mean to define the classification levels mean*(1-p), mean*(1+p)
-            default_portion_of_mean_classification_levels      = 0.02
-            self.portion_of_mean_classification_levels         = kwargs.get('portion_of_mean_classification_levels', default_portion_of_mean_classification_levels )
-            
-            if ( self.portion_of_mean_classification_levels > 1. ):
-                print("ERROR: portion_of_mean_classification_levels must be < 1.")
-                sys.exit()
-                
-                
-            # "bad" particles that remain "bad" for more than Number_of_iterations_bad_particlesiterations
-            # are relocated around the best swarm particle, within an interval (1-a) and (1+a) in all dimensions
-            # in this version it will decrease from value a1 to value a2 
-            default_amplitude_mutated_range_1                  = 0.4
-            self.amplitude_mutated_range_1                     = kwargs.get('amplitude_mutated_range_1', default_amplitude_mutated_range_1 )
-            
-            if (self.amplitude_mutated_range_1 > 1.):
-                print("ERROR: amplitude_mutated_range_1 must be < 1.")
-                sys.exit()
-            
-            default_amplitude_mutated_range_2                  = 0.01
-            self.amplitude_mutated_range_2                     = kwargs.get('amplitude_mutated_range_2', default_amplitude_mutated_range_2 )
-            
-            if (self.amplitude_mutated_range_2 > 1.):
-                print("ERROR: amplitude_mutated_range_2 must be < 1.")
-                sys.exit() 
-                
-            if (self.amplitude_mutated_range_2 > self.amplitude_mutated_range_1):
-                print("ERROR: amplitude_mutated_range_2 must be < amplitude_mutated_range_1.")
-                sys.exit() 
-            
-            ### Initialize inertia and amplitude of the mutated range
-            # w (inertia weight): It controls the impact of the particle's previous velocity on the current velocity update. A higher value of w emphasizes the influence of the particle's momentum, promoting exploration. On the other hand, a lower value of w emphasizes the influence of the current optimum positions, promoting exploitation.
-            self.w                                             = self.w1
-            # the rms width of the gaussian distribution used to relocate hopeless particles is proportional to this amplitude_mutated_range
-            self.amplitude_mutated_range                       = self.amplitude_mutated_range_1
-            # value of the last average_function_value_of_swarm
-            self.best_average_function_value                   = float('-inf')
-            
-            print("max_speed                                = ",self.max_speed )
-            print("c1                                       = ",self.c1)
-            print("c2                                       = ",self.c2)
-            print("w1                                       = ",self.w1)
-            print("w2                                       = ",self.w2)
-            print("portion_of_mean_classification_levels    = ",self.portion_of_mean_classification_levels)
-            print("Number_of_iterations_bad_particles       = ",self.Number_of_iterations_bad_particles)
-            print("amplitude_mutated_range_1                = ",self.amplitude_mutated_range_1)
-            print("amplitude_mutated_range_2                = ",self.amplitude_mutated_range_2)
-            print("")
-        
-        # if PSO-TPME is used, we need an array with the classification of each particle
-        # and the total number of iterations in which that particle has remained in the same category
-        self.particle_category                                           = []
-        self.particles_number_of_iterations_remained_in_current_category = []
-            
         # use scrambled Halton sampler to extract initial positions
         self.halton_sampler_position                 = qmc.Halton(d=self.number_of_dimensions, scramble=True)
         halton_sampler_random_position               = self.halton_sampler_position.random(n=self.number_of_samples_per_iteration)
@@ -455,9 +390,6 @@ class ParticleSwarmOptimization(Optimizer):
                 particle       = SwarmParticle(position,velocity) 
 
             self.samples.append(particle)
-            if (self.name=="PSO-TPME"):
-                self.particle_category.append("bad")
-                self.particles_number_of_iterations_remained_in_current_category.append(0)
                 
             print("Particle", iparticle, "Position:", position)  
             self.history_samples_positions_and_function_values[0,iparticle,0:self.number_of_dimensions] = position[:]
@@ -468,102 +400,32 @@ class ParticleSwarmOptimization(Optimizer):
         print("\n"+self.name+" initialized")
         
             
-    def updateParticlePositionAndVelocity(self):
-                    
-        if (self.name=="PSO-TPME"):
-            self.w  = self.w1-(self.iteration_number+2)*(self.w1-self.w2)/self.number_of_iterations
-            self.amplitude_mutated_range  = self.amplitude_mutated_range_1-(self.iteration_number+2)*(self.amplitude_mutated_range_1-self.amplitude_mutated_range_2)/self.number_of_iterations
-            print("\n ",self.name," activated; w = ",self.w,", mutation range =",self.amplitude_mutated_range )
-            
+    def updateParticlePositionAndVelocity(self):    
         
         for iparticle in range(0,self.number_of_samples_per_iteration):
-
-            if ((self.name=="Particle Swarm Optimization") or (self.name=="Adaptive Particle Swarm Optimization")):
-                for idim in range(self.number_of_dimensions):
-                    # extract two random numbers
-                    r1                  = random.random()
-                    r2                  = random.random()
-                    # compute cognitive velocity, based on the individual particle's exploration
-                    cognitive_velocity  = self.c1 * r1 * (self.samples[iparticle].optimum_position[idim] - self.samples[iparticle].position[idim])
-                    # compute social velocity, based on the swarm exploration
-                    social_velocity     = self.c2 * r2 * (self.optimum_position[idim] - self.samples[iparticle].position[idim])
-                    # update velocity
-                    self.samples[iparticle].velocity[idim] = self.w * self.samples[iparticle].velocity[idim] + cognitive_velocity + social_velocity    
-                    # limit the velocity to the interval [-max_speed,max_speed]
-                    self.samples[iparticle].velocity[idim] = np.clip(self.samples[iparticle].velocity[idim],-self.max_speed[idim],self.max_speed[idim])
-                # Update individual particle position
-                self.samples[iparticle].position += self.samples[iparticle].velocity
-                
             
-            elif (self.name=="PSO-TPME"):
-                if (self.particle_category[iparticle]=="good"): # update position only using exploitation of personal best
-                    for idim in range(self.number_of_dimensions):
-                        # extract one random numbers
-                        r1                  = random.random()
-                        # compute cognitive velocity, based on the individual particle's exploration
-                        cognitive_velocity  = self.c1 * r1 * (self.samples[iparticle].optimum_position[idim] - self.samples[iparticle].position[idim])
-                        # update velocity
-                        self.samples[iparticle].velocity[idim] = self.w * self.samples[iparticle].velocity[idim] + cognitive_velocity
-                        # limit the velocity to the interval [-max_speed,max_speed]
-                        self.samples[iparticle].velocity[idim] = np.clip(self.samples[iparticle].velocity[idim],-self.max_speed[idim],self.max_speed[idim])
-                    # Update individual particle position
-                    self.samples[iparticle].position           += self.samples[iparticle].velocity
-                
-                elif (self.particle_category[iparticle]=="fair"): # update position as in a classic PSO
-                    for idim in range(self.number_of_dimensions):
-                        # extract two random numbers
-                        r1                  = random.random()
-                        r2                  = random.random()
-                        # compute cognitive velocity, based on the individual particle's exploration
-                        cognitive_velocity  = self.c1 * r1 * (self.samples[iparticle].optimum_position[idim] - self.samples[iparticle].position[idim])
-                        # compute cognitive velocity, based on the swarm exploration
-                        social_velocity     = self.c2 * r2 * (self.optimum_position[idim]     - self.samples[iparticle].position[idim])
-                        # update velocity
-                        self.samples[iparticle].velocity[idim]      = self.w * self.samples[iparticle].velocity[idim] + cognitive_velocity + social_velocity
-                        # limit the velocity to the interval [-max_speed,max_speed]
-                        self.samples[iparticle].velocity[idim]      = np.clip(self.samples[iparticle].velocity[idim],-self.max_speed[idim],self.max_speed[idim])
-                    # Update individual particle position    
-                    self.samples[iparticle].position           += self.samples[iparticle].velocity
-                    
-                elif (self.particle_category[iparticle]=="bad"):
-                    for idim in range(self.number_of_dimensions):
-                        # keep converging towards the best position of the swarm
-                        # extract one random number
-                        r2                  = random.random()
-                        # compute social velocity, based on the swarm exploration
-                        social_velocity     = self.c2 * r2 * (self.optimum_position[idim] - self.samples[iparticle].position[idim])
-                        # Update individual particle position
-                        self.samples[iparticle].velocity[idim]      = self.w*self.samples[iparticle].position [idim] + social_velocity
-                        # limit the velocity to the interval [-max_speed,max_speed]
-                        self.samples[iparticle].velocity[idim]      = np.clip(self.samples[iparticle].velocity[idim],-self.max_speed[idim],self.max_speed[idim])
-                    # Update individual particle position
-                    self.samples[iparticle].position           += self.samples[iparticle].velocity
-                        
-                elif (self.particle_category[iparticle]=="hopeless"): 
-                    # extract one random number
-                    # eta                  = random.random()
-                    for idim in range(self.number_of_dimensions):
-                        # case of "hopeless particle" ---> relocate it arounf the best position so far
-                        #mutation_amplitude   = 2*eta*self.amplitude_mutated_range+(1-self.amplitude_mutated_range)
-                        random_number_gaussian = np.random.normal(0, 1, 1)[0]
-                        mutation_amplitude     = random_number_gaussian*self.amplitude_mutated_range*(self.search_interval_size[idim])
-                        mutation_amplitude     = np.minimum(mutation_amplitude, 3.*self.amplitude_mutated_range*(self.search_interval_size[idim]))
-                        mutation_amplitude     = np.maximum(mutation_amplitude,-3.*self.amplitude_mutated_range*(self.search_interval_size[idim]))
-                        # relocate particle around the swarm's optimum position
-                        #self.samples[iparticle].position [idim] = self.optimum_position[idim]*mutation_amplitude
-                        self.samples[iparticle].position [idim] = self.optimum_position[idim]*(1+mutation_amplitude)
-                        # reinitialize velocity to avoid being stuck if new position will become best position
-                        # use initial velocity proportional to the search_space size in this dimension
-                        self.samples[iparticle].velocity[idim] = self.max_speed[idim]*np.random.uniform(-1, 1)
-                    print("\n PSO-TPE mutation of sample ",iparticle,"to position ",self.samples[iparticle].position)
+            for idim in range(self.number_of_dimensions):
+                # extract two random numbers
+                r1                  = random.random()
+                r2                  = random.random()
+                # compute cognitive velocity, based on the individual particle's exploration
+                cognitive_velocity  = self.c1 * r1 * (self.samples[iparticle].optimum_position[idim] - self.samples[iparticle].position[idim])
+                # compute social velocity, based on the swarm exploration
+                social_velocity     = self.c2 * r2 * (self.optimum_position[idim] - self.samples[iparticle].position[idim])
+                # update velocity
+                self.samples[iparticle].velocity[idim] = self.w * self.samples[iparticle].velocity[idim] + cognitive_velocity + social_velocity    
+                # limit the velocity to the interval [-max_speed,max_speed]
+                self.samples[iparticle].velocity[idim] = np.clip(self.samples[iparticle].velocity[idim],-self.max_speed[idim],self.max_speed[idim])
+            # Update individual particle position
+            self.samples[iparticle].position += self.samples[iparticle].velocity
                                     
             # Boundary condition on position:
             # if the particle exits the search_interval in one of its position coordinates,
-            # reassign that coordinate randomly
+            # reassign that coordinate randomly within the search_interval boundaries;
             # don't change the velocity
-            for dimension in range(self.number_of_dimensions):
-                if ((self.samples[iparticle].position[dimension] < self.search_interval[dimension][0]) or (self.samples[iparticle].position[dimension] > self.search_interval[dimension][1])):
-                    self.samples[iparticle].position[dimension] = self.search_interval[dimension][0]+np.random.uniform(0., 1.)*(self.search_interval[dimension][1]-self.search_interval[dimension][0])
+            for idim in range(self.number_of_dimensions):
+                if ((self.samples[iparticle].position[idim] < self.search_interval[idim][0]) or (self.samples[iparticle].position[idim] > self.search_interval[idim][1])):
+                    self.samples[iparticle].position[idim] = self.search_interval[idim][0]+np.random.uniform(0., 1.)*(self.search_interval[idim][1]-self.search_interval[idim][0])
                     #self.samples[iparticle].velocity[dimension] = self.max_speed[idim]*np.random.uniform(-1, 1)
                 
     
@@ -695,49 +557,7 @@ class ParticleSwarmOptimization(Optimizer):
             self.samples[index_worst_particle].position[index_dimension_to_mutate] = candidate_mutated_coordinate
             
             print("Particle ",index_worst_particle," mutated to position ",self.samples[index_worst_particle].position[:])
-            
-            
-        
-    def operationsAfterUpdateOfOptimumFunctionValueAndPosition(self):
-        
-        if (self.name=="PSO-TPME"):
-            average_function_value_of_swarm = np.average(self.history_samples_positions_and_function_values[self.iteration_number,:,self.number_of_dimensions])
-            average_function_value_of_swarm = np.maximum(average_function_value_of_swarm,self.best_average_function_value)
-            if (average_function_value_of_swarm > self.best_average_function_value):
-                self.best_average_function_value = average_function_value_of_swarm
-            bad_function_value_level        = average_function_value_of_swarm*(1.-self.portion_of_mean_classification_levels)
-            good_function_value_level       = average_function_value_of_swarm*(1.+self.portion_of_mean_classification_levels)
-                
-            print("\n PSO-TPME: Bad, average and good function value levels :",bad_function_value_level,average_function_value_of_swarm,good_function_value_level)
-            old_particle_category       = self.particle_category
-            
-            for isample in range(0,self.number_of_samples_per_iteration):
-                    
-                if self.history_samples_positions_and_function_values[self.iteration_number,isample,self.number_of_dimensions] > good_function_value_level:
-                    self.particle_category[isample] = "good"
-                    self.particles_number_of_iterations_remained_in_current_category[isample] = 1
-                elif self.history_samples_positions_and_function_values[self.iteration_number,isample,self.number_of_dimensions]< bad_function_value_level:
-                    if (self.particles_number_of_iterations_remained_in_current_category[isample]>self.Number_of_iterations_bad_particles-1):
-                        self.particle_category[isample] = "hopeless"
-                        self.particles_number_of_iterations_remained_in_current_category[isample] = 1
-                    else:
-                        if (self.iteration_number==0):
-                            self.particle_category[isample] = "bad" 
-                            self.particles_number_of_iterations_remained_in_current_category[isample] = 1
-                        else:
-                            if (old_particle_category[isample]=="bad"):
-                                self.particle_category[isample] = "bad" 
-                                self.particles_number_of_iterations_remained_in_current_category[isample] = self.particles_number_of_iterations_remained_in_current_category[isample]+1
-                            else:
-                                self.particle_category[isample] = "bad" 
-                                self.particles_number_of_iterations_remained_in_current_category[isample] = 1
-                else:
-                    self.particle_category[isample] = "fair"
-                    self.particles_number_of_iterations_remained_in_current_category[isample] = 1
-     
-                print("Particle ",isample,"with function value ","{:.3f}".format(self.history_samples_positions_and_function_values[self.iteration_number,isample,self.number_of_dimensions])," is classified as ",self.particle_category[isample], \
-                            ", remained in this category for",self.particles_number_of_iterations_remained_in_current_category[isample]," iterations")
-                            
+
     def APSOLastEvaluationAndDumpHyperparameters(self): # used only for Adaptive Particle Swarm Optimization
         self.evaluateEvolutionStateAndAdaptHyperparameters()
         with open('history_evolutionary_factor_f.npy', 'wb') as f:
@@ -768,51 +588,11 @@ class ParticleSwarmOptimization(Optimizer):
 class BayesianOptimization(Optimizer):
     def __init__(self, name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs):
         super().__init__(name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs)
-        
+
         # Implementation of Bayesian Optimization based on a Matern Kernel (see https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.kernels.Matern.html)
-        
-        # number of points to test through the surrogate function when choosing new samples to draw
-        default_number_of_tests    = self.number_of_dimensions*2000
-        self.number_of_tests       = kwargs.get('num_tests', default_number_of_tests)
-        
-        # nu parameter of the Matern Kernel if different from [0.5, 1.5, 2.5, np.inf] 
-        # the optimizer may incur a considerably higher computational cost (appr. 10 times higher)
-        default_value_nu           = 1.5
-        self.nu                    = kwargs.get('nu', default_value_nu)
-        
-        # The kernel scales are normalized, so the input data to fit and predict must be normalized
-        # This length_scale parameter is really important for the regressor.
-        
-        # See Example 1.7.2.1 of https://scikit-learn.org/stable/modules/gaussian_process.html#gp-kernels
-        
-        # If it is a float, it is applied to all dimensions.
-        # If it is a list of length number_of_dimensions, it will contain the length scale for each dimension
-        
-        # smaller length_scales mean smaller scales of variations  --> risk of overfitted model
-        # larger length_scales mean larger scales of variation     --> risk of biased model
-        
-        # Thus a good equilibrium should be found ideally
-        
-        # If the variations of the function to optimize with respect to a certain dimension within the search interval are large,
-        # the length_scale associated to that dimension will be smaller.
-        # if the function to optimize does not vary much in one dimension, the associated length scale of that dimension can be larger.
-        
-        default_length_scale      = 1.0  
-        self.length_scale         = kwargs.get('length_scale', default_length_scale)
-        
-        
-        # the length_scale will be optimizer with optimizer="fmin_l_bfgs_b" (see below)
-        # the following parameter fixes the bounds for this optimization
-        default_length_scale_bounds= (1e-5, 1e5)
-        self.length_scale_bounds   = kwargs.get('length_scale_bounds', default_length_scale_bounds)
-        
-        # parameter used in the acquisition function (expected improvement)
-        # to tune the balance between exploitation of good points already found and exploration of the parameter space
-        # When equal to 0, exploitation is privileged. 
-        # High values privilege exploration.
-        default_xi                 = 0. # default privileges exploitation
-        self.xi                    = kwargs.get('xi', default_xi )
-        
+        self.number_of_tests,self.nu,self.length_scale,self.length_scale_bounds,self.xi,\
+        self.kernel,self.model,self.XsamplesChosenWithSurrogateModel \
+        = initializePredictiveModelForOptimization(number_of_samples_to_choose_per_iteration=self.number_of_samples_per_iteration,number_of_dimensions=self.number_of_dimensions,**kwargs)
         
         ### Define the model for the kernel of the Gaussian process
         print("number_of_tests                          = ",self.number_of_tests)
@@ -822,9 +602,6 @@ class BayesianOptimization(Optimizer):
         print("")
         
         
-        self.kernel               = ConstantKernel(1.0, constant_value_bounds="fixed")*Matern(nu=self.nu,length_scale=self.length_scale,length_scale_bounds=self.length_scale_bounds) 
-        self.model                = GaussianProcessRegressor(optimizer="fmin_l_bfgs_b",kernel=self.kernel)
-        self.Xsamples             = np.zeros(shape=(self.number_of_samples_per_iteration, self.number_of_dimensions))   # new samples for the new iteration iteration
         # Initial sparse sample
         self.halton_sampler_position   = qmc.Halton(d=self.number_of_dimensions, scramble=True)
         halton_sampler_random_position = self.halton_sampler_position.random(n=self.number_of_samples_per_iteration)
@@ -845,96 +622,15 @@ class BayesianOptimization(Optimizer):
             print("\n ---> Sample", isample, "Position:", position)  
             self.history_samples_positions_and_function_values[0,isample,0:self.number_of_dimensions] = position[:]
         
-        print("\n Bayesian Optimization initialized") 
-    # Surrogate or approximation for the objective function
-    def predictFunctionValueWithSurrogateModel(self, input_position_array):
-        # Catch any warning generated when making a prediction
-        with warnings.catch_warnings():
-            # Ignore generated warnings
-            warnings.filterwarnings("ignore")
-            return self.model.predict(input_position_array, return_std=True)
-        
-    # Expected improvement acquisition function
-    def getAcquisitionFunctionResult(self, Xtest, xi):
-
-        # Vectorized version
-        # Calculate the best surrogate score found so far
-        yhat, _ = self.predictFunctionValueWithSurrogateModel(self.X)
-        best = np.max(yhat)
-
-        # Calculate mean and standard deviation via surrogate model
-        mu, std = self.predictFunctionValueWithSurrogateModel(Xtest)
-
-        # Avoid division by zero in the computation of z
-        epsilon = 1e-9
-
-        z = (mu - best + xi) / (std + epsilon)
-        cdf_z = norm.cdf(z)
-        pdf_z = norm.pdf(z)
-
-        ei = (mu - best + xi) * cdf_z + std * pdf_z
-        
-        return ei
-        
-        # Non vectorized version
-        
-        # Xtest are test positions that are evaluated to pick new sample positions
-
-        # # Calculate the best surrogate score found so far
-        # yhat, _ = self.predictFunctionValueWithSurrogateModel(self.X)
-        # best = np.max(yhat)
-        # 
-        # # Calculate mean and standard deviation via surrogate model
-        # mu  = np.zeros(shape=np.shape(Xtest[:,0]))
-        # std = np.zeros(shape=np.shape(Xtest[:,0]))
-        # ei  = np.zeros(shape=np.shape(Xtest[:,0]))
-        # # this should be probably vectorized
-        # for i in range(0,np.size(Xtest[:,0])):
-        #     mu[i], std[i] = self.predictFunctionValueWithSurrogateModel(  Xtest[i,:].reshape(1,np.size(Xtest[0,:]))    );
-        #     z = (mu[i] - best + xi) / (std[i] + 1e-9)  # Modify the calculation of z with the xi parameter
-        #     ei[i] = (mu[i] - best + xi) * norm.cdf(z) + std[i] * norm.pdf(z)
-        # return ei
-
-    # Optimize the acquisition function
-    def optimizeAcquisitionFunction(self):
-        
-        # Vectorized version
-        # Generate normalized test points
-        X_test = np.random.uniform(
-            [interval[0] / size for interval, size in zip(self.search_interval, self.search_interval_size)],
-            [interval[1] / size for interval, size in zip(self.search_interval, self.search_interval_size)],
-            size=(self.number_of_tests, self.number_of_dimensions)
-        )
-
-        # Calculate acquisition scores on test points
-        scores = self.getAcquisitionFunctionResult(X_test, self.xi)
-
-        # Select top samples based on acquisition scores
-        best_indices = np.argsort(scores)[::-1][:self.number_of_samples_per_iteration]
-        self.Xsamples = X_test[best_indices]
-
-        return self.Xsamples
-        
-        # Non vectorized version
-        # # This function should probably be vectorized 
-        # X_test   = np.zeros(shape=(self.number_of_tests, self.number_of_dimensions)) # normalized
-        # for itest in range(0,self.number_of_tests):                 # remember that you need to feed normalized inputs to the model
-    	#        for idim in range(0,self.number_of_dimensions):
-    	# 	             X_test[itest,idim] = np.random.uniform(self.search_interval[idim][0]/self.search_interval_size[idim], self.search_interval[idim][1]/self.search_interval_size[idim]) #np.random.uniform(self.search_interval[idim][0], self.search_interval[idim][1])#, size=(num_tests, number_of_dimensions))
-        # scores = self.getAcquisitionFunctionResult(X_test,self.xi)  # Calculate acquisition scores on test points
-        # for isample in range(self.number_of_samples_per_iteration):
-        #     best_index              = np.argmax(scores)             # Find the index with the highest acquisition score
-        #     scores[best_index]      = float('-inf')                 # Set the acquisition score of the selected index to negative infinity
-        #     self.Xsamples[isample]  = X_test[best_index]            # Select the corresponding sample
-        # 
-        # return self.Xsamples   
+        print("\n Bayesian Optimization initialized")    
     
     def chooseNewPositionsToExplore(self):
-        Xsamples = self.optimizeAcquisitionFunction()
-        # denormalize because Xsamples is normalized, but the positions are not
+        
+        self.XsamplesChosenWithSurrogateModel = self.optimizeAcquisitionFunction(self.number_of_samples_per_iteration)
+        # denormalize because XsamplesChosenWithSurrogateModel is normalized, but the positions are not
         for isample in range(self.number_of_samples_per_iteration):
             for idim in range(0,self.number_of_dimensions):
-                self.samples[isample].position[idim] = Xsamples[isample,idim]*self.search_interval_size[idim] 
+                self.samples[isample].position[idim] = self.XsamplesChosenWithSurrogateModel[isample,idim]*self.search_interval_size[idim] 
             
     def updateSamplesForExploration(self):
         # pick new samples
@@ -952,11 +648,12 @@ class BayesianOptimization(Optimizer):
         else: # if it is one of the next iterations
             # add the new samples to the dataset
             for isample in range(0,self.number_of_samples_per_iteration):
-                self.X = np.vstack((self.X, self.Xsamples[isample]))
+                self.X = np.vstack((self.X, self.XsamplesChosenWithSurrogateModel[isample]))
                 self.y = np.vstack((self.y, self.history_samples_positions_and_function_values[self.iteration_number,isample,self.number_of_dimensions]))
             # fit to the whole dataset including the new observations
             self.model.fit(self.X, self.y)
-        
+            
+# Structure for genetic algorithm - need to find good crossover and mutation operators       
 # class GeneticAlgorithm(Optimizer):
 #     def __init__(self, name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs):
 #         super().__init__(name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs)

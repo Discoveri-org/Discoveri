@@ -27,7 +27,6 @@ from scipy.optimize import rosen
 # import libraries from this software
 from optimizerClasses import *
 from jobManagerClass import *
-from toolsSmileiAnalysis import *
 from generalUtilities import *
 
 
@@ -117,15 +116,6 @@ class optimizationRun:
             # where the hyperparameters are automatically tuned during the optimization
             self.optimizer             = ParticleSwarmOptimization(name=optimization_method,                                  \
                                                               number_of_samples_per_iteration=number_of_samples_per_iteration, number_of_dimensions=number_of_dimensions,         \
-                                                              search_interval=search_interval, number_of_iterations=number_of_iterations, \
-                                                              **kwargs )
-                                                              
-                                                              
-        elif (self.optimization_method == "PSO-TPME"):
-            # initialize a swarm of particles, version of the Particle Swarm Optimization
-            # called PSO with Targeted, Position-Mutated Elitism
-            self.optimizer             = ParticleSwarmOptimization(name=optimization_method, \
-                                                              number_of_samples_per_iteration=number_of_samples_per_iteration, number_of_dimensions=number_of_dimensions, \
                                                               search_interval=search_interval, number_of_iterations=number_of_iterations, \
                                                               **kwargs )
                                                               
