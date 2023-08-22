@@ -1,4 +1,5 @@
-# :Discoveri
+# <img width="1114" alt="Logo_Discoveri" src="https://github.com/Z10Frank/Discoveri/assets/9608804/e1a25139-ee42-4ca0-aeee-5534f3cbb739">
+
 ## Data-driven Investigation through Simulations on Clusters for the Optimization of the physical Variables' Effects in Regimes of Interest
 
 ### About ``:Discoveri``
