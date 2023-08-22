@@ -20,12 +20,12 @@ from sklearn.gaussian_process.kernels import ConstantKernel
 
 def printLogo():
     print("                                                                                  ")       
-    print("           _____    _                                              _              ")  
-    print("          |  __ \  (_)                                            (_)             ")  
-    print("          | |  | |  _   ___    ___    ___   __   __   ___   _ __   _              ")  
-    print("          | |  | | | | / __|  / __|  / _ \  \ \ / /  / _ \ | '__| | |             ")  
-    print("          | |__| | | | \__ \ | (__  | (_) |  \ V /  |  __/ | |    | |             ")  
-    print("          |_____/  |_| |___/  \___|  \___/    \_/    \___| |_|    |_|             ")
+    print("             _____    _                                              _            ")  
+    print("         _  |  __ \  (_)                                            (_)           ")  
+    print("        (_) | |  | |  _   ___    ___    ___   __   __   ___   _ __   _            ")  
+    print("         _  | |  | | | | / __|  / __|  / _ \  \ \ / /  / _ \ | '__| | |           ")  
+    print("        (_) | |__| | | | \__ \ | (__  | (_) |  \ V /  |  __/ | |    | |           ")  
+    print("            |_____/  |_| |___/  \___|  \___/    \_/    \___| |_|    |_|           ")
     print("                                                                                  ")  
     print("           Data-driven Investigation through Simulations on Clusters              ")
     print("  for the Optimization of the physical Variables' Effects in Regimes of Interest  ")
