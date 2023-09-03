@@ -11,8 +11,7 @@ sys.path.insert(0, path_discoveri)
 
 # import Discoveri class
 from discoveriMain import createOptimizationRun
-# import library to analyse Smilei simulation
-from toolsSmileiAnalysis import *
+
 
 
 ###########################################################################

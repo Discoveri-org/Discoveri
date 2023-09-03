@@ -278,7 +278,17 @@ class ParticleSwarmOptimization(Optimizer):
                 
         self.max_speed                                     = kwargs.get('max_speed', default_max_speed)
         
+        # Boundary conditions for particles crossing the domain boundaries
+        default_boundary_conditions   = "relocating"
+        self.boundary_conditions      = kwargs.get('boundary_conditions', default_boundary_conditions)
+        
+        if ( (self.boundary_conditions!="relocating") and (self.boundary_conditions!="damping") ):
+            print("ERROR: boundary_conditions for ",self.name,"can be either 'relocating' or 'damping' " )
+            
+        
         print("\n -- hyperparameters used by the optimizer -- ")
+        
+        print("boundary_conditions                      = ",self.boundary_conditions )
         
         if (self.name=="Particle Swarm Optimization"):
 
@@ -423,14 +433,22 @@ class ParticleSwarmOptimization(Optimizer):
             self.samples[iparticle].position += self.samples[iparticle].velocity
                                     
             # Boundary condition on position:
-            # if the particle exits the search_interval in one of its position coordinates,
-            # reassign that coordinate randomly within the search_interval boundaries;
-            # don't change the velocity
             for idim in range(self.number_of_dimensions):
                 if ((self.samples[iparticle].position[idim] < self.search_interval[idim][0]) or (self.samples[iparticle].position[idim] > self.search_interval[idim][1])):
-                    self.samples[iparticle].position[idim] = self.search_interval[idim][0]+np.random.uniform(0., 1.)*(self.search_interval[idim][1]-self.search_interval[idim][0])
-                    #self.samples[iparticle].velocity[dimension] = self.max_speed[idim]*np.random.uniform(-1, 1)
-                
+                    if (self.boundary_conditions!="relocating"):
+                        # if the particle exits the search_interval in one of its position coordinates,
+                        # reassign that coordinate randomly within the search_interval boundaries;
+                        # don't change the velocity
+                        self.samples[iparticle].position[idim] = self.search_interval[idim][0]+np.random.uniform(0., 1.)*(self.search_interval[idim][1]-self.search_interval[idim][0])
+                    elif (self.boundary_conditions!="damping"):
+                        # if the particle exits the search_interval in one of its position coordinates,
+                        # reassign that coordinate at the search_interval boundary that was crossed;
+                        # the velocity is inverted and multiplied by a random number within [0,1)
+                        self.samples[iparticle].velocity[idim] = -np.random.uniform(0., 1.)*self.samples[iparticle].velocity[idim]
+                        if   (self.samples[iparticle].position[idim] < self.search_interval[idim][0]):
+                            self.samples[iparticle].position[idim] = self.search_interval[idim][0]
+                        elif (self.samples[iparticle].position[idim] > self.search_interval[idim][1]):
+                            self.samples[iparticle].position[idim] = self.search_interval[idim][1]
     
     def updateSamplesForExploration(self):
         if (self.name=="Adaptive Particle Swarm Optimization"):
