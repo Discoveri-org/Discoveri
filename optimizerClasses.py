@@ -744,35 +744,35 @@ class ParticleSwarmOptimization(Optimizer):
                             }
                             
         # inertia w      
-        weight_low           = max(phi_membership['worse'], delta_membership['same'])
-        weight_medium        = max(phi_membership['same'], delta_membership['near'])
-        weight_high          = max(phi_membership['better'], delta_membership['far'])
+        weight_low           = phi_membership  ['worse' ] + delta_membership['same']
+        weight_medium        = phi_membership  ['same'  ] + delta_membership['near']
+        weight_high          = phi_membership  ['better'] + delta_membership['far' ]
         
-        w  = (weight_low * self.w_low + weight_medium * self.w_medium + weight_high * self.w_high) / (weight_low + weight_medium + weight_high + self.epsilon)
+        w  = (weight_low * self.w_low + weight_medium * self.w_medium + weight_high * self.w_high) / (weight_low + weight_medium + weight_high)
         
         # acceleration coefficient c1
-        weight_low           = delta_membership['far']
-        weight_medium        = max(phi_membership['worse'], phi_membership['same'], delta_membership['same'], delta_membership['near'])
-        weight_high          = phi_membership['better']
-        c1 = (weight_low * self.c1_low + weight_medium * self.c1_medium + weight_high * self.c1_high) / (weight_low + weight_medium + weight_high + self.epsilon)
+        weight_low           = delta_membership['far'   ]
+        weight_medium        = phi_membership  ['worse' ] + phi_membership  ['same'] + delta_membership['same'] + delta_membership['near']
+        weight_high          = phi_membership  ['better']
+        c1 = (weight_low * self.c1_low + weight_medium * self.c1_medium + weight_high * self.c1_high) / (weight_low + weight_medium + weight_high)
         
         # acceleration coefficient c2
-        weight_low           = max(phi_membership['better'], delta_membership['near'])
-        weight_medium        = max(phi_membership['same'], delta_membership['same'])
-        weight_high          = max(phi_membership['worse'], delta_membership['far'])
-        c2 = (weight_low * self.c2_low + weight_medium * self.c2_medium + weight_high * self.c2_high) / (weight_low + weight_medium + weight_high + self.epsilon)
+        weight_low           = phi_membership  ['better'] + delta_membership['near']
+        weight_medium        = phi_membership  ['same'  ] + delta_membership['same']
+        weight_high          = phi_membership  ['worse' ] + delta_membership['far' ]
+        c2 = (weight_low * self.c2_low + weight_medium * self.c2_medium + weight_high * self.c2_high) / (weight_low + weight_medium + weight_high)
 
         # minimum absolute value of velocity L
-        weight_low           = max(phi_membership['same'], phi_membership['better'], delta_membership['far'])
-        weight_medium        = max(delta_membership['same'], delta_membership['near'])
-        weight_high          = phi_membership['worse']
-        L  = (weight_low * self.L_low + weight_medium * self.L_medium + weight_high * self.L_high) / (weight_low + weight_medium + weight_high + self.epsilon)
+        weight_low           = phi_membership  ['same'  ] + phi_membership['better'] + delta_membership['far']
+        weight_medium        = delta_membership['same'  ] + delta_membership['near']
+        weight_high          = phi_membership  ['worse' ]
+        L  = (weight_low * self.L_low + weight_medium * self.L_medium + weight_high * self.L_high) / (weight_low + weight_medium + weight_high)
         
         # maximum absolute value of velocity U 
-        weight_low           = delta_membership['same']
-        weight_medium        = max(phi_membership['same'], phi_membership['better'], delta_membership['near'])
-        weight_high          = max(phi_membership['worse'], delta_membership['far'])
-        U  = (weight_low * self.U_low + weight_medium * self.U_medium + weight_high * self.U_high) / (weight_low + weight_medium + weight_high + self.epsilon)    
+        weight_low           = delta_membership['same'  ]
+        weight_medium        = phi_membership  ['same'  ] + phi_membership['better'] + delta_membership['near']
+        weight_high          = phi_membership  ['worse' ] +  delta_membership['far']
+        U  = (weight_low * self.U_low + weight_medium * self.U_medium + weight_high * self.U_high) / (weight_low + weight_medium + weight_high)    
         
         return w,c1,c2,L,U
         
