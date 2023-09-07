@@ -13,6 +13,9 @@ import math
 # this import is needed for Adaptive Particle Swarm Optimization
 from generalUtilities import *
 
+# this import is needed for the FST Particle Swarm Optimization
+from FuzzyLogicUtilitiesForFSTPSO import *
+
 # these imports are necessary for the Bayesian Optimization
 import warnings
 from scipy.stats import norm
@@ -279,7 +282,7 @@ class ParticleSwarmOptimization(Optimizer):
         self.max_speed                                     = kwargs.get('max_speed', default_max_speed)
         
         # Boundary conditions for particles crossing the domain boundaries
-        default_boundary_conditions   = "relocating"
+        default_boundary_conditions   = "damping"
         self.boundary_conditions      = kwargs.get('boundary_conditions', default_boundary_conditions)
         
         if ( (self.boundary_conditions!="relocating") and (self.boundary_conditions!="damping") ):
@@ -385,6 +388,59 @@ class ParticleSwarmOptimization(Optimizer):
             print("mu_max                                   = ",self.mu_max                           )
             print("")
         
+        elif (self.name=="FST-PSO"):
+            # Version of Particle Swarm Optimization described in
+            # M. Nobile et al., Swarm and Evolutionary Computation 39 (2018) 70–85
+            # where all the parameters of the PSO, independently for each particle,
+            # are adapted using fuzzy rules
+            
+            # Parameters for the crisp values of the fuzzy rules, taken from the paper
+            
+            # normalized distance
+            
+            # maximum normalized distance in the multidimensional space, i.e. the diagonal of the multidimensional cube of the normalized search_interval
+            self.delta_max    = max(1.,np.sqrt(self.number_of_dimensions)) # 1 if number_of_dimensions=1, sqrt(number_of_dimensions) otherwise
+            self.delta1       = 0.2 * self.delta_max
+            self.delta2       = 0.4 * self.delta_max
+            self.delta3       = 0.6 * self.delta_max
+
+            # inertia w
+            self.w_low        = 0.3
+            self.w_medium     = 0.5
+            self.w_high       = 1.0
+
+            # acceleration coefficient c1
+            self.c1_low       = 0.1
+            self.c1_medium    = 1.5
+            self.c1_high      = 3.0
+
+            # acceleration coefficient c2
+            self.c2_low       = 1.0
+            self.c2_medium    = 2.0
+            self.c2_high      = 3.0
+
+            # Minimum absolute value of velocity
+            self.L_low        = 0.
+            self.L_medium     = 0.001
+            self.L_high       = 0.01
+
+            # Maximum absolute value of velocity
+            self.U_low        = 0.1
+            self.U_medium     = 0.15
+            self.U_high       = 0.2
+
+            # small value to avoid divisions by zero
+            self.epsilon      = 1e-7
+            
+            # arrays to store the hyperparameters for each particle and each iteration
+            self.Phi_FSTPSO   = np.zeros(shape=(self.number_of_samples_per_iteration,self.number_of_iterations))
+            self.delta_FSTPSO = np.zeros(shape=(self.number_of_samples_per_iteration,self.number_of_iterations))
+            self.w_FSTPSO     = np.zeros(shape=(self.number_of_samples_per_iteration,self.number_of_iterations))
+            self.c1_FSTPSO    = np.zeros(shape=(self.number_of_samples_per_iteration,self.number_of_iterations))
+            self.c2_FSTPSO    = np.zeros(shape=(self.number_of_samples_per_iteration,self.number_of_iterations))
+            self.U_FSTPSO     = np.zeros(shape=(self.number_of_samples_per_iteration,self.number_of_iterations))
+            self.L_FSTPSO     = np.zeros(shape=(self.number_of_samples_per_iteration,self.number_of_iterations))
+            
         # use scrambled Halton sampler to extract initial positions
         self.halton_sampler_position                 = qmc.Halton(d=self.number_of_dimensions, scramble=True)
         halton_sampler_random_position               = self.halton_sampler_position.random(n=self.number_of_samples_per_iteration)
@@ -417,21 +473,42 @@ class ParticleSwarmOptimization(Optimizer):
         
         for iparticle in range(0,self.number_of_samples_per_iteration):
             
-            for idim in range(self.number_of_dimensions):
-                # extract two random numbers
-                r1                  = random.random()
-                r2                  = random.random()
-                # compute cognitive velocity, based on the individual particle's exploration
-                cognitive_velocity  = self.c1 * r1 * (self.samples[iparticle].optimum_position[idim] - self.samples[iparticle].position[idim])
-                # compute social velocity, based on the swarm exploration
-                social_velocity     = self.c2 * r2 * (self.optimum_position[idim] - self.samples[iparticle].position[idim])
-                # update velocity
-                self.samples[iparticle].velocity[idim] = self.w * self.samples[iparticle].velocity[idim] + cognitive_velocity + social_velocity    
-                # limit the velocity to the interval [-max_speed,max_speed]
-                self.samples[iparticle].velocity[idim] = np.clip(self.samples[iparticle].velocity[idim],-self.max_speed[idim],self.max_speed[idim])
-            # Update individual particle position
-            self.samples[iparticle].position += self.samples[iparticle].velocity
-                                    
+            if (self.name != "FST-PSO"): # not using the Fuzzy Self Tuning PSO
+                
+                for idim in range(self.number_of_dimensions):
+                    # extract two random numbers
+                    r1                  = random.random()
+                    r2                  = random.random()
+                    # compute cognitive velocity, based on the individual particle's exploration
+                    cognitive_velocity  = self.c1 * r1 * (self.samples[iparticle].optimum_position[idim] - self.samples[iparticle].position[idim])
+                    # compute social velocity, based on the swarm exploration
+                    social_velocity     = self.c2 * r2 * (self.optimum_position[idim] - self.samples[iparticle].position[idim])
+                    # update velocity
+                    self.samples[iparticle].velocity[idim] = self.w * self.samples[iparticle].velocity[idim] + cognitive_velocity + social_velocity    
+                    # limit the velocity to the interval [-max_speed,max_speed]
+                    self.samples[iparticle].velocity[idim] = np.clip(self.samples[iparticle].velocity[idim],-self.max_speed[idim],self.max_speed[idim])
+                # Update individual particle position
+                self.samples[iparticle].position += self.samples[iparticle].velocity
+            
+            else: # using the Fuzzy Self Tuning PSO, each parameter for the particles (w,c1,c2,L,u) is adaptively changed at each iteration
+            
+                for idim in range(self.number_of_dimensions):
+                    # extract two random numbers
+                    r1                  = random.random()
+                    r2                  = random.random()
+                    # compute cognitive velocity, based on the individual particle's exploration
+                    cognitive_velocity  = self.c1_FSTPSO[iparticle,self.iteration_number] * r1 * (self.samples[iparticle].optimum_position[idim] - self.samples[iparticle].position[idim])
+                    # compute social velocity, based on the swarm exploration
+                    social_velocity     = self.c2_FSTPSO[iparticle,self.iteration_number] * r2 * (self.optimum_position[idim] - self.samples[iparticle].position[idim])
+                    # update velocity
+                    self.samples[iparticle].velocity[idim] = self.w_FSTPSO[iparticle,self.iteration_number] * self.samples[iparticle].velocity[idim] + cognitive_velocity + social_velocity    
+                    # limit the absolute value of velocity to the interval [U,L]
+                    min_absolute_value_velocity = self.L_FSTPSO[iparticle,self.iteration_number]*self.search_interval_size[idim]
+                    max_absolute_value_velocity = self.U_FSTPSO[iparticle,self.iteration_number]*self.search_interval_size[idim]
+                    self.samples[iparticle].velocity[idim] = np.sign(self.samples[iparticle].velocity[idim])*np.clip(np.abs(self.samples[iparticle].velocity[idim]),min_absolute_value_velocity,max_absolute_value_velocity)
+                # Update individual particle position
+                self.samples[iparticle].position += self.samples[iparticle].velocity
+                            
             # Boundary condition on position:
             for idim in range(self.number_of_dimensions):
                 if ((self.samples[iparticle].position[idim] < self.search_interval[idim][0]) or (self.samples[iparticle].position[idim] > self.search_interval[idim][1])):
@@ -453,6 +530,8 @@ class ParticleSwarmOptimization(Optimizer):
     def updateSamplesForExploration(self):
         if (self.name=="Adaptive Particle Swarm Optimization"):
             self.evaluateEvolutionStateAndAdaptHyperparameters()
+        if (self.name=="FST-PSO"):
+            self.FSTPSOAdaptationOfHyperparameters()
         # update position and velocity of particles, store position history
         self.updateParticlePositionAndVelocity()
         self.iteration_number = self.iteration_number+1
@@ -586,6 +665,139 @@ class ParticleSwarmOptimization(Optimizer):
             np.save( f, self.history_w[0:self.iteration_number])
         with open('history_mu_up_to_iteration_'+str(self.iteration_number).zfill(5)+'.npy', 'wb') as f:
             np.save( f, self.history_mu[0:self.iteration_number])
+            
+    def FSTPSOAdaptationOfHyperparameters(self):
+        for iparticle in range(0,self.number_of_samples_per_iteration):
+            # normalized distance between the particle and the optimum
+            self.delta_FSTPSO[iparticle,self.iteration_number] = normalized_euclidean_distance(self.samples[iparticle].position,self.optimum_position,self.search_interval_size)
+            
+            # normalized improvement 
+            present_position                                   = self.samples[iparticle].position
+            past_position                                      = self.history_samples_positions_and_function_values[self.iteration_number-1,iparticle,0:self.number_of_dimensions]
+            normalized_distance_present_past_position          = normalized_euclidean_distance(present_position,past_position,self.search_interval_size)
+            improvement_function_value                         = 0.
+            if self.iteration_number == 0:
+                improvement_function_value                     = min(-self.history_samples_positions_and_function_values[self.iteration_number,iparticle,self.number_of_dimensions],self.FSTPSO_worst_function_value)\
+                                                               - self.FSTPSO_worst_function_value
+            else:
+                improvement_function_value                     = min(-self.history_samples_positions_and_function_values[self.iteration_number,iparticle,self.number_of_dimensions],self.FSTPSO_worst_function_value) \
+                                                               - min(-self.history_samples_positions_and_function_values[self.iteration_number-1,iparticle,self.number_of_dimensions],self.FSTPSO_worst_function_value)
+            self.Phi_FSTPSO[iparticle,self.iteration_number]   = normalized_distance_present_past_position/self.delta_max*improvement_function_value/self.FSTPSO_worst_function_value
+                                                                                   
+            self.w_FSTPSO[iparticle,self.iteration_number],  \
+            self.c1_FSTPSO[iparticle,self.iteration_number], \
+            self.c2_FSTPSO[iparticle,self.iteration_number], \
+            self.L_FSTPSO[iparticle,self.iteration_number],  \
+            self.U_FSTPSO[iparticle,self.iteration_number]   \
+            = self.FSTPSO_adapt_hyperparameters( \
+                                            self.delta_FSTPSO[iparticle,self.iteration_number],\
+                                            self.Phi_FSTPSO[iparticle,self.iteration_number]\
+                                               )
+        # print all the adapted Parameters
+        print("FSTPSO parameters adapted.")
+        print("- delta  : ")
+        print(self.delta_FSTPSO[:,self.iteration_number])
+        print("- Phi  : ")
+        print(self.Phi_FSTPSO[:,self.iteration_number])
+        print("- w  : ")
+        print(self.w_FSTPSO[:,self.iteration_number])
+        print("- c1 : ")
+        print(self.c1_FSTPSO[:,self.iteration_number])
+        print("- c2 : ")
+        print(self.c2_FSTPSO[:,self.iteration_number])
+        print("- L  : ")
+        print(self.L_FSTPSO[:,self.iteration_number])
+        print("- U  : ")
+        print(self.U_FSTPSO[:,self.iteration_number])
+        print("")
+        
+    def FSTPSOSavePartialHyperparametersHistory(self):    
+        # save all the adapted parameters
+        with open('history_FSTPSO_Phi_up_to_iteration_'+str(self.iteration_number).zfill(5)+'.npy', 'wb') as f:
+            np.save( f, self.Phi_FSTPSO[:,0:self.iteration_number])
+        with open('history_FSTPSO_delta_up_to_iteration_'+str(self.iteration_number).zfill(5)+'.npy', 'wb') as f:
+            np.save( f, self.delta_FSTPSO[:,0:self.iteration_number])
+        with open('history_FSTPSO_w_up_to_iteration_'+str(self.iteration_number).zfill(5)+'.npy', 'wb') as f:
+            np.save( f, self.w_FSTPSO[:,0:self.iteration_number])
+        with open('history_FSTPSO_c1_up_to_iteration_'+str(self.iteration_number).zfill(5)+'.npy', 'wb') as f:
+            np.save( f, self.c1_FSTPSO[:,0:self.iteration_number])
+        with open('history_FSTPSO_c2_up_to_iteration_'+str(self.iteration_number).zfill(5)+'.npy', 'wb') as f:
+            np.save( f, self.c2_FSTPSO[:,0:self.iteration_number])
+        with open('history_FSTPSO_L_up_to_iteration_'+str(self.iteration_number).zfill(5)+'.npy', 'wb') as f:
+            np.save( f, self.L_FSTPSO[:,0:self.iteration_number])
+        with open('history_FSTPSO_U_up_to_iteration_'+str(self.iteration_number).zfill(5)+'.npy', 'wb') as f:
+            np.save( f, self.U_FSTPSO[:,0:self.iteration_number])
+            
+    def FSTPSO_adapt_hyperparameters(self,delta,phi):
+        # Dictionaries for the membership functions 
+        phi_membership   = {                                                                              \
+                            'worse'  : membership_phi_worse(phi),                                         \
+                            'same'  : membership_phi_same  (phi),                                         \
+                            'better': membership_phi_better(phi)                                          \
+                           }
+                           
+                           
+        delta_membership = {                                                                              \
+                            'same': membership_delta_same(delta, self.delta1, self.delta2),               \
+                            'near': membership_delta_near(delta, self.delta1, self.delta2, self.delta3),  \
+                            'far' : membership_delta_far (delta, self.delta2, self.delta3, self.delta_max)\
+                            }
+                            
+        # inertia w      
+        weight_low           = max(phi_membership['worse'], delta_membership['same'])
+        weight_medium        = max(phi_membership['same'], delta_membership['near'])
+        weight_high          = max(phi_membership['better'], delta_membership['far'])
+        
+        w  = (weight_low * self.w_low + weight_medium * self.w_medium + weight_high * self.w_high) / (weight_low + weight_medium + weight_high + self.epsilon)
+        
+        # acceleration coefficient c1
+        weight_low           = delta_membership['far']
+        weight_medium        = max(phi_membership['worse'], phi_membership['same'], delta_membership['same'], delta_membership['near'])
+        weight_high          = phi_membership['better']
+        c1 = (weight_low * self.c1_low + weight_medium * self.c1_medium + weight_high * self.c1_high) / (weight_low + weight_medium + weight_high + self.epsilon)
+        
+        # acceleration coefficient c2
+        weight_low           = max(phi_membership['better'], delta_membership['near'])
+        weight_medium        = max(phi_membership['same'], delta_membership['same'])
+        weight_high          = max(phi_membership['worse'], delta_membership['far'])
+        c2 = (weight_low * self.c2_low + weight_medium * self.c2_medium + weight_high * self.c2_high) / (weight_low + weight_medium + weight_high + self.epsilon)
+
+        # minimum absolute value of velocity L
+        weight_low           = max(phi_membership['same'], phi_membership['better'], delta_membership['far'])
+        weight_medium        = max(delta_membership['same'], delta_membership['near'])
+        weight_high          = phi_membership['worse']
+        L  = (weight_low * self.L_low + weight_medium * self.L_medium + weight_high * self.L_high) / (weight_low + weight_medium + weight_high + self.epsilon)
+        
+        # maximum absolute value of velocity U 
+        weight_low           = delta_membership['same']
+        weight_medium        = max(phi_membership['same'], phi_membership['better'], delta_membership['near'])
+        weight_high          = max(phi_membership['worse'], delta_membership['far'])
+        U  = (weight_low * self.U_low + weight_medium * self.U_medium + weight_high * self.U_high) / (weight_low + weight_medium + weight_high + self.epsilon)    
+        
+        return w,c1,c2,L,U
+        
+    def FSTPSOLastEvaluationAndDumpHyperparameters(self):
+        self.FSTPSOAdaptationOfHyperparameters()
+        # save all the adapted parameters
+        with open('history_FSTPSO_Phi.npy', 'wb') as f:
+            np.save( f, self.Phi_FSTPSO)
+        with open('history_FSTPSO_delta.npy', 'wb') as f:
+            np.save( f, self.delta_FSTPSO)
+        with open('history_FSTPSO_w.npy', 'wb') as f:
+            np.save( f, self.w_FSTPSO)
+        with open('history_FSTPSO_c1.npy', 'wb') as f:
+            np.save( f, self.c1_FSTPSO)
+        with open('history_FSTPSO_c2.npy', 'wb') as f:
+            np.save( f, self.c2_FSTPSO)
+        with open('history_FSTPSO_L.npy', 'wb') as f:
+            np.save( f, self.L_FSTPSO)
+        with open('history_FSTPSO_U.npy', 'wb') as f:
+            np.save( f, self.U_FSTPSO)
+        
+    
+    def operationsAfterUpdateOfOptimumFunctionValueAndPosition(self):
+        if ((self.name == "FST-PSO") and (self.iteration_number==0)):
+            self.FSTPSO_worst_function_value = -np.amin(self.history_samples_positions_and_function_values[self.iteration_number,:,self.number_of_dimensions])-self.epsilon
 
 class BayesianOptimization(Optimizer):
     def __init__(self, name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs):

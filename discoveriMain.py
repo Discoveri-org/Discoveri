@@ -113,7 +113,15 @@ class optimizationRun:
                                                               
         elif (self.optimization_method == "Adaptive Particle Swarm Optimization"):
             # initialize a swarm of particles, version of the Particle Swarm Optimization
-            # where the hyperparameters are automatically tuned during the optimization
+            # where the hyperparameters of the swarm are automatically tuned during the optimization
+            self.optimizer             = ParticleSwarmOptimization(name=optimization_method,                                  \
+                                                              number_of_samples_per_iteration=number_of_samples_per_iteration, number_of_dimensions=number_of_dimensions,         \
+                                                              search_interval=search_interval, number_of_iterations=number_of_iterations, \
+                                                              **kwargs )
+                                                              
+        elif (self.optimization_method == "FST-PSO"):
+            # initialize a swarm of particles, version of the Particle Swarm Optimization
+            # where the hyperparameters of each particle are automatically tuned during the optimization
             self.optimizer             = ParticleSwarmOptimization(name=optimization_method,                                  \
                                                               number_of_samples_per_iteration=number_of_samples_per_iteration, number_of_dimensions=number_of_dimensions,         \
                                                               search_interval=search_interval, number_of_iterations=number_of_iterations, \
@@ -236,6 +244,8 @@ class optimizationRun:
                     np.save( f,np.asarray(self.time_to_complete_iterations[0:iteration+1]))
                 if (self.optimizer.name=="Adaptive Particle Swarm Optimization"):
                     self.optimizer.APSOSavePartialHyperparametersHistory()
+                if (self.optimizer.name=="FST-PSO"):
+                    self.optimizer.FSTPSOSavePartialHyperparametersHistory()
               
     
 
@@ -263,6 +273,9 @@ class optimizationRun:
         if (self.optimizer.name=="Adaptive Particle Swarm Optimization"):
             # execute one last evaluation of the evolutionary state and then save history of the hyperparameters
             self.optimizer.APSOLastEvaluationAndDumpHyperparameters()
+        if (self.optimizer.name=="FST-PSO"):
+            # execute one last adaptation then save history of the hyperparameters
+            self.optimizer.FSTPSOLastEvaluationAndDumpHyperparameters()
         print("\n Optimization history and time lapsed saved")
         print("\n\nEND OF THE OPTIMIZATION RUN")
         print("\n\n\n")
