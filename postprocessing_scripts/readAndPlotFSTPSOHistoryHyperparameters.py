@@ -28,7 +28,7 @@ if (os.path.isfile(filename_Phi)!=True): # the complete history file does not ex
     # find all files with partial history of optimization 
     files_with_history = []
     for file in os.listdir(starting_directory):
-        if (("history_FSTPSO_delta" in file) and ("iteration" in file)):
+        if (("history_FSTPSO_Phi" in file) and ("iteration" in file)):
             files_with_history.append(file)
     files_with_history = sorted(files_with_history)
     # pick the most recent one
