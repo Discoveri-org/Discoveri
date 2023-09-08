@@ -431,7 +431,7 @@ class ParticleSwarmOptimization(Optimizer):
 
             # small value to avoid divisions by zero
             default_epsilon   = 1e-7
-            self.epsilon      = kwargs.get('epsilon', default_default_epsilon)
+            self.epsilon      = kwargs.get('epsilon', default_epsilon)
                                           
             print("epsilon                                  = ",self.epsilon )                              
             
