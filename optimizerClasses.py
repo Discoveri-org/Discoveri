@@ -680,12 +680,12 @@ class ParticleSwarmOptimization(Optimizer):
             normalized_distance_present_past_position          = normalized_euclidean_distance(present_position,past_position,self.search_interval_size)
             improvement_function_value                         = 0.
             if self.iteration_number == 0:
-                improvement_function_value                     = min(-self.history_samples_positions_and_function_values[self.iteration_number,iparticle,self.number_of_dimensions],self.FSTPSO_worst_function_value)\
-                                                               - self.FSTPSO_worst_function_value
+                improvement_function_value                     = min(-self.history_samples_positions_and_function_values[self.iteration_number,iparticle,self.number_of_dimensions]-self.epsilon,-self.FSTPSO_worst_function_value-self.epsilon)\
+                                                               - (-self.FSTPSO_worst_function_value-self.epsilon)
             else:
-                improvement_function_value                     = min(-self.history_samples_positions_and_function_values[self.iteration_number,iparticle,self.number_of_dimensions]-self.epsilon,self.FSTPSO_worst_function_value-self.epsilon) \
-                                                               - min(-self.history_samples_positions_and_function_values[self.iteration_number-1,iparticle,self.number_of_dimensions]-self.epsilon,self.FSTPSO_worst_function_value-self.epsilon)
-            self.Phi_FSTPSO[iparticle,self.iteration_number]   = normalized_distance_present_past_position/self.delta_max*improvement_function_value/(self.FSTPSO_worst_function_value-self.epsilon)
+                improvement_function_value                     = min(-self.history_samples_positions_and_function_values[self.iteration_number,iparticle,self.number_of_dimensions]-self.epsilon,-self.FSTPSO_worst_function_value-self.epsilon) \
+                                                               - min(-self.history_samples_positions_and_function_values[self.iteration_number-1,iparticle,self.number_of_dimensions]-self.epsilon,-self.FSTPSO_worst_function_value-self.epsilon)
+            self.Phi_FSTPSO[iparticle,self.iteration_number]   = normalized_distance_present_past_position/self.delta_max*improvement_function_value/np.abs((-self.FSTPSO_worst_function_value-self.epsilon))
                                                                                    
             self.w_FSTPSO[iparticle,self.iteration_number],  \
             self.c1_FSTPSO[iparticle,self.iteration_number], \
@@ -800,7 +800,7 @@ class ParticleSwarmOptimization(Optimizer):
     
     def operationsAfterUpdateOfOptimumFunctionValueAndPosition(self):
         if ((self.name == "FST-PSO") and (self.iteration_number==0)):
-            self.FSTPSO_worst_function_value = -np.amin(self.history_samples_positions_and_function_values[self.iteration_number,:,self.number_of_dimensions])
+            self.FSTPSO_worst_function_value = np.amin(self.history_samples_positions_and_function_values[self.iteration_number,:,self.number_of_dimensions])
 
 class BayesianOptimization(Optimizer):
     def __init__(self, name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs):
