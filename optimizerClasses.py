@@ -379,7 +379,7 @@ class ParticleSwarmOptimization(Optimizer):
             for idim in range(0,self.number_of_dimensions):
                 self.max_speed[idim] = self.mu*(self.search_interval[idim][1]-self.search_interval[idim][0])
             
-            print("max_speed                                = ",self.max_speed )
+            print("max_speed                                = ",self.max_speed                        )
             print("c1 (initial)                             = ",self.c1                               )
             print("c2 (initial)                             = ",self.c2                               )
             print("w  (initial)                             = ",self.w                                )
@@ -430,7 +430,10 @@ class ParticleSwarmOptimization(Optimizer):
             self.U_high       = 0.2
 
             # small value to avoid divisions by zero
-            self.epsilon      = 1e-7
+            default_epsilon   = 1e-7
+            self.epsilon      = kwargs.get('epsilon', default_default_epsilon)
+                                          
+            print("epsilon                                  = ",self.epsilon )                              
             
             # arrays to store the hyperparameters for each particle and each iteration
             self.Phi_FSTPSO   = np.zeros(shape=(self.number_of_samples_per_iteration,self.number_of_iterations))
@@ -680,9 +683,9 @@ class ParticleSwarmOptimization(Optimizer):
                 improvement_function_value                     = min(-self.history_samples_positions_and_function_values[self.iteration_number,iparticle,self.number_of_dimensions],self.FSTPSO_worst_function_value)\
                                                                - self.FSTPSO_worst_function_value
             else:
-                improvement_function_value                     = min(-self.history_samples_positions_and_function_values[self.iteration_number,iparticle,self.number_of_dimensions],self.FSTPSO_worst_function_value) \
-                                                               - min(-self.history_samples_positions_and_function_values[self.iteration_number-1,iparticle,self.number_of_dimensions],self.FSTPSO_worst_function_value)
-            self.Phi_FSTPSO[iparticle,self.iteration_number]   = normalized_distance_present_past_position/self.delta_max*improvement_function_value/self.FSTPSO_worst_function_value
+                improvement_function_value                     = min(-self.history_samples_positions_and_function_values[self.iteration_number,iparticle,self.number_of_dimensions]-self.epsilon,self.FSTPSO_worst_function_value-self.epsilon) \
+                                                               - min(-self.history_samples_positions_and_function_values[self.iteration_number-1,iparticle,self.number_of_dimensions]-self.epsilon,self.FSTPSO_worst_function_value-self.epsilon)
+            self.Phi_FSTPSO[iparticle,self.iteration_number]   = normalized_distance_present_past_position/self.delta_max*improvement_function_value/(self.FSTPSO_worst_function_value-self.epsilon)
                                                                                    
             self.w_FSTPSO[iparticle,self.iteration_number],  \
             self.c1_FSTPSO[iparticle,self.iteration_number], \
@@ -797,7 +800,7 @@ class ParticleSwarmOptimization(Optimizer):
     
     def operationsAfterUpdateOfOptimumFunctionValueAndPosition(self):
         if ((self.name == "FST-PSO") and (self.iteration_number==0)):
-            self.FSTPSO_worst_function_value = -np.amin(self.history_samples_positions_and_function_values[self.iteration_number,:,self.number_of_dimensions])-self.epsilon
+            self.FSTPSO_worst_function_value = -np.amin(self.history_samples_positions_and_function_values[self.iteration_number,:,self.number_of_dimensions])
 
 class BayesianOptimization(Optimizer):
     def __init__(self, name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs):
