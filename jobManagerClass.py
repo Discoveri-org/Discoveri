@@ -53,8 +53,9 @@ class jobManager:
             os.chdir(directory)
             #os.system("cp "+path_executable+" .")
             os.system("cp "+self.path_submission_script+" .")
-            os.system("cp "+self.path_second_submission_script+" .")
             os.system("cp "+self.path_input_namelist+" .")
+            if (self.path_second_submission_script!=""):
+                os.system("cp "+self.path_second_submission_script+" .")
         
             # prepare namelist writing the parameter configuration 
             line_to_write_in_namelist = self.generateConfigurationToWriteOnNamelist(input_parameters,number_of_dimensions)
