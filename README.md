@@ -2,7 +2,7 @@
 
 ### About ``:Discoveri``
 
-``:Discoveri`` is a Python code to optimize/maximize a function with derivative-free methods. This function can be a `numpy` function or the result of a postprocessing function of simulations on a cluster. In both cases the user can define the function to optimize. In the latter case, ``:Discoveri`` prepares and launches automatically the simulations that sample the function to optimize. At the moment, the following optimization methods are implemented: `"Grid Search"`, `"Random Search"`,`"Bayesian Optimization"`, `"Particle Swarm Optimization"` (and its variant called `"Adaptive Particle Swarm Optimization"`).
+``:Discoveri`` is a Python code to optimize/maximize a function with derivative-free methods. This function can be a `numpy` function or the result of a postprocessing function of simulations on a cluster. In both cases the user can define the function to optimize. In the latter case, ``:Discoveri`` prepares and launches automatically the simulations that sample the function to optimize. At the moment, the following optimization methods are implemented: `"Grid Search"`, `"Random Search"`,`"Bayesian Optimization"`, `"Particle Swarm Optimization"` (and its variants called `"Adaptive Particle Swarm Optimization"`, `"FST-PSO"`).
 
 ### Python libraries used
 - `numpy`
@@ -49,6 +49,7 @@ At the moment the available options are:
   - `"Bayesian Optimization"`
   - `"Particle Swarm Optimization"`
   - `"Adaptive Particle Swarm Optimization"`
+  - `"FST-PSO"`
 - `number_of_iterations`(integer): the number of iterations of the optimization process.
 - `number_of_samples_per_iteration`(integer): the number of samples chosen/drawn at each iteration, each evaluating `f(X)` at a different sample `X`.
 - `number_of_dimensions` (integer): number of dimensions of the parameter space where the maximum of `f(X)` is searched.
@@ -139,6 +140,7 @@ In the folder `postprocessing_scripts` several scripts are available to have an 
 The script also plots the evolution of the best function value found during the optimization run, by all the optimizer, by each sample, as function the time needed to perform the iterations, or of the number of iterations, all in different figures. In case the `number_of_dimensions` is equal to 1 or 2, additional visualizations will be plotted.
 - `extractAllData`: to be used in a folder containing the folders of one or more optimization runs. The script extract all the datas (positions `X` and function values `f(X)`) explored during the optimization, stores them in a unique `pandas.DataFrame` and plots the `seaborn.pairplot` of these data. Having all the data in a single `DataFrame` is particularly useful if one wants to use machine learning techniques to create a surrogate model of `f(X)`.
 - `compareOptimizationHistories.py`: to be used in a folder containing the folders of two or more optimization runs. The script will plot the convergence plot of the optimization runs in the folder where it was called. The average best function value and the standard deviation of the best function values found by the runs will be plotted. This is useful to compare different sets of runs, e.g. performed with a different optimizer, because multiple runs are necessary to study the statistical behavior of the different optimizers for a given problem.
-- `readAndPlotAdaptiveParticleSwarmOptimizationHistoryHyperparameters.py`: to be used inside the folder of an optimization run performed with `"Adaptive Particle Swarm Optimization"`. The script plots the evolution of the hyperparameters (inertia weight, evolutionary factor, acceleration coefficient) that are computed and tuned automatically by this optimizer.
+- `readAndPlotAdaptiveParticleSwarmOptimizationHistoryHyperparameters.py`: to be used inside the folder of an optimization run performed with `"Adaptive Particle Swarm Optimization"`. The script plots the evolution of the hyperparameters (inertia weight, evolutionary factor, acceleration coefficients) that are computed and tuned automatically by this optimizer at each iteration.
+- `readAndPlotFSTPSOHistoryHyperparameters.py`: to be used inside the folder of an optimization run performed with `"FST-PSO"`. The script plots the evolution of the hyperparameters (inertia weight, acceleration coefficients, minimum and maximum absolute value for velocity) as well as the parameters delta and Phi that are computed aby this optimizer at each iteration.
   
   
