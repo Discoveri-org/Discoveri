@@ -663,7 +663,7 @@ class ParticleSwarmOptimization(Optimizer):
         with open('history_mu_up_to_iteration_'+str(self.iteration_number).zfill(5)+'.npy', 'wb') as f:
             np.save( f, self.history_mu[0:self.iteration_number])
     
-    def compute_Phi(self,iparticle):
+    def computePhiFSTPSO(self,iparticle):
         # normalized improvement as described in M. Nobile et al., Swarm and Evolutionary Computation 39 (2018) 70–85
         # updated to follow the definition of version FST-PSO2b of their library
         
@@ -701,7 +701,7 @@ class ParticleSwarmOptimization(Optimizer):
             
                                                                
                                                                
-            self.Phi_FSTPSO[iparticle,self.iteration_number]   = self.compute_Phi(iparticle)
+            self.Phi_FSTPSO[iparticle,self.iteration_number]   = self.computePhiFSTPSO(iparticle)
                                                                                    
             self.w_FSTPSO[iparticle,self.iteration_number],  \
             self.c1_FSTPSO[iparticle,self.iteration_number], \
