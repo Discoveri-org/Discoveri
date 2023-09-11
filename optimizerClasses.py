@@ -667,7 +667,6 @@ class ParticleSwarmOptimization(Optimizer):
         # normalized improvement as described in M. Nobile et al., Swarm and Evolutionary Computation 39 (2018) 70–85
         # updated to follow the definition of version FST-PSO2b of their library
         
-        
         # compute distance_factor
         present_position                                   = self.samples[iparticle].position
         past_position                                      = self.history_samples_positions_and_function_values[self.iteration_number-1,iparticle,0:self.number_of_dimensions]
@@ -816,7 +815,11 @@ class ParticleSwarmOptimization(Optimizer):
     
     def operationsAfterUpdateOfOptimumFunctionValueAndPosition(self):
         if (self.name == "FST-PSO"):
-            self.FSTPSO_worst_function_value = np.amin(self.history_samples_positions_and_function_values[self.iteration_number,:,self.number_of_dimensions])
+            if (self.iteration_number==0):
+                self.FSTPSO_worst_function_value = np.amin(self.history_samples_positions_and_function_values[self.iteration_number,:,self.number_of_dimensions])
+            else:
+                present_worst_function_value     = np.amin(self.history_samples_positions_and_function_values[self.iteration_number,:,self.number_of_dimensions])
+                self.FSTPSO_worst_function_value = min(self.FSTPSO_worst_function_value,present_worst_function_value)
 
 class BayesianOptimization(Optimizer):
     def __init__(self, name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs):
