@@ -427,13 +427,7 @@ class ParticleSwarmOptimization(Optimizer):
             # Maximum absolute value of velocity
             self.U_low        = 0.1
             self.U_medium     = 0.15
-            self.U_high       = 0.2
-
-            # small value to avoid divisions by zero
-            default_epsilon   = 1e-7
-            self.epsilon      = kwargs.get('epsilon', default_epsilon)
-                                          
-            print("epsilon                                  = ",self.epsilon )                              
+            self.U_high       = 0.2                           
             
             # arrays to store the hyperparameters for each particle and each iteration
             self.Phi_FSTPSO   = np.zeros(shape=(self.number_of_samples_per_iteration,self.number_of_iterations))
@@ -668,24 +662,46 @@ class ParticleSwarmOptimization(Optimizer):
             np.save( f, self.history_w[0:self.iteration_number])
         with open('history_mu_up_to_iteration_'+str(self.iteration_number).zfill(5)+'.npy', 'wb') as f:
             np.save( f, self.history_mu[0:self.iteration_number])
-            
+    
+    def compute_Phi(self,iparticle):
+        # normalized improvement as described in M. Nobile et al., Swarm and Evolutionary Computation 39 (2018) 70–85
+        # updated to follow the definition of version FST-PSO2b of their library
+        
+        
+        # compute distance_factor
+        present_position                                   = self.samples[iparticle].position
+        past_position                                      = self.history_samples_positions_and_function_values[self.iteration_number-1,iparticle,0:self.number_of_dimensions]
+        normalized_distance_present_past_position          = normalized_euclidean_distance(present_position,past_position,self.search_interval_size)
+        distance_factor                                    = normalized_distance_present_past_position/self.delta_max
+        
+        # compute improvement_factor
+        function_improvement_factor = 0.
+        present_function_value      = min(-self.history_samples_positions_and_function_values[self.iteration_number,iparticle,self.number_of_dimensions],-self.FSTPSO_worst_function_value)
+        past_function_value         = 0.
+        if (self.iteration_number == 0):
+            past_function_value     = -self.FSTPSO_worst_function_value
+        else:
+            past_function_value     = min(-self.history_samples_positions_and_function_values[self.iteration_number-1,iparticle,self.number_of_dimensions],-self.FSTPSO_worst_function_value) 
+        
+        if ( abs(self.optimum_function_value-self.FSTPSO_worst_function_value) == 0 ):
+            print("ERROR: division by zero in Phi calculation.")
+            print(" This can only happen if the function value of all the particles at the first iteration is zero")
+            sys.exit()
+        else:
+            function_improvement_factor = (present_function_value-past_function_value)/abs(self.optimum_function_value-self.FSTPSO_worst_function_value)
+                                                                                                        
+        return distance_factor*function_improvement_factor
+        
     def FSTPSOAdaptationOfHyperparameters(self):
         for iparticle in range(0,self.number_of_samples_per_iteration):
             # normalized distance between the particle and the optimum
             self.delta_FSTPSO[iparticle,self.iteration_number] = normalized_euclidean_distance(self.samples[iparticle].position,self.optimum_position,self.search_interval_size)
             
-            # normalized improvement 
-            present_position                                   = self.samples[iparticle].position
-            past_position                                      = self.history_samples_positions_and_function_values[self.iteration_number-1,iparticle,0:self.number_of_dimensions]
-            normalized_distance_present_past_position          = normalized_euclidean_distance(present_position,past_position,self.search_interval_size)
-            improvement_function_value                         = 0.
-            if self.iteration_number == 0:
-                improvement_function_value                     = min(-self.history_samples_positions_and_function_values[self.iteration_number,iparticle,self.number_of_dimensions]-self.epsilon,-self.FSTPSO_worst_function_value-self.epsilon)\
-                                                               - (-self.FSTPSO_worst_function_value-self.epsilon)
-            else:
-                improvement_function_value                     = min(-self.history_samples_positions_and_function_values[self.iteration_number,iparticle,self.number_of_dimensions]-self.epsilon,-self.FSTPSO_worst_function_value-self.epsilon) \
-                                                               - min(-self.history_samples_positions_and_function_values[self.iteration_number-1,iparticle,self.number_of_dimensions]-self.epsilon,-self.FSTPSO_worst_function_value-self.epsilon)
-            self.Phi_FSTPSO[iparticle,self.iteration_number]   = normalized_distance_present_past_position/self.delta_max*improvement_function_value/np.abs((-self.FSTPSO_worst_function_value-self.epsilon))
+            
+            
+                                                               
+                                                               
+            self.Phi_FSTPSO[iparticle,self.iteration_number]   = self.compute_Phi(iparticle)
                                                                                    
             self.w_FSTPSO[iparticle,self.iteration_number],  \
             self.c1_FSTPSO[iparticle,self.iteration_number], \
@@ -799,7 +815,7 @@ class ParticleSwarmOptimization(Optimizer):
         
     
     def operationsAfterUpdateOfOptimumFunctionValueAndPosition(self):
-        if ((self.name == "FST-PSO") and (self.iteration_number==0)):
+        if (self.name == "FST-PSO"):
             self.FSTPSO_worst_function_value = np.amin(self.history_samples_positions_and_function_values[self.iteration_number,:,self.number_of_dimensions])
 
 class BayesianOptimization(Optimizer):
