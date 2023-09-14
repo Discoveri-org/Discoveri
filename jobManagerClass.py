@@ -137,19 +137,21 @@ class jobManager:
                     os.chdir(configuration.split(',', 1)[0]) # go inside the considered directory
                     index_configuration = list_configurations.index(configuration)
                     isample             = samples_running_a_simulation[index_configuration]
-                    
-                    with open(self.name_log_file_simulations, 'r') as simulation_log_file: # check the results of the simulation
-                        for line in simulation_log_file:
-                            if self.word_marking_end_of_simulation_in_log_file in line: # if a simulation has ended
-                                # remove the directory and the sample from the list of those still running a simulation
-                                list_configurations.remove(list_configurations[index_configuration])
-                                samples_running_a_simulation.remove(isample)
-                                # analyse the result, i.e. compute function value at new sample position
-                                function_value = self.simulation_postprocessing_function() #np.maximum(np.log(get_sqrtCharge_times_median_Energy_over_MAD_Energy()),0.)#get_average_bunch_energy()
-                                # update history array, and if function_value is better, update sample's best function_value and positon
-                                optimizer.updateHistoryAndCheckIfFunctionValueIsBetter(iteration,isample,function_value)
-                                # you can stop reading the log file of the simulation
-                                break
+                    if (os.path.isfile(self.name_log_file_simulations)): # if simulation log file exists
+                        with open(self.name_log_file_simulations, 'r') as simulation_log_file: # check the results of the simulation
+                            for line in simulation_log_file:
+                                if self.word_marking_end_of_simulation_in_log_file in line: # if a simulation has ended
+                                    # remove the directory and the sample from the list of those still running a simulation
+                                    list_configurations.remove(list_configurations[index_configuration])
+                                    samples_running_a_simulation.remove(isample)
+                                    # analyse the result, i.e. compute function value at new sample position
+                                    function_value = self.simulation_postprocessing_function() #np.maximum(np.log(get_sqrtCharge_times_median_Energy_over_MAD_Energy()),0.)#get_average_bunch_energy()
+                                    # update history array, and if function_value is better, update sample's best function_value and positon
+                                    optimizer.updateHistoryAndCheckIfFunctionValueIsBetter(iteration,isample,function_value)
+                                    # you can stop reading the log file of the simulation
+                                    break
+                    else: # file not existing, just keep checking the other directories
+                        pass 
                     # return to starting folder
                     os.chdir(self.starting_directory)
         
