@@ -863,7 +863,6 @@ class ParticleSwarmOptimization(Optimizer):
                     # reset the particle position and velocity
                     distance_from_optimum_position = normalized_euclidean_distance(self.samples[iparticle].position,self.optimum_position,self.search_interval_size)
                     if ( (distance_from_optimum_position < self.min_distance_from_best_position) or (self.number_of_iterations_before_last_optimum_function_value_update[iparticle]>=self.max_number_iterations_stuck_particles)):
-                        print(self.delta_FSTPSO)
                         print("Particle ",iparticle," reset because")
                         if (distance_from_optimum_position < self.min_distance_from_best_position):
                             print("distance from optimum position = ",distance_from_optimum_position,", min distance = ",self.min_distance_from_best_position)
