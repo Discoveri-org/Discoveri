@@ -110,7 +110,7 @@ def initializePredictiveModelForOptimization(number_of_samples_to_choose=1,numbe
     # nu parameter of the Matern Kernel if different from [0.5, 1.5, 2.5, np.inf] 
     # the optimizer may incur a considerably higher computational cost (appr. 10 times higher)
     default_value_nu                  = 1.5
-    nu                               = kwargs.get('nu', default_value_nu)
+    nu                                = kwargs.get('nu', default_value_nu)
     
     # The kernel scales are normalized, so the input data to fit and predict must be normalized
     # This length_scale parameter is really important for the regressor.
@@ -128,27 +128,27 @@ def initializePredictiveModelForOptimization(number_of_samples_to_choose=1,numbe
     # If the variations of the function to optimize with respect to a certain dimension within the search interval are large,
     # the length_scale associated to that dimension will be smaller.
     # if the function to optimize does not vary much in one dimension, the associated length scale of that dimension can be larger.
-    default_length_scale             = 1.0  
-    length_scale                     = kwargs.get('length_scale', default_length_scale)
+    default_length_scale              = 1.0  
+    length_scale                      = kwargs.get('length_scale', default_length_scale)
     
     
     # the length_scale will be optimizer with optimizer="fmin_l_bfgs_b" (see below)
     # the following parameter fixes the bounds for this optimization
-    default_length_scale_bounds      = (1e-5, 1e5)
-    length_scale_bounds              = kwargs.get('length_scale_bounds', default_length_scale_bounds)
+    default_length_scale_bounds       = (1e-5, 1e5)
+    length_scale_bounds               = kwargs.get('length_scale_bounds', default_length_scale_bounds)
     
     # parameter used in the acquisition function (expected improvement)
     # to tune the balance between exploitation of good points already found and exploration of the parameter space
     # When equal to 0, exploitation is privileged. 
     # High values privilege exploration.
-    default_xi                       = 0. # default privileges exploitation
-    xi                               = kwargs.get('xi', default_xi )
+    default_xi                        = 0. # default privileges exploitation
+    xi                                = kwargs.get('xi', default_xi )
     
     
     # now the kernel and the model 
-    kernel                           = ConstantKernel(1.0, constant_value_bounds="fixed")*Matern(nu=nu,length_scale=length_scale,length_scale_bounds=length_scale_bounds) 
-    model                            = GaussianProcessRegressor(optimizer="fmin_l_bfgs_b",kernel=kernel)
-    XsamplesChosenWithSurrogateModel = np.zeros(shape=(number_of_samples_to_choose, number_of_dimensions))
+    kernel                            = ConstantKernel(1.0, constant_value_bounds="fixed")*Matern(nu=nu,length_scale=length_scale,length_scale_bounds=length_scale_bounds) 
+    model                             = GaussianProcessRegressor(optimizer="fmin_l_bfgs_b",kernel=kernel)
+    XsamplesChosenWithSurrogateModel  = np.zeros(shape=(number_of_samples_to_choose, number_of_dimensions))
     
     
     return number_of_tests,nu,length_scale,length_scale_bounds,xi,kernel,model,XsamplesChosenWithSurrogateModel

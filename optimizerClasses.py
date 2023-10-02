@@ -396,8 +396,6 @@ class ParticleSwarmOptimization(Optimizer):
             
             # Parameters for the crisp values of the fuzzy rules, taken from the paper
             
-            # normalized distance
-            
             # maximum normalized distance in the multidimensional space, i.e. the diagonal of the multidimensional cube of the normalized search_interval
             self.delta_max    = max(1.,np.sqrt(self.number_of_dimensions)) # 1 if number_of_dimensions=1, sqrt(number_of_dimensions) otherwise
             self.delta1       = 0.2 * self.delta_max
@@ -438,9 +436,34 @@ class ParticleSwarmOptimization(Optimizer):
             self.U_FSTPSO     = np.zeros(shape=(self.number_of_samples_per_iteration,self.number_of_iterations))
             self.L_FSTPSO     = np.zeros(shape=(self.number_of_samples_per_iteration,self.number_of_iterations))
             
+            # If True, particles are reset if they fulfill at least one of these two conditions:
+            # 1) if the particle does not change its best function value for max_number_iterations_stuck_particles
+            # 2) if the particle normalized distance from the best position is too small, smaller than min_distance_from_best_position
+            
+            default_reset_stuck_particles                   = False
+            self.reset_stuck_particles                      = kwargs.get('reset_stuck_particles', default_reset_stuck_particles)
+            
+            default_max_number_iterations_stuck_particles   = max(2,int(self.number_of_iterations/10))
+            self.max_number_iterations_stuck_particles      = kwargs.get('max_number_iterations_stuck_particles', default_max_number_iterations_stuck_particles)
+            
+            default_min_distance_from_best_position         = 0.01*self.delta_max
+            self.min_distance_from_best_position            = kwargs.get('min_distance_from_best_position', default_min_distance_from_best_position)
+            
+            # array storing for each particle the number of iterations since the last update of its optimum function value
+            self.number_of_iterations_before_last_optimum_function_value_update       = np.zeros(self.number_of_samples_per_iteration)
+            
+            print("reset_stuck_particles                    = ",self.reset_stuck_particles                )
+            print("min_distance_from_best_position          = ",self.min_distance_from_best_position      )
+            print("max_number_iterations_stuck_particles    = ",self.max_number_iterations_stuck_particles)
+            print("")
+            
+            
         # use scrambled Halton sampler to extract initial positions
         self.halton_sampler_position                 = qmc.Halton(d=self.number_of_dimensions, scramble=True)
-        halton_sampler_random_position               = self.halton_sampler_position.random(n=self.number_of_samples_per_iteration)
+        if (self.reset_stuck_particles==False):
+            self.halton_sampler_random_position           = self.halton_sampler_position.random(n=self.number_of_samples_per_iteration)
+        else: 
+            self.halton_sampler_random_position           = self.halton_sampler_position.random(n=self.number_of_samples_per_iteration*self.number_of_iterations)
         
         # Initialize each particle the swarm
         for iparticle in range(0,self.number_of_samples_per_iteration):
@@ -449,7 +472,7 @@ class ParticleSwarmOptimization(Optimizer):
             
             for idim in range(0,self.number_of_dimensions):
                 # use a scrambled Halton sequence to sample more uniformly the parameter space
-                position[idim] = self.search_interval[idim][0]+halton_sampler_random_position[iparticle][idim]*self.search_interval_size[idim] #np.random.uniform(search_interval[dimension][0], search_interval[dimension][1])
+                position[idim] = self.search_interval[idim][0]+self.halton_sampler_random_position[iparticle][idim]*self.search_interval_size[idim] #np.random.uniform(search_interval[dimension][0], search_interval[dimension][1])
                 # use initial velocity proportional to the search_space size in this dimension
                 velocity[idim] = self.max_speed[idim]*np.random.uniform(-1, 1)
                 particle       = SwarmParticle(position,velocity)
@@ -465,6 +488,11 @@ class ParticleSwarmOptimization(Optimizer):
             
         print("\n"+self.name+" initialized")
         
+    def reset_particle(self,iparticle):
+        for idim in range(0,self.number_of_dimensions):
+            self.samples[iparticle].position[idim] = self.search_interval[idim][0] \
+                                                   + self.halton_sampler_random_position[self.iteration_number*self.number_of_samples_per_iteration+iparticle][idim]*self.search_interval_size[idim]
+            self.samples[iparticle].velocity[idim] = self.U_FSTPSO[iparticle,self.iteration_number]*np.random.uniform(-1, 1)*self.search_interval_size[idim]
             
     def updateParticlePositionAndVelocity(self):    
         
@@ -499,7 +527,7 @@ class ParticleSwarmOptimization(Optimizer):
                     social_velocity     = self.c2_FSTPSO[iparticle,self.iteration_number] * r2 * (self.optimum_position[idim] - self.samples[iparticle].position[idim])
                     # update velocity
                     self.samples[iparticle].velocity[idim] = self.w_FSTPSO[iparticle,self.iteration_number] * self.samples[iparticle].velocity[idim] + cognitive_velocity + social_velocity    
-                    # limit the absolute value of velocity to the interval [U,L]
+                    # limit the absolute value of velocity to the interval [L,U]
                     min_absolute_value_velocity = self.L_FSTPSO[iparticle,self.iteration_number]*self.search_interval_size[idim]
                     max_absolute_value_velocity = self.U_FSTPSO[iparticle,self.iteration_number]*self.search_interval_size[idim]
                     self.samples[iparticle].velocity[idim] = np.sign(self.samples[iparticle].velocity[idim])*np.clip(np.abs(self.samples[iparticle].velocity[idim]),min_absolute_value_velocity,max_absolute_value_velocity)
@@ -695,11 +723,7 @@ class ParticleSwarmOptimization(Optimizer):
         for iparticle in range(0,self.number_of_samples_per_iteration):
             # normalized distance between the particle and the optimum
             self.delta_FSTPSO[iparticle,self.iteration_number] = normalized_euclidean_distance(self.samples[iparticle].position,self.optimum_position,self.search_interval_size)
-            
-            
-            
-                                                               
-                                                               
+                                                           
             self.Phi_FSTPSO[iparticle,self.iteration_number]   = self.computePhiFSTPSO(iparticle)
                                                                                    
             self.w_FSTPSO[iparticle,self.iteration_number],  \
@@ -820,6 +844,40 @@ class ParticleSwarmOptimization(Optimizer):
             else:
                 present_worst_function_value     = np.amin(self.history_samples_positions_and_function_values[self.iteration_number,:,self.number_of_dimensions])
                 self.FSTPSO_worst_function_value = min(self.FSTPSO_worst_function_value,present_worst_function_value)
+                
+            if ((self.reset_stuck_particles) and (self.iteration_number>0)):
+                for iparticle in range(0,self.number_of_samples_per_iteration):
+                    
+                    # check if the particle did not improve its function value since the last iteration
+                    # if it did not, increase the counter
+                    if (self.iteration_number>0):
+                        if (self.history_samples_positions_and_function_values[self.iteration_number,iparticle,self.number_of_dimensions]<=self.history_samples_positions_and_function_values[self.iteration_number-1,iparticle,self.number_of_dimensions]):
+                            self.number_of_iterations_before_last_optimum_function_value_update[iparticle] = self.number_of_iterations_before_last_optimum_function_value_update[iparticle] + 1
+                        else:
+                            self.number_of_iterations_before_last_optimum_function_value_update[iparticle] = 0
+                            
+                    # if the particle did not change its best function value for max_number_iterations_stuck_particles
+                    # OR 
+                    # if the particle normalized distance from the best position is too small, smaller than min_distance_from_best_position
+                    # THEN 
+                    # reset the particle position and velocity
+                    distance_from_optimum_position = normalized_euclidean_distance(self.samples[iparticle].position,self.optimum_position,self.search_interval_size)
+                    if ( (distance_from_optimum_position < self.min_distance_from_best_position) or (self.number_of_iterations_before_last_optimum_function_value_update[iparticle]>=self.max_number_iterations_stuck_particles)):
+                        print(self.delta_FSTPSO)
+                        print("Particle ",iparticle," reset because")
+                        if (distance_from_optimum_position < self.min_distance_from_best_position):
+                            print("distance from optimum position = ",distance_from_optimum_position,", min distance = ",self.min_distance_from_best_position)
+                            
+                        if (self.number_of_iterations_before_last_optimum_function_value_update[iparticle]>=self.max_number_iterations_stuck_particles):
+                            print("too many iterations from last update of particle optimum\n")
+                            
+                        self.reset_particle(iparticle)
+                        self.number_of_iterations_before_last_optimum_function_value_update[iparticle] = 0
+                        
+                        
+                        
+                        
+            print("\niterations since particle optimum function value improvement: ",self.number_of_iterations_before_last_optimum_function_value_update)
 
 class BayesianOptimization(Optimizer):
     def __init__(self, name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs):
