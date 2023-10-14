@@ -55,7 +55,6 @@ plt.xlabel("Iteration number")
 plt.legend()
 
 ### plot the convergence plot, i.e. the maximum value of the function to optimize (for the current iteration and for all the optimization history)
-
 optimizer_maximum_of_function_to_optimize                       = np.zeros(number_of_iterations)
 optimizer_maximum_of_function_to_optimize_for_this_iteration    = np.zeros(number_of_iterations)
 
@@ -72,6 +71,13 @@ plt.figure()
 plt.scatter(iterations,optimizer_maximum_of_function_to_optimize_for_this_iteration,label="Optimizer maximum at this iteration")
 plt.plot(iterations,optimizer_maximum_of_function_to_optimize,label="Optimizer maximum until now",marker='.')
 plt.xlabel("Iteration number")
+plt.ylabel("Function value")
+
+# plot the best function value evolution as function of the number of function evaluations
+plt.figure()
+plt.scatter((iterations+1)*number_of_samples_per_iteration,optimizer_maximum_of_function_to_optimize_for_this_iteration,label="Optimizer maximum at this iteration")
+plt.plot((iterations+1)*number_of_samples_per_iteration,optimizer_maximum_of_function_to_optimize,label="Optimizer maximum until now",marker='.')
+plt.xlabel("Number of evaluations")
 plt.ylabel("Function value")
 
 

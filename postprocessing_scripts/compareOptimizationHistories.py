@@ -57,10 +57,13 @@ for run in runs_to_read:
 ##### Plot averages of optimization history, individual optimization histories and error bars
 
 color               = "b"
-optimization_method = "APSO" #"Bayesian Optimization"#"Random Search with Halton Sequence"#"Bayesian Optimization"
+optimization_method = "PSO" #"Bayesian Optimization"#"Random Search with Halton Sequence"#"Bayesian Optimization"
 plt.ion()
-plt.figure(1)
 
+
+
+# as function of iteration number
+plt.figure(1)
 label = ""
 for irun in range(0,len(runs_to_read)):
     if irun == 0:
@@ -75,6 +78,7 @@ plt.xlabel("Iteration number")
 plt.ylabel("Maximum objective function value found")
 plt.legend()
 
+# as function of time
 plt.figure(2)
 label = ""
 for irun in range(0,len(runs_to_read)):
@@ -89,6 +93,22 @@ plt.plot(average_time_for_iterations/3600.,np.average(history_optimization_runs,
 plt.fill_between(average_time_for_iterations/3600.,np.average(history_optimization_runs,axis=1 )-np.std(history_optimization_runs,axis=1 ),np.average(history_optimization_runs,axis=1 )+np.std(history_optimization_runs,axis=1 ),color=color,alpha=0.1)
     
 plt.xlabel("Time lapsed [h]")
+plt.ylabel("Maximum objective function value found")
+plt.legend()
+
+# as function of number of function evaluations
+plt.figure(3)
+label = ""
+for irun in range(0,len(runs_to_read)):
+    if irun == 0:
+        label="individual, "+optimization_method 
+    else:
+        label=""
+    plt.plot((iterations+1)*number_of_samples_per_iteration,history_optimization_runs[:,irun],color=color,label=label,alpha=0.3,linewidth=0.8)
+plt.plot((iterations+1)*number_of_samples_per_iteration,np.average(history_optimization_runs,axis=1 ),label="average, "+optimization_method ,color=color)
+plt.fill_between((iterations+1)*number_of_samples_per_iteration,np.average(history_optimization_runs,axis=1)-np.std(history_optimization_runs,axis=1 ),np.average(history_optimization_runs,axis=1 )+np.std(history_optimization_runs,axis=1 ),color=color,alpha=0.1)
+    
+plt.xlabel("Number of function evaluations")
 plt.ylabel("Maximum objective function value found")
 plt.legend()
 
