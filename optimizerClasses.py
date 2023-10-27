@@ -62,6 +62,7 @@ class Optimizer:
         self.optimum_function_value          = float('-inf')                    # maximum value found of the function to optimize, in all the the swarm
         self.samples                         = []                               # array containing the explored samples at the present iterations
         self.iteration_number                = 0                                # present iteration number 
+        self.use_multiple_swarms             = False                            # use or not multiple swarms if Particle Swarm Optimization or FST-PSO are used
         # history of the positions traveled by the particles
         # dimension 0 : iteration
         # dimension 1 : sample number
@@ -287,11 +288,31 @@ class ParticleSwarmOptimization(Optimizer):
         
         if ( (self.boundary_conditions!="relocating") and (self.boundary_conditions!="damping") ):
             print("ERROR: boundary_conditions for ",self.name,"can be either 'relocating' or 'damping' " )
+            sys.exit()
             
         
         print("\n -- hyperparameters used by the optimizer -- ")
         
         print("boundary_conditions                      = ",self.boundary_conditions )
+        
+        # Choose if using multiple (almost) independent swarms searching in parallel for the optimum
+        default_use_multiple_swarms   = "False"
+        self.use_multiple_swarms      = kwargs.get('use_multiple_swarms', default_use_multiple_swarms)
+        print("use_multiple_swarms                      = ",self.use_multiple_swarms )
+        
+        default_subswarm_size         = self.number_of_samples_per_iteration
+        self.number_of_subswarms      = 1
+        if (self.use_multiple_swarms):
+            self.subswarm_size        = kwargs.get('subswarm_size', default_subswarm_size)
+            if (self.subswarm_size == self.number_of_samples_per_iteration):
+                print("ERROR: if use_multiple_swarms=True, you have to choose a subswarm size < number_of_samples_per_iteration")
+                sys.exit()
+            if (self.number_of_samples_per_iteration%self.subswarm_size!=0):
+                print("ERROR: subswarm_size must divide number_of_samples_per_iteration evenly")
+                sys.exit()
+            print("subswarm_size                            = ",self.subswarm_size )
+            self.number_of_subswarms  = int(self.number_of_samples_per_iteration/self.subswarm_size)
+            print("number_of_subswarms                      = ",self.number_of_subswarms )
         
         if (self.name=="Particle Swarm Optimization"):
 
@@ -324,6 +345,10 @@ class ParticleSwarmOptimization(Optimizer):
             #     compared to the version in that reference, no fuzzy classification is used for the evolutionary state.
             #     the intervals for this classification based on the parameter f are just 
             #     Convergence: [0,0.25), Exploitation: [0.25,0.5), Exploration: [0.5,0.75), Jumping-Out: [0.75,1.)]
+            
+            if (self.use_multiple_swarms==True):
+                print("ERROR: multiple swarms are not supported with ",self.name)
+                sys.exit()
             
             # w1 (initial inertia weight)
             default_value_w    = 0.9
@@ -436,35 +461,11 @@ class ParticleSwarmOptimization(Optimizer):
             self.U_FSTPSO     = np.zeros(shape=(self.number_of_samples_per_iteration,self.number_of_iterations))
             self.L_FSTPSO     = np.zeros(shape=(self.number_of_samples_per_iteration,self.number_of_iterations))
             
-            # If True, particles are reset if they fulfill at least one of these two conditions:
-            # 1) if the particle does not change its best function value for max_number_iterations_stuck_particles
-            # 2) if the particle normalized distance from the best position is too small, smaller than min_distance_from_best_position
-            
-            default_reset_stuck_particles                   = False
-            self.reset_stuck_particles                      = kwargs.get('reset_stuck_particles', default_reset_stuck_particles)
-            
-            default_max_number_iterations_stuck_particles   = max(2,int(self.number_of_iterations/10))
-            self.max_number_iterations_stuck_particles      = kwargs.get('max_number_iterations_stuck_particles', default_max_number_iterations_stuck_particles)
-            
-            default_min_distance_from_best_position         = 0.01*self.delta_max
-            self.min_distance_from_best_position            = kwargs.get('min_distance_from_best_position', default_min_distance_from_best_position)
-            
-            # array storing for each particle the number of iterations since the last update of its optimum function value
-            self.number_of_iterations_before_last_optimum_function_value_update       = np.zeros(self.number_of_samples_per_iteration)
-            
-            print("reset_stuck_particles                    = ",self.reset_stuck_particles                )
-            print("min_distance_from_best_position          = ",self.min_distance_from_best_position      )
-            print("max_number_iterations_stuck_particles    = ",self.max_number_iterations_stuck_particles)
-            print("")
-            
             
         # use scrambled Halton sampler to extract initial positions
         self.halton_sampler_position                 = qmc.Halton(d=self.number_of_dimensions, scramble=True)
-        if (self.reset_stuck_particles==False):
-            self.halton_sampler_random_position           = self.halton_sampler_position.random(n=self.number_of_samples_per_iteration)
-        else: 
-            self.halton_sampler_random_position           = self.halton_sampler_position.random(n=self.number_of_samples_per_iteration*self.number_of_iterations)
-        
+        self.halton_sampler_random_position          = self.halton_sampler_position.random(n=self.number_of_samples_per_iteration)
+
         # Initialize each particle the swarm
         for iparticle in range(0,self.number_of_samples_per_iteration):
             position = np.zeros(self.number_of_dimensions)
@@ -484,20 +485,32 @@ class ParticleSwarmOptimization(Optimizer):
             self.samples[iparticle].optimum_position[:]                                                 = position[:]
             del position, velocity
             
-        
+        self.particles_indices_in_subswarm = []
+        if (self.use_multiple_swarms==True):
+            # first dimension: iteration number
+            # second dimension: number of swarm
+            # third dimension: the coordinates of the optimum position for that swarm at that iteration + the corresponding function value
+            self.history_subswarm_optimum_position_and_optimum_function_values = np.zeros(shape=(self.number_of_iterations,self.number_of_subswarms,self.number_of_dimensions+1))
+            for i in range(0,self.number_of_subswarms):
+                self.particles_indices_in_subswarm.append(np.asarray([i+k*self.number_of_subswarms for k in range(0,self.subswarm_size) ]))
+            
             
         print("\n"+self.name+" initialized")
-        
-    def reset_particle(self,iparticle):
-        for idim in range(0,self.number_of_dimensions):
-            self.samples[iparticle].position[idim] = self.search_interval[idim][0] \
-                                                   + self.halton_sampler_random_position[self.iteration_number*self.number_of_samples_per_iteration+iparticle][idim]*self.search_interval_size[idim]
-            self.samples[iparticle].velocity[idim] = self.U_FSTPSO[iparticle,self.iteration_number]*np.random.uniform(-1, 1)*self.search_interval_size[idim]
+
             
     def updateParticlePositionAndVelocity(self):    
         
         for iparticle in range(0,self.number_of_samples_per_iteration):
             
+            if (self.use_multiple_swarms == False ):
+                # choose as global best position the best one from the entire swarm
+                global_best_position = self.optimum_position
+            else:
+                # choose as global best position the best one from the particle's subswarm
+                swarm_index          = int(iparticle%self.number_of_subswarms)
+                print(iparticle,self.subswarm_size,swarm_index)
+                global_best_position = self.history_subswarm_optimum_position_and_optimum_function_values[self.iteration_number,swarm_index,0:self.number_of_dimensions]
+                
             if (self.name != "FST-PSO"): # not using the Fuzzy Self Tuning PSO
                 
                 for idim in range(self.number_of_dimensions):
@@ -507,7 +520,7 @@ class ParticleSwarmOptimization(Optimizer):
                     # compute cognitive velocity, based on the individual particle's exploration
                     cognitive_velocity  = self.c1 * r1 * (self.samples[iparticle].optimum_position[idim] - self.samples[iparticle].position[idim])
                     # compute social velocity, based on the swarm exploration
-                    social_velocity     = self.c2 * r2 * (self.optimum_position[idim] - self.samples[iparticle].position[idim])
+                    social_velocity     = self.c2 * r2 * (global_best_position[idim] - self.samples[iparticle].position[idim])
                     # update velocity
                     self.samples[iparticle].velocity[idim] = self.w * self.samples[iparticle].velocity[idim] + cognitive_velocity + social_velocity    
                     # limit the velocity to the interval [-max_speed,max_speed]
@@ -524,7 +537,7 @@ class ParticleSwarmOptimization(Optimizer):
                     # compute cognitive velocity, based on the individual particle's exploration
                     cognitive_velocity  = self.c1_FSTPSO[iparticle,self.iteration_number] * r1 * (self.samples[iparticle].optimum_position[idim] - self.samples[iparticle].position[idim])
                     # compute social velocity, based on the swarm exploration
-                    social_velocity     = self.c2_FSTPSO[iparticle,self.iteration_number] * r2 * (self.optimum_position[idim] - self.samples[iparticle].position[idim])
+                    social_velocity     = self.c2_FSTPSO[iparticle,self.iteration_number] * r2 * (global_best_position[idim] - self.samples[iparticle].position[idim])
                     # update velocity
                     self.samples[iparticle].velocity[idim] = self.w_FSTPSO[iparticle,self.iteration_number] * self.samples[iparticle].velocity[idim] + cognitive_velocity + social_velocity    
                     # limit the absolute value of velocity to the interval [L,U]
@@ -690,6 +703,14 @@ class ParticleSwarmOptimization(Optimizer):
             np.save( f, self.history_w[0:self.iteration_number])
         with open('history_mu_up_to_iteration_'+str(self.iteration_number).zfill(5)+'.npy', 'wb') as f:
             np.save( f, self.history_mu[0:self.iteration_number])
+            
+    def multiSwarmSaveHistoryBestPositionsAndBestFunctionValues(self):
+        with open('history_subswarm_optimum_position_and_optimum_function_values'+str(self.iteration_number).zfill(5)+'.npy', 'wb') as f:
+            np.save( f, self.history_subswarm_optimum_position_and_optimum_function_values)
+            
+    def multiSwarmSavePartialHistoryBestPositionsAndBestFunctionValues(self):
+        with open('history_subswarm_optimum_position_and_optimum_function_values_up_to_iteration_'+str(self.iteration_number).zfill(5)+'.npy', 'wb') as f:
+            np.save( f, self.history_subswarm_optimum_position_and_optimum_function_values[0:self.iteration_number,:,:])
     
     def computePhiFSTPSO(self,iparticle):
         # normalized improvement as described in M. Nobile et al., Swarm and Evolutionary Computation 39 (2018) 70–85
@@ -721,8 +742,18 @@ class ParticleSwarmOptimization(Optimizer):
         
     def FSTPSOAdaptationOfHyperparameters(self):
         for iparticle in range(0,self.number_of_samples_per_iteration):
+            
+            if (self.use_multiple_swarms == False ):
+                # choose as global best position the best one from the entire swarm
+                global_best_position = self.optimum_position
+            else:
+                # choose as global best position the best one from the particle's subswarm
+                swarm_index          = int(iparticle%self.subswarm_size)
+                global_best_position = self.history_subswarm_optimum_position_and_optimum_function_values[self.iteration_number,swarm_index,0:self.number_of_dimensions]
+                
+                
             # normalized distance between the particle and the optimum
-            self.delta_FSTPSO[iparticle,self.iteration_number] = normalized_euclidean_distance(self.samples[iparticle].position,self.optimum_position,self.search_interval_size)
+            self.delta_FSTPSO[iparticle,self.iteration_number] = normalized_euclidean_distance(self.samples[iparticle].position,global_best_position,self.search_interval_size)
                                                            
             self.Phi_FSTPSO[iparticle,self.iteration_number]   = self.computePhiFSTPSO(iparticle)
                                                                                    
@@ -838,45 +869,40 @@ class ParticleSwarmOptimization(Optimizer):
         
     
     def operationsAfterUpdateOfOptimumFunctionValueAndPosition(self):
+        
+        if (self.use_multiple_swarms==True):
+            if (self.iteration_number==0):
+                for iswarm in range(0,self.number_of_subswarms):
+                    # find best particle in subswarm
+                    index_best_particle_in_subswarm = \
+                    np.argmax(self.history_samples_positions_and_function_values[0,self.particles_indices_in_subswarm[iswarm],self.number_of_dimensions])
+                    # find corresponding index in global swarm
+                    index_best_particle_in_swarm = self.particles_indices_in_subswarm[iswarm][index_best_particle_in_subswarm]
+                    # store its position and function value as best ones in the subswarm
+                    self.history_subswarm_optimum_position_and_optimum_function_values[0,iswarm,:] \
+                    = self.history_samples_positions_and_function_values[0,index_best_particle_in_swarm,:]
+            else: # store only if the subswarm best value is better than the previous one
+                for iswarm in range(0,self.number_of_subswarms):
+                    # find best particle in subswarm
+                    index_best_particle_in_subswarm = \
+                    np.argmax(self.history_samples_positions_and_function_values[0,self.particles_indices_in_subswarm[iswarm],self.number_of_dimensions])
+                    # find corresponding index in global swarm
+                    index_best_particle_in_swarm = self.particles_indices_in_subswarm[iswarm][index_best_particle_in_subswarm]
+                    # store its position and function value as best ones in the subswarm, only if the subswarm best value is better than the previous one
+                    if (self.history_samples_positions_and_function_values[self.iteration_number,index_best_particle_in_subswarm,self.number_of_dimensions] >self.history_subswarm_optimum_position_and_optimum_function_values[0,iswarm,self.number_of_dimensions]):
+                        self.history_subswarm_optimum_position_and_optimum_function_values[self.iteration_number,iswarm,:] = self.history_samples_positions_and_function_values[0,index_best_particle_in_swarm,:]
+            print("Optimum positions and optimum function values of the subswarms:")
+            print(self.history_subswarm_optimum_position_and_optimum_function_values[self.iteration_number,:,:])
+            print("")
+        
+        # compute the worst function value for FSTO
         if (self.name == "FST-PSO"):
             if (self.iteration_number==0):
                 self.FSTPSO_worst_function_value = np.amin(self.history_samples_positions_and_function_values[self.iteration_number,:,self.number_of_dimensions])
             else:
                 present_worst_function_value     = np.amin(self.history_samples_positions_and_function_values[self.iteration_number,:,self.number_of_dimensions])
                 self.FSTPSO_worst_function_value = min(self.FSTPSO_worst_function_value,present_worst_function_value)
-                
-            if ((self.reset_stuck_particles) and (self.iteration_number>0)):
-                for iparticle in range(0,self.number_of_samples_per_iteration):
-                    
-                    # check if the particle did not improve its function value since the last iteration
-                    # if it did not, increase the counter
-                    if (self.iteration_number>0):
-                        if (self.history_samples_positions_and_function_values[self.iteration_number,iparticle,self.number_of_dimensions]<=self.history_samples_positions_and_function_values[self.iteration_number-1,iparticle,self.number_of_dimensions]):
-                            self.number_of_iterations_before_last_optimum_function_value_update[iparticle] = self.number_of_iterations_before_last_optimum_function_value_update[iparticle] + 1
-                        else:
-                            self.number_of_iterations_before_last_optimum_function_value_update[iparticle] = 0
-                            
-                    # if the particle did not change its best function value for max_number_iterations_stuck_particles
-                    # OR 
-                    # if the particle normalized distance from the best position is too small, smaller than min_distance_from_best_position
-                    # THEN 
-                    # reset the particle position and velocity
-                    distance_from_optimum_position = normalized_euclidean_distance(self.samples[iparticle].position,self.optimum_position,self.search_interval_size)
-                    if ( (distance_from_optimum_position < self.min_distance_from_best_position) or (self.number_of_iterations_before_last_optimum_function_value_update[iparticle]>=self.max_number_iterations_stuck_particles)):
-                        print("Particle ",iparticle," reset because")
-                        if (distance_from_optimum_position < self.min_distance_from_best_position):
-                            print("distance from optimum position = ",distance_from_optimum_position,", min distance = ",self.min_distance_from_best_position)
-                            
-                        if (self.number_of_iterations_before_last_optimum_function_value_update[iparticle]>=self.max_number_iterations_stuck_particles):
-                            print("too many iterations from last update of particle optimum\n")
-                            
-                        self.reset_particle(iparticle)
-                        self.number_of_iterations_before_last_optimum_function_value_update[iparticle] = 0
-                        
-                        
-                        
-                        
-            print("\niterations since particle optimum function value improvement: ",self.number_of_iterations_before_last_optimum_function_value_update)
+
 
 class BayesianOptimization(Optimizer):
     def __init__(self, name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs):

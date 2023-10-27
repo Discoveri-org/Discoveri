@@ -246,6 +246,8 @@ class optimizationRun:
                     self.optimizer.APSOSavePartialHyperparametersHistory()
                 if (self.optimizer.name=="FST-PSO"):
                     self.optimizer.FSTPSOSavePartialHyperparametersHistory()
+                if(self.optimizer.use_multiple_swarms==True):
+                    self.optimizer.multiSwarmSavePartialHistoryBestPositionsAndBestFunctionValues()
               
     
 
@@ -276,6 +278,8 @@ class optimizationRun:
         if (self.optimizer.name=="FST-PSO"):
             # execute one last adaptation then save history of the hyperparameters
             self.optimizer.FSTPSOLastEvaluationAndDumpHyperparameters()
+        if(self.optimizer.use_multiple_swarms==True):
+            self.optimizer.multiSwarmSaveHistoryBestPositionsAndBestFunctionValues()
         print("\n Optimization history and time lapsed saved")
         print("\n\nEND OF THE OPTIMIZATION RUN")
         print("\n\n\n")
