@@ -140,4 +140,49 @@ plt.xlabel("Number of iterations")
 plt.ylabel("Time lapsed [h]")
 
 
+#### Plot the optimization history of subswarms
+# find the name of the optimization subswatm history file to read
+filename = starting_directory+"/history_subswarm_optimum_position_and_optimum_function_values.npy" # complete history
+if (os.path.isfile(filename)!=True): # the complete history file does not exist 
+    # find all files with partial history of optimization 
+    files_with_history = []
+    for file in os.listdir(starting_directory):
+        if (("history_subswarm_optimum_position_and_optimum_function_values" in file) and ("iteration" in file)):
+            files_with_history.append(file)
+    if (len(files_with_history)>=1):
+        files_with_history = sorted(files_with_history)
+        # pick the most recent one
+        filename = files_with_history[len(files_with_history)-1]
+    else:
+        filename = "subswarm history not available"
 
+
+if (filename!="subswarm history not available"):
+    history_subswarm_optimum_position_and_optimum_function_values = np.load(filename)
+    number_of_subswarms = np.size(history_subswarm_optimum_position_and_optimum_function_values[0,:,0])
+    
+    subswarms_maximum_of_function_to_optimize                       = np.zeros(shape=(number_of_iterations,number_of_subswarms))
+    subswarms_maximum_of_function_to_optimize_for_this_iteration    = np.zeros(shape=(number_of_iterations,number_of_subswarms))
+
+    for iswarm in range(0,number_of_subswarms):
+        subswarms_maximum_of_function_to_optimize[0]                    = np.amax(history_subswarm_optimum_position_and_optimum_function_values[0,:,number_of_dimensions])
+        subswarms_maximum_of_function_to_optimize_for_this_iteration[0] = subswarms_maximum_of_function_to_optimize[0]
+
+
+        for iteration in range(1,np.size(history_subswarm_optimum_position_and_optimum_function_values[:,0,0])):
+            subswarms_maximum_of_function_to_optimize[iteration,iswarm]                    = history_subswarm_optimum_position_and_optimum_function_values[iteration,iswarm,number_of_dimensions]
+            subswarms_maximum_of_function_to_optimize_for_this_iteration[iteration,iswarm] = subswarms_maximum_of_function_to_optimize[iteration,iswarm]
+            subswarms_maximum_of_function_to_optimize[iteration,iswarm]                    = max(subswarms_maximum_of_function_to_optimize[iteration-1,iswarm],subswarms_maximum_of_function_to_optimize[iteration,iswarm])
+            
+    plt.figure()
+    for iswarm in range(0,number_of_subswarms):
+        plt.scatter(iterations,subswarms_maximum_of_function_to_optimize_for_this_iteration[:,iswarm],label="maximum at this iteration of subswarm "+str(iswarm))
+        plt.plot(iterations,subswarms_maximum_of_function_to_optimize[:,iswarm],label="maximum until now of subswarm "+str(iswarm),marker='.')
+        
+    plt.xlabel("Iteration number")
+    plt.ylabel("Function value")
+    
+    plt.legend()
+    
+    
+    
