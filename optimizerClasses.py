@@ -508,7 +508,6 @@ class ParticleSwarmOptimization(Optimizer):
             else:
                 # choose as global best position the best one from the particle's subswarm
                 swarm_index          = int(iparticle%self.number_of_subswarms)
-                print(iparticle,self.subswarm_size,swarm_index)
                 global_best_position = self.history_subswarm_optimum_position_and_optimum_function_values[self.iteration_number,swarm_index,0:self.number_of_dimensions]
                 
             if (self.name != "FST-PSO"): # not using the Fuzzy Self Tuning PSO
@@ -705,7 +704,7 @@ class ParticleSwarmOptimization(Optimizer):
             np.save( f, self.history_mu[0:self.iteration_number])
             
     def multiSwarmSaveHistoryBestPositionsAndBestFunctionValues(self):
-        with open('history_subswarm_optimum_position_and_optimum_function_values'+str(self.iteration_number).zfill(5)+'.npy', 'wb') as f:
+        with open('history_subswarm_optimum_position_and_optimum_function_values.npy', 'wb') as f:
             np.save( f, self.history_subswarm_optimum_position_and_optimum_function_values)
             
     def multiSwarmSavePartialHistoryBestPositionsAndBestFunctionValues(self):
@@ -885,12 +884,15 @@ class ParticleSwarmOptimization(Optimizer):
                 for iswarm in range(0,self.number_of_subswarms):
                     # find best particle in subswarm
                     index_best_particle_in_subswarm = \
-                    np.argmax(self.history_samples_positions_and_function_values[0,self.particles_indices_in_subswarm[iswarm],self.number_of_dimensions])
+                    np.argmax(self.history_samples_positions_and_function_values[self.iteration_number,self.particles_indices_in_subswarm[iswarm],self.number_of_dimensions])
                     # find corresponding index in global swarm
                     index_best_particle_in_swarm = self.particles_indices_in_subswarm[iswarm][index_best_particle_in_subswarm]
                     # store its position and function value as best ones in the subswarm, only if the subswarm best value is better than the previous one
-                    if (self.history_samples_positions_and_function_values[self.iteration_number,index_best_particle_in_subswarm,self.number_of_dimensions] >self.history_subswarm_optimum_position_and_optimum_function_values[0,iswarm,self.number_of_dimensions]):
-                        self.history_subswarm_optimum_position_and_optimum_function_values[self.iteration_number,iswarm,:] = self.history_samples_positions_and_function_values[0,index_best_particle_in_swarm,:]
+                    if (self.history_samples_positions_and_function_values[self.iteration_number,index_best_particle_in_swarm,self.number_of_dimensions] >self.history_subswarm_optimum_position_and_optimum_function_values[self.iteration_number-1,iswarm,self.number_of_dimensions]):
+                        self.history_subswarm_optimum_position_and_optimum_function_values[self.iteration_number,iswarm,:] = self.history_samples_positions_and_function_values[self.iteration_number,index_best_particle_in_swarm,:]
+                    else:
+                        self.history_subswarm_optimum_position_and_optimum_function_values[self.iteration_number,iswarm,:] = self.history_subswarm_optimum_position_and_optimum_function_values[self.iteration_number-1,iswarm,:]
+                #sys.exit()
             print("Optimum positions and optimum function values of the subswarms:")
             print(self.history_subswarm_optimum_position_and_optimum_function_values[self.iteration_number,:,:])
             print("")
