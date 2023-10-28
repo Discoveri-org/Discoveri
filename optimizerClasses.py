@@ -747,7 +747,7 @@ class ParticleSwarmOptimization(Optimizer):
                 global_best_position = self.optimum_position
             else:
                 # choose as global best position the best one from the particle's subswarm
-                swarm_index          = int(iparticle%self.subswarm_size)
+                swarm_index          = int(iparticle%self.number_of_subswarms)
                 global_best_position = self.history_subswarm_optimum_position_and_optimum_function_values[self.iteration_number,swarm_index,0:self.number_of_dimensions]
                 
                 
