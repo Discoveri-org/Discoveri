@@ -300,6 +300,15 @@ class ParticleSwarmOptimization(Optimizer):
         self.use_multiple_swarms      = kwargs.get('use_multiple_swarms', default_use_multiple_swarms)
         print("use_multiple_swarms                      = ",self.use_multiple_swarms )
         
+        # Choose if how to distribute the subswarms 
+        # if "by_search_space_subdomains", each subswarm will be initially assigned to a different part of the domain
+        # if "all_the_search_space", the subswarms will be distributed through the whole domain
+        default_subswarms_distribution= "all_the_search_space"
+        self.subswarms_distribution   = kwargs.get('subswarms_distribution', default_subswarms_distribution)
+        print("subswarms_distribution                   = ",self.subswarms_distribution )
+        
+        
+        
         default_subswarm_size         = self.number_of_samples_per_iteration
         self.number_of_subswarms      = 1
         if (self.use_multiple_swarms):
@@ -491,8 +500,15 @@ class ParticleSwarmOptimization(Optimizer):
             # second dimension: number of swarm
             # third dimension: the coordinates of the optimum position for that swarm at that iteration + the corresponding function value
             self.history_subswarm_optimum_position_and_optimum_function_values = np.zeros(shape=(self.number_of_iterations,self.number_of_subswarms,self.number_of_dimensions+1))
-            for i in range(0,self.number_of_subswarms):
-                self.particles_indices_in_subswarm.append(np.asarray([i+k*self.number_of_subswarms for k in range(0,self.subswarm_size) ]))
+            print("\nAssigning the swarm particles to subswarms")
+            if (self.subswarms_distribution=="all_the_search_space"):
+                for iswarm in range(0,self.number_of_subswarms):
+                    self.particles_indices_in_subswarm.append(np.asarray([iswarm*self.subswarm_size+iparticle for iparticle in range(0,self.subswarm_size) ]))
+                    print("Particles in subswarm ",iswarm,": ",self.particles_indices_in_subswarm[iswarm])
+            elif (self.subswarms_distribution=="search_space_subdomains"):
+                for iswarm in range(0,self.number_of_subswarms):
+                    self.particles_indices_in_subswarm.append(np.asarray([iswarm+iparticle*self.number_of_subswarms for iparticle in range(0,self.subswarm_size) ]))
+                    print("Particles in subswarm ",iswarm,": ",self.particles_indices_in_subswarm[iswarm])
             
             
         print("\n"+self.name+" initialized")
@@ -507,8 +523,11 @@ class ParticleSwarmOptimization(Optimizer):
                 global_best_position = self.optimum_position
             else:
                 # choose as global best position the best one from the particle's subswarm
-                swarm_index          = int(iparticle%self.number_of_subswarms)
-                global_best_position = self.history_subswarm_optimum_position_and_optimum_function_values[self.iteration_number,swarm_index,0:self.number_of_dimensions]
+                if (self.subswarms_distribution=="all_the_search_space"):
+                    subswarm_index   = int(iparticle/self.subswarm_size)
+                elif (self.subswarms_distribution=="search_space_subdomains"):    
+                    subswarm_index   = int(iparticle%self.number_of_subswarms)
+                global_best_position = self.history_subswarm_optimum_position_and_optimum_function_values[self.iteration_number,subswarm_index,0:self.number_of_dimensions]
                 
             if (self.name != "FST-PSO"): # not using the Fuzzy Self Tuning PSO
                 
@@ -747,8 +766,11 @@ class ParticleSwarmOptimization(Optimizer):
                 global_best_position = self.optimum_position
             else:
                 # choose as global best position the best one from the particle's subswarm
-                swarm_index          = int(iparticle%self.number_of_subswarms)
-                global_best_position = self.history_subswarm_optimum_position_and_optimum_function_values[self.iteration_number,swarm_index,0:self.number_of_dimensions]
+                if (self.subswarms_distribution=="all_the_search_space"):
+                    subswarm_index   = int(iparticle/self.subswarm_size)
+                elif (self.subswarms_distribution=="search_space_subdomains"):    
+                    subswarm_index   = int(iparticle%self.number_of_subswarms)
+                global_best_position = self.history_subswarm_optimum_position_and_optimum_function_values[self.iteration_number,subswarm_index,0:self.number_of_dimensions]
                 
                 
             # normalized distance between the particle and the optimum
