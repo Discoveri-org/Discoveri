@@ -296,7 +296,7 @@ class ParticleSwarmOptimization(Optimizer):
         print("boundary_conditions                      = ",self.boundary_conditions )
         
         # Choose if using multiple (almost) independent swarms searching in parallel for the optimum
-        default_use_multiple_swarms   = "False"
+        default_use_multiple_swarms   = False
         self.use_multiple_swarms      = kwargs.get('use_multiple_swarms', default_use_multiple_swarms)
         print("use_multiple_swarms                      = ",self.use_multiple_swarms )
         
@@ -305,13 +305,14 @@ class ParticleSwarmOptimization(Optimizer):
         # if "all_the_search_space", the subswarms will be distributed through the whole domain
         default_subswarms_distribution= "all_the_search_space"
         self.subswarms_distribution   = kwargs.get('subswarms_distribution', default_subswarms_distribution)
-        print("subswarms_distribution                   = ",self.subswarms_distribution )
+        if (self.use_multiple_swarms==True):
+            print("subswarms_distribution                   = ",self.subswarms_distribution )
         
         
         
         default_subswarm_size         = self.number_of_samples_per_iteration
         self.number_of_subswarms      = 1
-        if (self.use_multiple_swarms):
+        if (self.use_multiple_swarms==True):
             self.subswarm_size        = kwargs.get('subswarm_size', default_subswarm_size)
             if (self.subswarm_size == self.number_of_samples_per_iteration):
                 print("ERROR: if use_multiple_swarms=True, you have to choose a subswarm size < number_of_samples_per_iteration")
@@ -332,17 +333,37 @@ class ParticleSwarmOptimization(Optimizer):
             # w (inertia weight): It controls the impact of the particle's previous velocity on the current velocity update. 
             # A higher value of w emphasizes the influence of the particle's momentum, promoting exploration.
             # On the other hand, a lower value of w emphasizes the influence of the current optimum positions, promoting exploitation.
-            default_value_w  = 0.9
+            default_value_w  = 0.8
             self.w           = kwargs.get('w', default_value_w)
             
             if ((self.w)>1.):
                 print("ERROR: w must be < 1.")
                 sys.exit()
             
+            # The inertia will be decreased from w1 to w2.
+            # If no value for w1 and w2 is provided, the inertia will remain constant
+            default_value_w1 = self.w
+            self.w1          = kwargs.get('w1', default_value_w1)
+            
+            default_value_w2 = self.w1
+            self.w2          = kwargs.get('w2', default_value_w2)
+            
+            
+            if ( (self.w1 > 1) or (self.w2 > 1) ):
+                print("ERROR: w1 and w2 should be smaller than 1")
+                sys.exit()
+                
+            if ( self.w2 > self.w1 ):
+                print("ERROR: w2 should be smaller than w")
+                sys.exit()
+            
             print("max_speed                                = ",self.max_speed )
             print("c1                                       = ",self.c1)
             print("c2                                       = ",self.c2)
             print("w                                        = ",self.w)
+            if (self.w2 != self.w):
+                print("w1                                       = ",self.w1)
+                print("w2                                       = ",self.w2)
             print("")
 
         elif (self.name=="Adaptive Particle Swarm Optimization"):
@@ -516,12 +537,16 @@ class ParticleSwarmOptimization(Optimizer):
             
     def updateParticlePositionAndVelocity(self):    
         
+        if (self.name == "Particle Swarm Optimization"):
+            self.w = self.w1-(self.w1-self.w2)/(self.number_of_iterations+1)*(self.iteration_number)
+            print("Inertia weight w = ",self.w)
+        
         for iparticle in range(0,self.number_of_samples_per_iteration):
             
             if (self.use_multiple_swarms == False ):
                 # choose as global best position the best one from the entire swarm
                 global_best_position = self.optimum_position
-            else:
+            elif (self.use_multiple_swarms == True ):
                 # choose as global best position the best one from the particle's subswarm
                 if (self.subswarms_distribution=="all_the_search_space"):
                     subswarm_index   = int(iparticle/self.subswarm_size)

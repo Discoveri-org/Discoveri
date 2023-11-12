@@ -116,9 +116,14 @@ The optimum positions `Best_X_i` are updated if better positions are found the p
 Optimizer hyperparameters:
   - `c1` (cognitive acceleration coefficient, default value = `2.`): high values of `c1` promote the exploitation of positions near the best position found by the individual particle, updated at each iteration if a better position is found. If provided by the users, they must ensure that `c1+c1<4`.
   - `c2` (social acceleration coefficient, default value = `2.`): high values of `c2` promote the exploitation of positions near the best position found by the entire swarm, updated at each iteration if a better position is found. If provided by the users, they must ensure that `c1+c1<4`.
-  - `w` (inertia weight, default value = `0.9`): high values of this coefficient reduce the variations of the velocity of the particle. If provided by the users, they must ensure that it is `<1` to avoid velocity divergence.
+  - `w` (inertia weight, default value = `0.8`): high values of this coefficient reduce the variations of the velocity of the particle. If provided by the users, they must ensure that it is `<1` to avoid velocity divergence.
+  - `w1`, `w2` (initial and final inertia weight, default value equal to `w`): if these values are specified, the inertia
+  weight will linearly decrease from `w1` to `w2`, otherwise it will remain constant.
   - `max_speed` (maximum speed, default value: an array with elements equal to the respective size of `search_interval` in each dimension multiplied by `0.3`). This array is also the maximum absolute value for the initial velocities of the particles in each dimension (which are drawn randomly).
   - `boundary_conditions` (default: `"damping"`): if `"relocating"` and a particle exits the `search_interval` in one of its position coordinates, that coordinate is reassigned randomly within the `search_interval` boundaries, the velocity of the particle remains unchanged. If `"damping"` and a particle exits the `search_interval` in one of its position coordinates, that coordinate is reassigned at the crossed boundary, the velocity in that dimension is inverted and multiplied by a random number within the interval [0,1).
+  - `use_multiple_swarms (default value = False)`: if `True`, the swarm is divides in `int(number_of_samples_per_iteration/subswarm_size)` independent swarms
+  - `subswarm_size`: the size of the swarm if `use_multiple_swarms=True`. This number must divide evenly the `number_of_samples_per_iteration`.
+  - `subswarms_distribution` (default: `"all_the_search_space"`): if `"all_the_search_space"`, the subswarms will be distributed through the whole search space; if `"search_space_subdomains"`, each subswarm will be initially assigned to a different part of the search space.  
   
 - `"Adaptive Particle Swarm Optimization"` (Adaptive PSO): based on from Z.-H. Zhan et al., IEEE Transactions on Systems, Man, and Cybernetics, Part B (Cybernetics) 39, 6 (2009) https://ieeexplore.ieee.org/document/4812104 .
 Based on the evolutionary state of the swarm, the coefficients `c1`, `c2` and the inertia weight `w` are updated as described in that article. Compared to the description in the original reference, no fuzzy classification is used. 
@@ -133,6 +138,9 @@ Optimizer hyperparameters:
   - `mu_max` (default value = `0.7`), must be larger than `mu_min`.
 - `"FST-PSO"` (Fuzzy Self-Tuning PSO): at each iteration, the hyperparameters of each particle (`c1`,`c2`,`w`,`L`,`U`), where `L` and `U` are the minimum and maximum absolute values for the normalized velocity, are adapted following the set of fuzzy rules described in M. Nobile et al., Swarm and Evolutionary Computation 39 (2018) 70–85. This way the user only has to set the `boundary_conditions` of the optimizer.
   - `boundary_conditions`: same as in the `"Particle Swarm Optimization"`.
+  - `use_multiple_swarms`: same as in the `"Particle Swarm Optimization"`.
+  - `subswarm_size`: same as in the `"Particle Swarm Optimization"`.
+  - `subswarms_distribution`: same as in the `"Particle Swarm Optimization"`
   
 #### Postprocessing:
 In the folder `postprocessing_scripts` several scripts are available to have an insight on the optimization run(s) made with ``:Discoveri``:
