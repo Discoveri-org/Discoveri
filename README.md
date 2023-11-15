@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10139399.svg)](https://doi.org/10.5281/zenodo.10139399)
+
 ## ``:Discoveri``: Data-driven Investigation through Simulations on Clusters for the Optimization of the physical Variables' Effects in Regimes of Interest
 
 ### About ``:Discoveri``
