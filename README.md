@@ -126,7 +126,7 @@ Optimizer hyperparameters:
   - `use_multiple_swarms` (default = False)`: if `True`, the swarm is divides in `int(number_of_samples_per_iteration/subswarm_size)` independent swarms
   - `subswarm_size`: the size of the swarm if `use_multiple_swarms=True`. This number must divide evenly the `number_of_samples_per_iteration`.
   - `subswarms_distribution` (default: `"all_the_search_space"`): if `"all_the_search_space"`, the subswarms will be distributed through the whole search space; if `"search_space_subdomains"`, each subswarm will be initially assigned to a different part of the search space.
-  - `subswarm_regrouping` (default: `False`): if `True`, every `iterations_beween_subswarm_regrouping` iterations the particles are reassigned randomly to a different subswarm, similarly to J.J. Liang, P.N. Suganthan, Proceedings 2005 IEEE Swarm Intelligence Symposium, 2005. SIS 2005,
+  - `subswarm_regrouping` (default: `False`): if `True`, every `iterations_beween_subswarm_regrouping` iterations the particles are reassigned randomly to a different subswarm, similarly to J.J. Liang, P.N. Suganthan, Proceedings 2005 IEEE Swarm Intelligence Symposium, 2005. SIS 2005.
   - `iterations_beween_subswarm_regrouping` (default: 5): number of iterations between subswarm regrouping (if activated).
   
 - `"Adaptive Particle Swarm Optimization"` (Adaptive PSO): based on from Z.-H. Zhan et al., IEEE Transactions on Systems, Man, and Cybernetics, Part B (Cybernetics) 39, 6 (2009) https://ieeexplore.ieee.org/document/4812104 .
@@ -145,6 +145,10 @@ Optimizer hyperparameters:
   - `use_multiple_swarms`: same as in the `"Particle Swarm Optimization"`.
   - `subswarm_size`: same as in the `"Particle Swarm Optimization"`.
   - `subswarms_distribution`: same as in the `"Particle Swarm Optimization"`
+  - `subswarm_regrouping` (default: `False`): same as in the `"Particle Swarm Optimization"`. 
+  - `iterations_beween_subswarm_regrouping` (default: 5): same as in the `"Particle Swarm Optimization"`.
+  - `subswarm_regrouping` (default: `False`): same as in the `"Particle Swarm Optimization"`. 
+  - `iterations_beween_subswarm_regrouping` (default: 5): same as in the `"Particle Swarm Optimization"`.
   
 #### Postprocessing:
 In the folder `postprocessing_scripts` several scripts are available to have an insight on the optimization run(s) made with ``:Discoveri``:
