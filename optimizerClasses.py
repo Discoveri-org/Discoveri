@@ -308,8 +308,6 @@ class ParticleSwarmOptimization(Optimizer):
         if (self.use_multiple_swarms==True):
             print("subswarms_distribution                   = ",self.subswarms_distribution )
         
-        
-        
         default_subswarm_size         = self.number_of_samples_per_iteration
         self.number_of_subswarms      = 1
         if (self.use_multiple_swarms==True):
@@ -323,6 +321,14 @@ class ParticleSwarmOptimization(Optimizer):
             print("subswarm_size                            = ",self.subswarm_size )
             self.number_of_subswarms  = int(self.number_of_samples_per_iteration/self.subswarm_size)
             print("number_of_subswarms                      = ",self.number_of_subswarms )
+        
+        # If yes, the particles are randomly exchanged between subswarms every iterations_beween_subswarm_regrouping iterations
+        # similarly to J.J. Liang, P.N. Suganthan, Proceedings 2005 IEEE Swarm Intelligence Symposium, 2005. SIS 2005,
+        default_subswarm_regrouping   = False
+        self.subswarm_regrouping      = kwargs.get('subswarm_regrouping', default_subswarm_regrouping)
+        
+        default_iterations_beween_subswarm_regrouping = 5
+        self.iterations_beween_subswarm_regrouping    = kwargs.get('subswarm_regrouping', default_iterations_beween_subswarm_regrouping)
         
         if (self.name=="Particle Swarm Optimization"):
 
@@ -607,6 +613,10 @@ class ParticleSwarmOptimization(Optimizer):
                             self.samples[iparticle].position[idim] = self.search_interval[idim][0]
                         elif (self.samples[iparticle].position[idim] > self.search_interval[idim][1]):
                             self.samples[iparticle].position[idim] = self.search_interval[idim][1]
+                   
+        if ((self.use_multiple_swarms == True) and (self.subswarm_regrouping==True) and (self.iteration_number!=0) and ((self.iteration_number+1)%self.iterations_beween_subswarm_regrouping==0)):
+            print("Regrouping the subswarms")
+            self.regroup_subswarms()
     
     def updateSamplesForExploration(self):
         if (self.name=="Adaptive Particle Swarm Optimization"):
@@ -912,7 +922,43 @@ class ParticleSwarmOptimization(Optimizer):
             np.save( f, self.L_FSTPSO)
         with open('history_FSTPSO_U.npy', 'wb') as f:
             np.save( f, self.U_FSTPSO)
+    
+    def regroup_subswarms(self):
+        # Similarly to J.J. Liang, P.N. Suganthan, Proceedings 2005 IEEE Swarm Intelligence Symposium, 2005. SIS 2005,
+        # the particles are redistributed randomly among the swarms periodically.
+        # Here their new particle index is simply obtained by shuffling the particle indices
+        # and then copying in each slot the particle corresponding to that index in the previous configuration
         
+        
+        # obtain an array with the new index that each particle will have
+        old_particle_indices = list(range(self.number_of_samples_per_iteration))
+        random.shuffle(old_particle_indices)
+        shuffled_particle_indices = old_particle_indices
+        
+        # copy the positions of the particles
+        temporary_copy_particles_positions = []
+        for iparticle in range(0,self.number_of_samples_per_iteration):
+            temporary_copy_particles_positions.append(self.samples[iparticle].position[:])
+            
+        # for each index in the array of particles
+        for iparticle in range(0,self.number_of_samples_per_iteration):
+            print("Position of particle ",iparticle," substituted by the position of particle ",shuffled_particle_indices[iparticle])
+            
+            # overwrite the particle position with the one of the corresponding shuffled index
+            self.samples[iparticle].position[:] = temporary_copy_particles_positions[shuffled_particle_indices[iparticle]]
+            
+            # reset the velocity
+            for idim in range(0,self.number_of_dimensions):
+                self.samples[iparticle].velocity[idim] = random.uniform(-1, 1)*self.search_interval_size[idim]
+                
+                # limit the absolute value of velocity
+                if (self.name != "FST-PSO"):
+                    self.samples[iparticle].velocity[idim] = np.clip(self.samples[iparticle].velocity[idim],-self.max_speed[idim],self.max_speed[idim])
+                else:
+                    # limit the absolute value of velocity to the interval [L,U]
+                    min_absolute_value_velocity = self.L_FSTPSO[iparticle,self.iteration_number]*self.search_interval_size[idim]
+                    max_absolute_value_velocity = self.U_FSTPSO[iparticle,self.iteration_number]*self.search_interval_size[idim]
+                    self.samples[iparticle].velocity[idim] = np.sign(self.samples[iparticle].velocity[idim])*np.clip(np.abs(self.samples[iparticle].velocity[idim]),min_absolute_value_velocity,max_absolute_value_velocity)
     
     def operationsAfterUpdateOfOptimumFunctionValueAndPosition(self):
         
