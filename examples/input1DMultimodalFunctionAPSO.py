@@ -1,5 +1,7 @@
-# This example shows the use of a Bayesian Optimization
-# with a function which has  multiple peaks
+# This example shows the use of a Adaptive Particle Swarm Optimization (APSO)
+# with a function which has  multiple peaks.
+# This variant of PSO changes the hyperparameters of the whole swarm based on
+# the evolutionary state of the swarm.
 
 
 import pickle
