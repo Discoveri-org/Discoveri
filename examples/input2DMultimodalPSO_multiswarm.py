@@ -16,10 +16,6 @@ from discoveriMain import createOptimizationRun
 ###########################################################################
 
 
-#### Optimization method options: 
-
-optimization_method                = "FST-PSO"
-
 #### Parameter space to explore
 number_of_dimensions               = 2 
 search_interval                    = [[-5.,5.],[-5.,5.]]
@@ -27,8 +23,6 @@ input_parameters_names             = ["dim0","dim1"]
 
 number_of_samples_per_iteration    = 20
 
-use_multiple_swarms                = True
-subswarm_size                      = 5
 #### Optimization parameters
 number_of_iterations               = 20 
 
@@ -53,6 +47,19 @@ test_function                      = my_test_function
 
 
 starting_directory = ""
+
+###########################################################################
+##################   Set the optimization method ##########################
+###########################################################################
+
+optimization_method                = "FST-PSO"
+use_multiple_swarms                = True
+subswarm_size                      = 5
+
+
+###########################################################################
+######################## Run the optimization #############################
+###########################################################################
 
 if __name__ == '__main__':
     

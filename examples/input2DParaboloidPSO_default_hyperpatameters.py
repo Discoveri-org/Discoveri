@@ -16,11 +16,6 @@ from discoveriMain import createOptimizationRun
 ############# Parameters for a generic optimization method ################
 ###########################################################################
 
-
-#### Optimization method options: 
-
-optimization_method                = "Particle Swarm Optimization" 
-
 #### Parameter space to explore
 number_of_dimensions               = 2 
 search_interval                    = [[-100.,100.],[-100.,100.]]
@@ -48,6 +43,17 @@ test_function                      = my_test_function
 
 
 starting_directory = ""
+
+###########################################################################
+################## Set the optimization method ############################
+###########################################################################
+
+optimization_method                = "Particle Swarm Optimization" 
+
+###########################################################################
+##################### Run the optimization ################################
+###########################################################################
+
 
 if __name__ == '__main__':
     

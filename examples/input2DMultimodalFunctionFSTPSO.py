@@ -18,8 +18,6 @@ from toolsSmileiAnalysis import *
 ############# Parameters for a generic optimization method ################
 ###########################################################################
 
-optimization_method                = "FST-PSO" 
-
 #### Parameter space to explore
 number_of_dimensions               = 2 
 search_interval                    = [[-5.12,5.12],[-5.12,5.12]]
@@ -46,10 +44,21 @@ def my_test_function(X): # minus the Raisigrin function, maximum at 0
     y = A*np.size(X) + np.sum(delta)
     return -y
     
-test_function                           = my_test_function
+test_function                      = my_test_function
 
 
 starting_directory = ""
+
+
+###########################################################################
+##################  Set the optimization method ###########################
+###########################################################################
+
+optimization_method                = "FST-PSO" 
+
+###########################################################################
+######################## Run the optimization #############################
+###########################################################################
 
 if __name__ == '__main__':
     

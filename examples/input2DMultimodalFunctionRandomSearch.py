@@ -18,8 +18,6 @@ from toolsSmileiAnalysis import *
 ############# Parameters for a generic optimization method ################
 ###########################################################################
 
-optimization_method                = "Random Search" 
-
 #### Parameter space to explore
 number_of_dimensions               = 2  
 search_interval                    = [[0.,10.],[0.,10.]]
@@ -49,6 +47,17 @@ test_function                      = my_test_function
 
 
 starting_directory = ""
+
+###########################################################################
+##################  Set the optimization method ###########################
+###########################################################################
+
+optimization_method                = "Random Search" 
+
+###########################################################################
+######################## Run the optimization #############################
+###########################################################################
+
 
 if __name__ == '__main__':
     

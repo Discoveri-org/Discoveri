@@ -23,8 +23,6 @@ from toolsSmileiAnalysis import *
 ############# Parameters for a generic optimization method ################
 ###########################################################################
 
-optimization_method                = "Bayesian Optimization" 
-
 #### Parameter space to explore
 number_of_dimensions               = 1 
 search_interval                    = [[0.,10.]]
@@ -34,11 +32,6 @@ number_of_samples_per_iteration    = 1
 
 #### Optimization parameters
 number_of_iterations               = 25
-
-#### Bayesian Optimization parameters
-# this parameter is particularly important especially in more than one dimension
-# see its description in the doc and in the links it provides
-length_scale                       = 1.0 
 
 #### Diagnostic and output dump periodicity
 iterations_between_outputs         = 1
@@ -57,6 +50,20 @@ test_function                      = my_test_function
 
 
 starting_directory = ""
+
+###########################################################################
+##################  Set the optimization method ###########################
+###########################################################################
+
+optimization_method                = "Bayesian Optimization" 
+# this parameter is particularly important especially in more than one dimension
+# see its description in the doc and in the links it provides
+length_scale                       = 1.0 
+
+###########################################################################
+################## Run the optimization, plot the model ###################
+###########################################################################
+
 
 if __name__ == '__main__':
     

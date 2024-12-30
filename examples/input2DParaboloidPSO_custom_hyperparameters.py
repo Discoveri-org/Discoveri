@@ -13,15 +13,9 @@ sys.path.insert(0, path_discoveri)
 from discoveriMain import createOptimizationRun
 
 
-
 ###########################################################################
 ############# Parameters for a generic optimization method ################
 ###########################################################################
-
-
-#### Optimization method options: 
-
-optimization_method                = "Particle Swarm Optimization" 
 
 #### Parameter space to explore
 number_of_dimensions               = 2 
@@ -51,6 +45,21 @@ test_function                      = my_test_function
 
 starting_directory = ""
 
+###########################################################################
+##################  Set the optimization method ###########################
+###########################################################################
+
+optimization_method                = "Particle Swarm Optimization" 
+c1                                 = 0.4
+c2                                 = 0.4
+w1                                 = 0.8
+w2                                 = 0.4
+
+###########################################################################
+####################### Run the optimization ##############################
+###########################################################################
+
+
 if __name__ == '__main__':
     
     starting_directory = os.getcwd()
@@ -66,6 +75,6 @@ if __name__ == '__main__':
                                                test_function                   = test_function,                   \
                                                iterations_between_outputs      = iterations_between_outputs,      \
                                                input_parameters_names          = input_parameters_names,          \
-                                               c1=0.4,c2=0.4,w1=0.8,w2=0.4)
+                                               c1=c1.4,c2=c2,w1=w1,w2=w2)
     # execute optimization run
     optimization_run.execute()
