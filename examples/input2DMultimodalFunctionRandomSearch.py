@@ -1,4 +1,4 @@
-# This example shows the use of a classic Grid Search
+# This example shows the use of a classic Random Search
 # with a function which has multiple peaks
 
 

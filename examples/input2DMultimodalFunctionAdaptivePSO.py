@@ -1,7 +1,6 @@
 # This example shows the use of a variant of Particle Swarm Optimization, 
-# called PSO-TPME, with a function which has  multiple peaks
-# this variant of Particle Swarm Optimization adapts its hyperparameters 
-# based on the evolutionary state of the swarm
+# called FST-PSO, with a function which has  multiple peaks
+# this variant of Particle Swarm Optimization adapts the hyperparameters of each particle
 
 import numpy as np
 import os,sys
@@ -19,20 +18,20 @@ from toolsSmileiAnalysis import *
 ############# Parameters for a generic optimization method ################
 ###########################################################################
 
-optimization_method                = "Adaptive Particle Swarm Optimization" 
+optimization_method                = "FST-PSO" 
 
 #### Parameter space to explore
 number_of_dimensions               = 2 
-search_interval                    = [[0.,10.],[0.,10.]]
+search_interval                    = [[-5.12,5.12],[-5.12,5.12]]#[[-100,100],[-100,100]]#[[0.,10.],[0.,10.]]
 input_parameters_names             = ["dim0","dim1"]
 
-number_of_samples_per_iteration    = 30 
+number_of_samples_per_iteration    = 10 
 
 #### Optimization parameters
-number_of_iterations               = 60 
+number_of_iterations               = 200 
 
 #### Diagnostic and output dump periodicity
-iterations_between_outputs         = 20
+iterations_between_outputs         = 100
 
 #### Flag used to set if a numpy function or simulation results are optimized: 
 #### if True it optimizes (i.e. maximizes) a numpy function defined in test_function
@@ -41,8 +40,14 @@ use_test_function                  = True
 test_function                      = None
 simulation_postprocessing_function = None
 
-def my_test_function(x): # global maximum near (4.5,4.5)
-    return np.sum( -np.cos(x)-np.sin(x)-5/2.*np.cos(2.*x)+1/2.*np.sin(2.*x)  )
+def my_test_function(X): # global maximum near (4.5,4.5)
+    A = 10.0
+    delta = [x ** 2 - A * np.cos(2 * np.pi * x) for x in X]
+    y = A + np.sum(delta)
+    return -y
+    
+    return np.sum(-np.square(x))+9
+    #return np.sum( -np.cos(x)-np.sin(x)-5/2.*np.cos(2.*x)+1/2.*np.sin(2.*x)  )
     
 test_function                           = my_test_function
 

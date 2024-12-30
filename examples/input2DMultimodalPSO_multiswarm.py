@@ -1,7 +1,4 @@
-# This example shows the use of Particle Swarm Optimization 
-# in an easy problem with a unique maximum, the same of input2DParaboloidPSO.py,
-# but with better hyperparameters. Note how this improves convergence compared 
-# to using default hyperparameters. 
+# This example shows the use of Particle Swarm Optimization with multiple swarms
 
 import numpy as np
 import os,sys
@@ -21,18 +18,19 @@ from discoveriMain import createOptimizationRun
 
 #### Optimization method options: 
 
-optimization_method                = "Particle Swarm Optimization" 
+optimization_method                = "FST-PSO"
 
 #### Parameter space to explore
 number_of_dimensions               = 2 
-search_interval                    = [[-1000.,1000.],[-1000.,1000.]]
+search_interval                    = [[-5.,5.],[-5.,5.]]
 input_parameters_names             = ["dim0","dim1"]
 
-number_of_samples_per_iteration    = 100 
+number_of_samples_per_iteration    = 20
 
-subswarm_size                      = 10
+use_multiple_swarms                = True
+subswarm_size                      = 5
 #### Optimization parameters
-number_of_iterations               = 50 
+number_of_iterations               = 20 
 
 #### Diagnostic and output dump periodicity
 iterations_between_outputs         = 10
@@ -44,11 +42,11 @@ use_test_function                  = True
 test_function                      = None
 simulation_postprocessing_function = None
 
-def my_test_function(X): # minus the Raisigrin function, maximum at 0
-    A = 10.0
-    delta = [x ** 2 - A * np.cos(2 * np.pi * x) for x in X]
-    y = A*np.size(X) + np.sum(delta)
-    return -y
+# def my_test_function(X): # - Rosenbrock function
+#     z = (1-X[0])**2+100.*(X[1]-X[0]**2)**2
+#     return -z
+def my_test_function(x): # global maximum near (4.5,4.5)
+    return np.sum( -np.cos(x)-np.sin(x)-5/2.*np.cos(2.*x)+1/2.*np.sin(2.*x)  )-0.001*np.sum(np.square(x))
 
     
 test_function                      = my_test_function
@@ -71,6 +69,6 @@ if __name__ == '__main__':
                                                test_function                   = test_function,                   \
                                                iterations_between_outputs      = iterations_between_outputs,      \
                                                input_parameters_names          = input_parameters_names,          \
-                                               c1=2.,c2=2.,w=0.6, use_multiple_swarms=True,subswarm_size=subswarm_size)
+                                               c1=2.,c2=2.,w=0.6, use_multiple_swarms=use_multiple_swarms,subswarm_size=subswarm_size,subswarm_regrouping=True)
     # execute optimization run
     optimization_run.execute()

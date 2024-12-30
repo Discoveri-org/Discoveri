@@ -63,6 +63,6 @@ if __name__ == '__main__':
                                                use_test_function               = use_test_function,               \
                                                test_function                   = test_function,                   \
                                                iterations_between_outputs      = iterations_between_outputs,      \
-                                               input_parameters_names          = input_parameters_names)
+                                               input_parameters_names          = input_parameters_names,w1=0.8,w2=0.4)
     # execute optimization run
     optimization_run.execute()

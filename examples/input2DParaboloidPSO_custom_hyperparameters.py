@@ -1,7 +1,7 @@
 # This example shows the use of Particle Swarm Optimization 
-# in an easy problem with a unique maximum, the same of input2DParaboloidPSO.py,
+# in an easy problem with a unique maximum, the same as in input2DParaboloidPSO.py,
 # but with better hyperparameters. Note how this improves convergence compared 
-# to using default hyperparameters. 
+# to using default hyperparameters in input2DParaboloidPSO.py. 
 
 import numpy as np
 import os,sys
@@ -66,6 +66,6 @@ if __name__ == '__main__':
                                                test_function                   = test_function,                   \
                                                iterations_between_outputs      = iterations_between_outputs,      \
                                                input_parameters_names          = input_parameters_names,          \
-                                               c1=0.4,c2=0.4,w=0.6)
+                                               c1=0.4,c2=0.4,w1=0.8,w2=0.4)
     # execute optimization run
     optimization_run.execute()

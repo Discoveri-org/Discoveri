@@ -1,7 +1,6 @@
 # This example shows the use of a variant of Particle Swarm Optimization, 
-# called PSO-TPME, with a function which has  multiple peaks
-# this variant of Particle Swarm Optimization adapts its hyperparameters 
-# based on the evolutionary state of the swarm
+# called FST-PSO, with a function which has  multiple peaks
+# this variant of Particle Swarm Optimization adapts the hyperparameters of each particle
 
 import numpy as np
 import os,sys
@@ -26,10 +25,10 @@ number_of_dimensions               = 2
 search_interval                    = [[-5.12,5.12],[-5.12,5.12]]
 input_parameters_names             = ["dim0","dim1"]
 
-number_of_samples_per_iteration    = 20 
+number_of_samples_per_iteration    = 10 
 
 #### Optimization parameters
-number_of_iterations               = 200 
+number_of_iterations               = 50 
 
 #### Diagnostic and output dump periodicity
 iterations_between_outputs         = 100
@@ -66,6 +65,7 @@ if __name__ == '__main__':
                                                use_test_function               = use_test_function,                \
                                                test_function                   = test_function,                    \
                                                iterations_between_outputs      = iterations_between_outputs,       \
-                                               input_parameters_names          = input_parameters_names)
+                                               input_parameters_names          = input_parameters_names,           \
+                                               )
     # execute optimization run
     optimization_run.execute()
