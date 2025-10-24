@@ -93,10 +93,10 @@ Finally, an implementation of the function `f` to maximize is provided in the sc
 
 Every time the optimization process needs to launch a simulation, it creates a new directory named ``Config_*``, where the executable ``smilei``, the Python input namelist and the ``.sh`` script are copied.
 
-Afterwards, the process inserts a new line into the input namelist to define a dictionary ``external_config`` containing the parameters for that specific simulation configuration. 
+Afterwards, the process inserts a new line into the input namelist to define a dictionary ``configuration`` containing the parameters for that specific simulation configuration. 
 For this example, the namelist of one configuration may contain these parameters:
 ``` 
-external_config = { 'bunch_charge_pC':85.22, 'electron_bunch_delay_behind_laser_um':17.97 }
+configuration = { 'bunch_charge_pC':85.22, 'electron_bunch_delay_behind_laser_um':17.97 }
 ```
 
 This line is automatically added immediately after the marker ``# Configuration to simulate`` at the beginning of the input namelist.

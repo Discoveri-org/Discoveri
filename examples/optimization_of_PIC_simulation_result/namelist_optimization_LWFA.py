@@ -154,12 +154,12 @@ Species(
 ######################## Define the electron bunch
 
 ###### electron bunch parameters
-Q_bunch                    = -external_config["bunch_charge_pC"] * pC # Total charge of the electron bunch
+Q_bunch                    = -configuration["bunch_charge_pC"] * pC   # Total charge of the electron bunch
 sigma_x                    = 1.  * um                                 # initial longitudinal rms size
 sigma_r                    = 1.5 * um                                 # initial transverse/radial rms size (cylindrical symmetry)
 bunch_energy_spread        = 0.01                                     # initial rms energy spread / average energy (not in percent)
 bunch_normalized_emittance = 2.  * um                                 # initial rms emittance, same emittance for both transverse planes
-delay_behind_laser         = external_config["electron_bunch_delay_behind_laser_um"] * um  # distance between x_center_laser and center_bunch
+delay_behind_laser         = configuration["electron_bunch_delay_behind_laser_um"] * um  # distance between x_center_laser and center_bunch
 center_bunch               = x_center_laser-delay_behind_laser        # initial position of the electron bunch in the window   
 gamma_bunch                = 30.                                      # initial relativistic Lorentz factor of the bunch
 

@@ -82,7 +82,7 @@ class jobManager:
         
     def generateConfigurationToWriteOnNamelist(self,input_parameters,number_of_dimensions):
         # generate the line to insert in the input namelist to select the configuration to explore
-        write_to_namelist = "external_config = { "
+        write_to_namelist = "configuration = { "
         
         input_params_names = self.input_parameters_names
         if (len(input_params_names)==0):
@@ -106,7 +106,7 @@ class jobManager:
         # you need to ensure that the input file of your namelist uses this dictionary
         with open(self.path_input_namelist, "r") as file:
     	       namelist_file_content = file.readlines()
-        # insert in the original namelist file dictionary with parameters after the line "External_config" 
+        # insert in the original namelist file dictionary with parameters after the line "configuration" 
         with open(self.name_input_namelist, 'w') as namelist:
             for line in namelist_file_content:
                 newline = line

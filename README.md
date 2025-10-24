@@ -68,7 +68,7 @@ In both cases, the users must ensure that the function does not return `nan`,`-i
 #### Job preparation and management  in a cluster 
 
 The users must ensure that these parameters are coherent. e.g. the template job submission script must set the correct name for the simulation log files, etc.
-- `input_parameters_names` (list of `number_of_dimensions` strings): important to modify the namelist to launch simulations. Currently, ``:Discoveri`` assumes that a Python namelist is used by the code, where after a line containing `# Configuration to simulate` a line defining a dictionary `external_config` will be added by ``:Discoveri``, containing the names of the parameters to explore and their values. The namelist of the code must be prepared in order to use this dictionary.
+- `input_parameters_names` (list of `number_of_dimensions` strings): important to modify the namelist to launch simulations. Currently, ``:Discoveri`` assumes that a Python namelist is used by the code, where after a line containing `# Configuration to simulate` a line defining a dictionary `configuration` will be added by ``:Discoveri``, containing the names of the parameters to explore and their values. The namelist of the code must be prepared in order to use this dictionary.
 - `starting_directory`(string):                    
 - `home_directory`(string):
 - `path_executable`(string): the path of the executable.
