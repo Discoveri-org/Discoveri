@@ -78,7 +78,7 @@ field amplitudes and increasing the final energy spread, or reducing its energy 
 
 <p align="center">
   <figure>
-    <img src="images/Beam_loading.png" alt="Ex_on_axis" width="400">
+    <img src="images/Beam_loading.png" alt="Ex_on_axis" width="600">
     <figcaption>Figure 1: Snapshot of the longitudinal electric field Ex on the propagation axis of the plasma wave for three different simulations. The final energy and energy spread of the accelerated beam strongly depends on the amplitude and shape this curve. Q is the charge of the electron bunch.  </figcaption>
   </figure>
 </p>
@@ -110,7 +110,7 @@ The script ``postprocessing_scripts/readAndPlotOptimizationHistory.py``, when us
 
 <p align="center">
   <figure>
-    <img src="images/Optimization_progress.png" alt="Optimization progress" width="400">
+    <img src="images/Optimization_progress.png" alt="Optimization progress" width="600">
     <figcaption>Figure 2: Example of evolution of the objective function to maximise, as function of the number of function evaluations. The big markers correspond to the value of the objective function at that function evaluation. The line represents the best value found so far, showing the progress of the optimization process. Given the non-deterministic nature of Bayesian Optimization, running again the optimization process will likely yield a slightly different curve.  </figcaption>
   </figure>
 </p>
@@ -119,7 +119,7 @@ In the file `postprocessing_function` the function `Plot_energy_spectrum` (which
 
 <p align="center">
   <figure>
-    <img src="images/Energy_spectra.png" alt="Optimization progress" width="400">
+    <img src="images/Energy_spectra.png" alt="Optimization progress" width="600">
     <figcaption>Figure 3: Energy spectra and objective function value corresponding to the first and best simulation run during the optimization process. Given the non-deterministic nature of Bayesian Optimization, running again the optimization process will likely yield different curves.  </figcaption>
   </figure>
 </p>
