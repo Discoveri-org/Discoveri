@@ -51,7 +51,7 @@ class jobManager:
         os.makedirs(directory)
         if (self.use_test_function==False):
             os.chdir(directory)
-            #os.system("cp "+path_executable+" .")
+            os.system("cp "+self.path_executable+" .")
             os.system("cp "+self.path_submission_script+" .")
             os.system("cp "+self.path_input_namelist+" .")
             if (self.path_second_submission_script!=""):
@@ -101,7 +101,7 @@ class jobManager:
     def writeConfigurationDictionaryInNamelist(self,line_to_write_in_namelist):
         # create an input namelist file identical to the one in the path_input_namelist
         # the only difference will be a line with the parameters of the configuration to explore
-        # this line will be written after the line containng "External_config"
+        # this line will be written after the line containng "# Configuration to simulate"
         # after this line, a dictionary with the sample parameters will be written
         # you need to ensure that the input file of your namelist uses this dictionary
         with open(self.path_input_namelist, "r") as file:
@@ -110,7 +110,7 @@ class jobManager:
         with open(self.name_input_namelist, 'w') as namelist:
             for line in namelist_file_content:
                 newline = line
-                if "External_config" in line:
+                if "# Configuration to simulate" in line:
                     #print(line)
                     newline = newline + "\n" + line_to_write_in_namelist + "\n"
                 namelist.write(newline)

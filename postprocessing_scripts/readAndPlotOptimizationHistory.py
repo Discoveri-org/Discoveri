@@ -71,14 +71,14 @@ plt.figure()
 plt.scatter(iterations,optimizer_maximum_of_function_to_optimize_for_this_iteration,label="Optimizer maximum at this iteration")
 plt.plot(iterations,optimizer_maximum_of_function_to_optimize,label="Optimizer maximum until now",marker='.')
 plt.xlabel("Iteration number")
-plt.ylabel("Function value")
+plt.ylabel("Objective function value")
 
 # plot the best function value evolution as function of the number of function evaluations
 plt.figure()
 plt.scatter((iterations+1)*number_of_samples_per_iteration,optimizer_maximum_of_function_to_optimize_for_this_iteration,label="Optimizer maximum at this iteration")
 plt.plot((iterations+1)*number_of_samples_per_iteration,optimizer_maximum_of_function_to_optimize,label="Optimizer maximum until now",marker='.')
-plt.xlabel("Number of evaluations")
-plt.ylabel("Function value")
+plt.xlabel("Number of function evaluations")
+plt.ylabel("Objective function value")
 
 
 ### plots used only in some special cases for the number of dimensions
