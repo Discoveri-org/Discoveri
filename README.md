@@ -22,6 +22,10 @@
 
 If ``Discoveri`` is used to optimize the result of ``Smilei`` simulations, then also the postprocessing library `happi` will be necessary.
 
+### Contributors
+Francesco Massimo (LPGP, CNRS, Université Paris Saclay) started the repository, 
+which benefitted from contributions from Paul Kigaya (University of Michigan).
+
 ### Basic concepts and terminology used in ``:Discoveri``
 
 ``Discoveri`` optimizes/maximizes the result of `f(X)`, where `f` is a real-valued function of an array `X` called position, with `number_of_dimensions` dimensions. The elements of `X` can vary continuously in the real numbers space. The whole search space from which `X` is drawn is called `search_interval`.
