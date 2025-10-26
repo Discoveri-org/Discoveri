@@ -29,7 +29,8 @@ Instructions:
 - Download and install the PIC code ``Smilei`` (https://github.com/SmileiPIC/Smilei.git) on the machine you want to use. 
 - Install the ``Smilei`` postprocessing library ``happi`` (installing first the ``pint`` library for unit conversions).
 - Create a directory, e.g. ``optimization_runs`` and copy inside the ``smilei`` executable, the files ``namelist_optimization_LWFA.py``, ``launch_Smilei_simulation.sh``, and ``postprocessing_functions.py`` from this directory.
-- Inside this directory, create a folder for the optimization run, called e.g. ``run_0``.
+- In ``optimization_runs``, modify and adapt ``launch_Smilei_simulation.sh`` with the environment and commands you use to launch a ``Smilei`` simulation. 
+- In ``optimization_runs``, create a folder for the optimization run, called e.g. ``run_0``.
 - In ``run_0``, copy the script ``Optimization_Smilei_simulation.py``.
 - In that file, modify the path of the ``:Discoveri`` folder on your machine.
 - Navigate to ``run_0`` and run the script ``Optimization_Smilei_simulation.py`` (this was tested using `IPython`).
