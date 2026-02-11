@@ -211,10 +211,6 @@ class RandomSearch(Optimizer):
 class GridSearch(Optimizer):
     def __init__(self, name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs):
         super().__init__(name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs)
-        
-        if ( self.number_of_iterations != 1 ):
-            print("ERROR: Grid Search only supports number_of_iterations = 1")
-            sys.exit()
             
         default_samples_per_dimension  = [self.number_of_samples_per_iteration]
         self.samples_per_dimension     = kwargs.get('samples_per_dimension', default_samples_per_dimension)
@@ -222,11 +218,15 @@ class GridSearch(Optimizer):
         self.samples_per_dimension     = np.asarray(self.samples_per_dimension)
         
         if ( np.size(self.samples_per_dimension) != self.number_of_dimensions):
-            print("ERROR: samples_per_dimension must be a list of number_of_dimensions integers")
+            print("ERROR: samples_per_dimension must be a list of integers with size equal to number_of_dimensions.")
             sys.exit()
         
-        if ( np.prod(self.samples_per_dimension) != self.number_of_samples_per_iteration ):
-            print("ERROR: samples_per_dimension must be a list of integers, whose product is number_of_samples_per_iteration")
+        if ( np.prod(self.samples_per_dimension) != self.number_of_samples_per_iteration * self.number_of_iterations  ):
+            print("ERROR: the number_of_samples_per_iteration times the number_of_iterations must be equal to the product of the samples_per_dimension.")
+            sys.exit()
+        
+        if ( np.prod(self.samples_per_dimension) % self.number_of_samples_per_iteration != 0 ):
+            print("ERROR: The product of the samples_per_dimension must be a multiple of the number_of_samples_per_iteration.")
             sys.exit()
         
         print("\n -- hyperparameters used by the optimizer -- ")
@@ -240,15 +240,23 @@ class GridSearch(Optimizer):
         # fill the population with the correct position, print and save
         position_arrays_along_dimensions = [np.linspace(self.search_interval[idim][0], self.search_interval[idim][1], num=self.samples_per_dimension[idim]) for idim in range(self.number_of_dimensions)]
         mesh_grid       = np.meshgrid(*position_arrays_along_dimensions, indexing='ij')
-        flat_mesh_grid  = np.array(mesh_grid).reshape(number_of_dimensions, -1).T; #print(flat_mesh_grid)
+        self.flat_mesh_grid  = np.array(mesh_grid).reshape(number_of_dimensions, -1).T; 
+        print("\nThe Grid Search will explore the following points:")
+        print(self.flat_mesh_grid)
         
         for isample in range(0,self.number_of_samples_per_iteration):
             for idim in range(self.number_of_dimensions):
-                self.samples[isample].position[idim]=flat_mesh_grid[isample, idim] 
+                self.samples[isample].position[idim]=self.flat_mesh_grid[isample, idim] 
             print("\n ---> Sample", isample, "Position:", self.samples[isample].position)  
             self.history_samples_positions_and_function_values[0,isample,0:self.number_of_dimensions] = self.samples[isample].position[:]
             
         print("\n Grid Search initialized")
+    
+    def updateSamplesForExploration(self):
+        self.iteration_number = self.iteration_number+1
+        for isample in range(0,self.number_of_samples_per_iteration):
+            self.samples[isample].position[:] = self.flat_mesh_grid[self.iteration_number*self.number_of_samples_per_iteration+isample]
+        
 
     
 class ParticleSwarmOptimization(Optimizer):
@@ -1002,7 +1010,7 @@ class ParticleSwarmOptimization(Optimizer):
 class BayesianOptimization(Optimizer):
     def __init__(self, name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs):
         super().__init__(name, number_of_samples_per_iteration, number_of_dimensions, search_interval, number_of_iterations, **kwargs)
-
+        
         # Implementation of Bayesian Optimization based on a Matern Kernel (see https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.kernels.Matern.html)
         ### Define the regression model with a Gaussian process
         self.number_of_tests,self.nu,self.length_scale,self.length_scale_bounds,self.xi,\

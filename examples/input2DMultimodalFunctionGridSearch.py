@@ -23,12 +23,14 @@ number_of_dimensions               = 2
 search_interval                    = [[0.,10.],[0.,10.]]
 input_parameters_names             = ["dim0","dim1"]
 
-number_of_samples_per_iteration    = 1800
-
-samples_per_dimension              = [30,60]
-
 #### Optimization parameters
-number_of_iterations               = 1
+number_of_iterations               = 9
+number_of_samples_per_iteration    = 2
+
+#### Grid search parameters
+# the number of iterations times the number of samples per iteration 
+# must be equal to the elements of the following list, i.e. the product of the samples per dimension
+samples_per_dimension              = [3,6]
 
 #### Diagnostic and output dump periodicity
 iterations_between_outputs         = 1

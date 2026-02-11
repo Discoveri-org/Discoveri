@@ -90,9 +90,8 @@ The users must ensure that these parameters are coherent. e.g. the template job 
 Following are the optimization techniques currently supported by ``:Discoveri``, as well as their hyperparameters. 
 
 - `"Grid Search"`: the arrays `X` of the `number_of_samples_per_iteration` samples are evenly distributed in each dimension `idim` between `search_interval[idim][0]` and `search_interval[idim][1]`, with `samples_per_dimension[idim]` samples.
-NOTE: this optimizer only supports `number_of_iterations = 1`.
 Optimizer hyperparameters:
-  - `samples_per_dimension` a list of `number_of_dimensions` integers, whose product must be equal to `number_of_samples_per_iteration`.
+  - `samples_per_dimension` a list of `number_of_dimensions` integers, whose product must be equal to the product of `number_of_samples_per_iteration` and `number_of_iterations`.
   
 - `"Random Search"`: in this optimization method, the array `X` for each sample of each iteration is generated pseudo-randomly, with a uniform distribution within the `search_interval`. 
 Optimizer hyperparameter:

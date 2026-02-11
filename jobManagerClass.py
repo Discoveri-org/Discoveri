@@ -4,7 +4,7 @@
 import os,sys,time
 
 from optimizerClasses import *
-from toolsSmileiAnalysis import *
+#from toolsSmileiAnalysis import *
 from generalUtilities import *
 
 class jobManager:
@@ -51,10 +51,11 @@ class jobManager:
         os.makedirs(directory)
         if (self.use_test_function==False):
             os.chdir(directory)
-            os.system("cp "+self.path_executable+" .")
+            if (self.path_executable!="") and (self.path_executable!=None):
+                os.system("cp "+self.path_executable+" .")
             os.system("cp "+self.path_submission_script+" .")
             os.system("cp "+self.path_input_namelist+" .")
-            if (self.path_second_submission_script!=""):
+            if (self.path_second_submission_script!="") and (self.path_second_submission_script!=None):
                 os.system("cp "+self.path_second_submission_script+" .")
         
             # prepare namelist writing the parameter configuration 
