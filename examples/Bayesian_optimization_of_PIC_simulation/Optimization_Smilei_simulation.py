@@ -17,8 +17,7 @@ search_interval                            = [[20,100],[15,25]]
 #### Optimization parameters
 
 number_of_iterations                       = 20 
-number_of_samples_per_iteration            = 1  
-iterations_between_outputs                 = 1
+number_of_samples_per_iteration            = 1
 
 #### Diagnostic and output dump periodicity
 iterations_between_outputs                 = 1
