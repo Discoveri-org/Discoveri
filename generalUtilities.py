@@ -130,7 +130,22 @@ def initializePredictiveModelForOptimization(number_of_samples_to_choose=1,numbe
     # if the function to optimize does not vary much in one dimension, the associated length scale of that dimension can be larger.
     default_length_scale              = 1.0  
     length_scale                      = kwargs.get('length_scale', default_length_scale)
-    
+    import numbers
+
+    def is_positive(x):
+        return isinstance(x, numbers.Real) and x > 0
+
+    if is_positive(length_scale):
+        ok = True
+    elif hasattr(length_scale, "__len__") and len(length_scale) == number_of_dimensions and all(is_positive(v) for v in length_scale):
+        ok = True
+    else:
+        ok = False
+    if not ok:
+        print(
+        "ERROR: the length_scale must be either one positive float or a list of positive floats "
+        "with length equal to number_of_dimensions")
+        sys.exit()
     
     # the length_scale will be optimizer with optimizer="fmin_l_bfgs_b" (see below)
     # the following parameter fixes the bounds for this optimization
